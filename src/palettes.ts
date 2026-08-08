@@ -18,8 +18,11 @@ export const PALETTES: readonly PalettePreset[] = [
   { id: 'sunset', name: 'Sunset', colour1: '#ff9e4a', colour2: '#7b2d6b', border: null },
   { id: 'emerald', name: 'Emerald', colour1: '#1b998b', colour2: '#093a3e', border: '#0b1b1c' },
   { id: 'paper', name: 'Paper & ink', colour1: '#faf3e0', colour2: '#c9c2b0', border: '#20211f' },
-  { id: 'neon', name: 'Neon', colour1: '#39ff14', colour2: '#1a0b2e', border: '#0a0416' },
+  { id: 'archive', name: 'Archive', colour1: '#70253a', colour2: '#f2eee5', border: '#13263a' },
   { id: 'bauhaus', name: 'Bauhaus', colour1: '#e63946', colour2: '#f1c453', border: '#1d3557' },
+  { id: 'navy-brass', name: 'Navy & brass', colour1: '#13263a', colour2: '#b08d57', border: '#f2eee5' },
+  { id: 'plum-sage', name: 'Plum & sage', colour1: '#6d3b66', colour2: '#a8c686', border: '#242038' },
+  { id: 'porcelain', name: 'Porcelain', colour1: '#f4f1de', colour2: '#3d5a80', border: '#e07a5f' },
 ];
 
 export const DEFAULT_PALETTE = PALETTES[0]!;

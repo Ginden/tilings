@@ -135,6 +135,12 @@ input[type='number'] {
   font-size: 0.85rem;
 }
 
+select option,
+select optgroup {
+  background: #222832;
+  color: var(--text);
+}
+
 .row {
   display: grid;
   grid-template-columns: auto 2.6rem 1fr;

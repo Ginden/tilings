@@ -69,11 +69,6 @@ function populateSelects(): void {
     button.title = palette.name;
     button.dataset['palette'] = palette.id;
     button.setAttribute('aria-label', palette.name);
-    for (const colour of [palette.colour1, palette.colour2, palette.border ?? 'transparent']) {
-      const swatch = document.createElement('span');
-      swatch.style.background = colour;
-      button.append(swatch);
-    }
     button.addEventListener('click', () => {
       state = {
         ...state,
@@ -146,8 +141,16 @@ function syncControls(): void {
 
   for (const button of paletteBox.querySelectorAll<HTMLButtonElement>('button')) {
     const palette = PALETTES.find((p) => p.id === button.dataset['palette']);
+    if (!palette) continue;
+
+    const swatches = kindColors(palette.colour1, palette.colour2, def.kinds).map((colour) => {
+      const swatch = document.createElement('span');
+      swatch.style.background = colour;
+      return swatch;
+    });
+    button.replaceChildren(...swatches);
+
     const active =
-      palette !== undefined &&
       palette.colour1.toLowerCase() === state.colour1.toLowerCase() &&
       palette.colour2.toLowerCase() === state.colour2.toLowerCase();
     button.setAttribute('aria-pressed', String(active));
