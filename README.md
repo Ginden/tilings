@@ -48,7 +48,9 @@ are here.
 * **Screen size** — fit the window, one of the common presets (Full HD, 4K,
   phone, A4, square) or a custom pixel size.
 * **Tile size** — the nominal tile size in pixels. Tile areas are normalised per
-  tiling, so 40 px means roughly the same visual density everywhere.
+  tiling, so 40 px means roughly the same visual density everywhere. A patch is
+  capped at 30 000 tiles; past that the tile size is raised automatically and the
+  status line says so, which keeps a 4K canvas from locking up the tab.
 
 The full configuration lives in the URL hash, so any view can be shared or
 bookmarked.

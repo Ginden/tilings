@@ -89,12 +89,20 @@ function populateSelects(): void {
   }
 }
 
+/**
+ * A 4K canvas full of 8 px tiles is a third of a million polygons, which locks
+ * up the tab and produces a download nobody wants. Raise the tile size just
+ * enough to stay under the budget and say so in the status line.
+ */
+const MAX_TILES = 30_000;
+
 function currentOptions(): RenderOptions {
   const size = resolveSize(state, { width: window.innerWidth, height: window.innerHeight });
+  const budget = Math.sqrt((size.width * size.height) / MAX_TILES);
   return {
     width: Math.round(size.width),
     height: Math.round(size.height),
-    tileSize: state.tileSize,
+    tileSize: Math.max(state.tileSize, budget),
     colour1: state.colour1,
     colour2: state.colour2,
     border: state.borderTransparent ? null : state.border,
@@ -152,17 +160,28 @@ let pending = 0;
 
 function render(): void {
   if (pending) cancelAnimationFrame(pending);
+  status.textContent = 'Generating…';
   pending = requestAnimationFrame(() => {
-    pending = 0;
-    const def = tilingById(state.tilingId);
-    const options = currentOptions();
-    const started = performance.now();
-    const { svg, tileCount } = renderSvg(def, { ...options, preserveAspectRatio: 'xMidYMid slice' });
-    stage.innerHTML = svg;
-    lastRender = { options, svg };
-    status.textContent = `${tileCount.toLocaleString()} tiles · ${options.width}×${options.height} px · ${Math.round(
-      performance.now() - started,
-    )} ms`;
+    // A second frame, so the message above is painted before the work starts.
+    pending = requestAnimationFrame(() => {
+      pending = 0;
+      const def = tilingById(state.tilingId);
+      const options = currentOptions();
+      const started = performance.now();
+      const { svg, tileCount } = renderSvg(def, {
+        ...options,
+        preserveAspectRatio: 'xMidYMid slice',
+      });
+      stage.innerHTML = svg;
+      lastRender = { options, svg };
+      const clamped =
+        options.tileSize > state.tileSize
+          ? ` · tile size raised to ${Math.round(options.tileSize)} px to stay under ${MAX_TILES.toLocaleString()} tiles`
+          : '';
+      status.textContent =
+        `${tileCount.toLocaleString()} tiles · ${options.width}×${options.height} px · ` +
+        `${Math.round(performance.now() - started)} ms${clamped}`;
+    });
   });
 }
 
