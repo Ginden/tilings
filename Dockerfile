@@ -11,7 +11,9 @@ COPY public ./public
 COPY docs ./docs
 RUN npm run typecheck && npm test && npx vite build
 
-FROM nginx:1.29-alpine AS runtime
+# Data-only OCI image. Kubernetes mounts the image root at the shared nginx
+# document root, so index.html and assets must live directly at `/`.
+FROM scratch AS site
 
 ARG OCI_CREATED
 ARG OCI_SOURCE="https://gitea.wadas.dev/nuc/penrose-tilings"
@@ -27,10 +29,4 @@ LABEL org.opencontainers.image.title="penrose-tilings" \
   org.opencontainers.image.created="${OCI_CREATED}" \
   org.opencontainers.image.licenses="MIT"
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY --from=build /app/dist /usr/share/nginx/html
-
-EXPOSE 80
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \
-  CMD wget -q -O /dev/null http://127.0.0.1/ || exit 1
+COPY --from=build /app/dist/ /

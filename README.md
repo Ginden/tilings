@@ -91,12 +91,14 @@ PREVIEW_DIR=/tmp/tilings npm test   # writes one SVG per tiling
 ## Deployment
 
 `Dockerfile` is a multi-stage build: Node 24 typechecks, tests and builds the
-site, then nginx 1.29 (Alpine) serves `dist`. Images carry the OpenContainers
-annotations and are published to `oci.wadas.dev/nuc/penrose-tilings`.
+site, then a `scratch` stage places the contents of `dist` at the image root.
+The resulting data-only OCI image is mounted read-only as a Kubernetes image
+volume and served by the shared frontend nginx. It is not a runnable container.
+Images carry OpenContainers annotations and are published to
+`oci.wadas.dev/nuc/penrose-tilings`.
 
 ```bash
 docker build -t penrose-tilings .
-docker run --rm -p 8080:80 penrose-tilings
 ```
 
 Gitea Actions:
