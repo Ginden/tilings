@@ -11,7 +11,13 @@ export interface Palette {
   readonly borderWidth: number;
 }
 
-export interface RenderOptions extends SceneOptions, Palette {}
+export interface RenderOptions extends SceneOptions, Palette {
+  /**
+   * SVG `preserveAspectRatio`. The on-screen preview uses `xMidYMid slice` so
+   * that the tiling always covers the window; exported files keep the default.
+   */
+  readonly preserveAspectRatio?: string;
+}
 
 export interface RenderResult {
   readonly svg: string;
@@ -69,7 +75,8 @@ export function renderSvg(def: TilingDefinition, opts: RenderOptions): RenderRes
 
   const svg =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${opts.width}" height="${opts.height}" ` +
-    `viewBox="0 0 ${opts.width} ${opts.height}" preserveAspectRatio="xMidYMid slice">` +
+    `viewBox="0 0 ${opts.width} ${opts.height}" ` +
+    `preserveAspectRatio="${opts.preserveAspectRatio ?? 'xMidYMid meet'}">` +
     `<title>${escapeXml(def.name)}</title>${body.join('')}</svg>`;
 
   return { svg, tileCount: scene.tiles.length };

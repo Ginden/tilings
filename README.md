@@ -1,2 +1,108 @@
-# penrose-tilings
+# Penrose tilings
 
+An interactive visualiser for Penrose and other aperiodic tilings. Pick a tiling
+from the list, choose two colours and a border colour, set the canvas size and
+tile size, and the tiling fills the background as an SVG you can download as SVG
+or PNG.
+
+Everything is generated in the browser: the tilings are computed in TypeScript
+(compiled by Vite) and emitted as SVG paths — there is no server, no canvas
+rasterisation for display, and no runtime dependencies.
+
+![Penrose P3 rhombs](docs/preview.svg)
+
+## Tilings
+
+| Tiling | Prototiles | How it is generated |
+| --- | --- | --- |
+| Penrose P3 — rhombs | thick + thin rhomb | Robinson triangle deflation, half-tiles glued on their bases |
+| Penrose P2 — kite and dart | kite + dart | Robinson triangle deflation with the mirror axis tracked per half-tile |
+| Penrose rhombs — pentagrid | thick + thin rhomb | de Bruijn's pentagrid (dual of five line families, offsets summing to zero) |
+| Robinson triangles | golden triangle + gnomon | the P3 deflation, drawn as half-tiles |
+| Ammann–Beenker (8-fold) | square + 45° rhomb | four-family multigrid |
+| Dodecagonal (12-fold) | 30°/60°/90° rhombs | six-family multigrid |
+| Heptagonal (14-fold) | three rhombs | seven-family multigrid |
+| Decagonal (20-fold) | five rhombs | ten-family multigrid |
+| Hat monotile (einstein) | one 13-sided tile | H/T/P/F metatile substitution (see credits) |
+| Pinwheel (Conway–Radin) | 1–2–√5 right triangle | rep-5 substitution; tiles appear in infinitely many orientations |
+| Chair (L-tromino) | L-tromino | rep-4 substitution, grown outwards from a central supertile |
+
+Tilings with more than two tile classes (the dodecagonal, heptagonal and
+decagonal rhombs, the hat's five metatile classes, the chair's four
+orientations) shade their classes evenly between the two chosen colours.
+
+Penrose's original **P1** set (pentagons, star, boat and diamond) is not
+included: it needs the six-prototile pentagon inflation, whose rules are not
+stated in the sources this was built from, and a half-correct version would be
+worse than none. P1 is mutually locally derivable from P2 and P3, both of which
+are here.
+
+## Controls
+
+* **Type** — the tiling, grouped by family.
+* **Colour 1 / Colour 2** — the two tile colours, as pickers or hex values, plus
+  twelve preset palettes.
+* **Border** — colour, width, and a *transparent* switch that drops the stroke
+  entirely (the background is then filled with a blend of the two colours so no
+  seams show).
+* **Screen size** — fit the window, one of the common presets (Full HD, 4K,
+  phone, A4, square) or a custom pixel size.
+* **Tile size** — the nominal tile size in pixels. Tile areas are normalised per
+  tiling, so 40 px means roughly the same visual density everywhere.
+
+The full configuration lives in the URL hash, so any view can be shared or
+bookmarked.
+
+## Exports
+
+* **Download SVG** — the standalone SVG at the chosen pixel size.
+* **Download PNG** — the same image rasterised at the chosen pixel size.
+
+Files are named after their settings, for example
+`penrose-p3_1920x1080_tile42_e8b53b-1b3a5c_border-101820.svg`.
+
+## Development
+
+```bash
+npm ci
+npm run dev        # Vite dev server
+npm run typecheck  # tsc --noEmit
+npm test           # vitest
+npm run build      # typecheck + production build into dist/
+```
+
+The test suite samples random points inside every generated patch and asserts
+that each is covered by exactly one tile, which catches both gaps and overlaps —
+the failure mode that a wrong substitution rule produces. To eyeball the output:
+
+```bash
+PREVIEW_DIR=/tmp/tilings npm test   # writes one SVG per tiling
+```
+
+## Deployment
+
+`Dockerfile` is a multi-stage build: Node 24 typechecks, tests and builds the
+site, then nginx 1.29 (Alpine) serves `dist`. Images carry the OpenContainers
+annotations and are published to `oci.wadas.dev/nuc/penrose-tilings`.
+
+```bash
+docker build -t penrose-tilings .
+docker run --rm -p 8080:80 penrose-tilings
+```
+
+Gitea Actions:
+
+* `.gitea/workflows/ci.yaml` — typecheck, test and build on every push and pull
+  request, uploading `dist` as an artifact.
+* `.gitea/workflows/image.yaml` — build and push the container image on `main`,
+  tagged `YYYY.DDD.HHMM`, the branch name and `latest`.
+
+## Credits
+
+The hat metatile construction is ported from Craig S. Kaplan's
+[hatviz](https://github.com/isohedral/hatviz) (BSD 3-Clause) — see
+[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). Everything else is derived
+from the geometry described on Wikipedia's
+[Penrose tiling](https://en.wikipedia.org/wiki/Penrose_tiling) and
+[list of aperiodic sets of tiles](https://en.wikipedia.org/wiki/List_of_aperiodic_sets_of_tiles)
+pages.

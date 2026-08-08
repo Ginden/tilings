@@ -1,4 +1,4 @@
-import { PHI, add, lerp, scale, sub } from '../geometry.js';
+import { PHI, lerp, sub } from '../geometry.js';
 import type { Vec } from '../geometry.js';
 import type { Tile, TilingDefinition } from './types.js';
 import { mergeHalfTiles, subdivideTriangles } from './substitution.js';
@@ -160,24 +160,6 @@ export const robinsonTriangles: TilingDefinition = {
     }));
   },
 };
-
-/**
- * Penrose P1-style pentagon decoration. Each thick rhomb of a P3 tiling carries
- * a regular pentagon inscribed on its long diagonal; this is a decoration of the
- * rhombs, not the six-prototile P1 tiling itself.
- */
-export function pentagonOnRhomb(points: readonly Vec[]): Vec[] {
-  const [p0, p1, p2, p3] = points as [Vec, Vec, Vec, Vec];
-  const centre = scale(add(add(p0, p1), add(p2, p3)), 0.25);
-  const r = Math.hypot(p0.x - centre.x, p0.y - centre.y);
-  const base = Math.atan2(p0.y - centre.y, p0.x - centre.x);
-  const out: Vec[] = [];
-  for (let i = 0; i < 5; i++) {
-    const a = base + (i * 2 * Math.PI) / 5;
-    out.push(add(centre, { x: r * Math.cos(a), y: r * Math.sin(a) }));
-  }
-  return out;
-}
 
 export function triangleArea(t: Tri): number {
   const u = sub(t.b, t.a);

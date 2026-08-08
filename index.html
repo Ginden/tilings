@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aperiodic tilings — Penrose and friends</title>
+    <meta
+      name="description"
+      content="Generate Penrose and other aperiodic tilings as SVG, recolour them and download them as SVG or PNG."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 30 12 24 30 8 30 2 12Z' fill='%23e8b53b'/%3E%3Cpath d='M16 2 24 30 2 12Z' fill='%231b3a5c'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./src/styles.css" />
+  </head>
+  <body>
+    <main id="stage" aria-label="Tiling preview"></main>
+
+    <button id="panel-toggle" type="button" aria-expanded="true" aria-controls="panel">
+      <span aria-hidden="true">☰</span><span class="sr-only">Toggle controls</span>
+    </button>
+
+    <form id="panel" aria-label="Tiling controls">
+      <header>
+        <h1>Aperiodic tilings</h1>
+        <p id="tiling-description"></p>
+        <p><a id="tiling-reference" href="#" target="_blank" rel="noreferrer noopener">Read about this tiling</a></p>
+      </header>
+
+      <fieldset>
+        <legend>Tiling</legend>
+        <label for="tiling">Type</label>
+        <select id="tiling" name="tiling"></select>
+      </fieldset>
+
+      <fieldset>
+        <legend>Colours</legend>
+        <div id="palettes" class="palettes" role="group" aria-label="Preset palettes"></div>
+
+        <div class="row">
+          <label for="colour1">Colour 1</label>
+          <input type="color" id="colour1" />
+          <input type="text" id="colour1-hex" class="hex" spellcheck="false" aria-label="Colour 1 hex value" />
+        </div>
+
+        <div class="row">
+          <label for="colour2">Colour 2</label>
+          <input type="color" id="colour2" />
+          <input type="text" id="colour2-hex" class="hex" spellcheck="false" aria-label="Colour 2 hex value" />
+        </div>
+        <p class="hint" id="kind-hint"></p>
+
+        <div class="row">
+          <label for="border">Border</label>
+          <input type="color" id="border" />
+          <input type="text" id="border-hex" class="hex" spellcheck="false" aria-label="Border hex value" />
+        </div>
+        <div class="row">
+          <label for="border-transparent">Transparent border</label>
+          <input type="checkbox" id="border-transparent" />
+        </div>
+        <div class="row">
+          <label for="border-width">Border width</label>
+          <input type="range" id="border-width" min="0.1" max="6" step="0.1" value="1" />
+          <output id="border-width-value">1.0</output>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Canvas</legend>
+        <label for="size">Screen size</label>
+        <select id="size"></select>
+        <div class="row" id="custom-size" hidden>
+          <label for="custom-width">Width</label>
+          <input type="number" id="custom-width" min="64" max="16384" step="1" />
+          <label for="custom-height">Height</label>
+          <input type="number" id="custom-height" min="64" max="16384" step="1" />
+        </div>
+
+        <div class="row">
+          <label for="tile-size">Tile size</label>
+          <input type="range" id="tile-size" min="8" max="200" step="1" value="42" />
+          <output id="tile-size-value">42 px</output>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Export</legend>
+        <div class="buttons">
+          <button type="button" id="download-svg">Download SVG</button>
+          <button type="button" id="download-png">Download PNG</button>
+        </div>
+        <p class="hint" id="status"></p>
+      </fieldset>
+    </form>
+
+    <script type="module" src="./src/main.ts"></script>
+  </body>
+</html>
