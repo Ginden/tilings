@@ -1,0 +1,21 @@
+{
+  "name": "penrose-tilings",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Interactive visualiser for Penrose and other aperiodic tilings, rendered as SVG",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.4",
+    "vitest": "^3.2.4"
+  }
+}

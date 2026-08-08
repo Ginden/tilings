@@ -1,0 +1,60 @@
+import type { Affine, Vec } from '../geometry.js';
+import { IDENTITY, apply, bounds, inv, mul, translation } from '../geometry.js';
+import type { Tile, TilingDefinition } from './types.js';
+import { subdivideShapes } from './substitution.js';
+import type { Placed } from './substitution.js';
+
+/** The chair (L-tromino), three unit squares, as a closed outline. */
+export const CHAIR_OUTLINE: readonly Vec[] = [
+  { x: 0, y: 0 },
+  { x: 2, y: 0 },
+  { x: 2, y: 1 },
+  { x: 1, y: 1 },
+  { x: 1, y: 2 },
+  { x: 0, y: 2 },
+];
+
+/** The four half-size chairs that exactly fill one chair, with their rotation. */
+const CHILDREN: readonly { transform: Affine; rotation: number }[] = [
+  { transform: [0.5, 0, 0, 0, 0.5, 0], rotation: 0 },
+  { transform: [0, -0.5, 2, 0.5, 0, 0], rotation: 1 },
+  { transform: [0, 0.5, 0, -0.5, 0, 2], rotation: 3 },
+  { transform: [-0.5, 0, 1.5, 0, -0.5, 1.5], rotation: 2 },
+];
+
+export function subdivideChair(p: Placed): Placed[] {
+  return CHILDREN.map((child) => ({
+    kind: (p.kind + child.rotation) % 4,
+    transform: mul(p.transform, child.transform),
+  }));
+}
+
+export const chair: TilingDefinition = {
+  id: 'chair',
+  name: 'Chair (L-tromino)',
+  family: 'reptile',
+  description:
+    'The chair substitution: an L-tromino splitting into four half-size chairs. Its hierarchical structure forces non-periodicity.',
+  kinds: 4,
+  kindLabels: ['0°', '90°', '180°', '270°'],
+  reference: 'https://en.wikipedia.org/wiki/List_of_aperiodic_sets_of_tiles',
+  unitTileArea: 3,
+  generate(radius): Tile[] {
+    const levels = Math.max(1, Math.ceil(Math.log2(2 * Math.max(radius, 1))));
+    // Grow outwards by repeatedly making the current patch the central child of
+    // a supertile, which keeps the origin near the middle of the patch.
+    const central = CHILDREN[3]!.transform;
+    let seedTransform: Affine = IDENTITY;
+    for (let i = 0; i < levels; i++) {
+      seedTransform = mul(seedTransform, inv(central));
+    }
+    const box = bounds(CHAIR_OUTLINE.map((v) => apply(seedTransform, v)));
+    const recentre = translation(-(box.minX + box.maxX) / 2, -(box.minY + box.maxY) / 2);
+    const seed: Placed = { kind: 0, transform: mul(recentre, seedTransform) };
+    const placed = subdivideShapes([seed], subdivideChair, levels);
+    return placed.map((p) => ({
+      kind: p.kind,
+      points: CHAIR_OUTLINE.map((v) => apply(p.transform, v)),
+    }));
+  },
+};
