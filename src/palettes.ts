@@ -21,7 +21,7 @@ export const PALETTES: readonly PalettePreset[] = [
   { id: 'archive', name: 'Archive', colour1: '#70253a', colour2: '#f2eee5', border: '#13263a' },
   { id: 'bauhaus', name: 'Bauhaus', colour1: '#e63946', colour2: '#f1c453', border: '#1d3557' },
   { id: 'navy-brass', name: 'Navy & brass', colour1: '#13263a', colour2: '#b08d57', border: '#f2eee5' },
-  { id: 'plum-sage', name: 'Plum & sage', colour1: '#6d3b66', colour2: '#a8c686', border: '#242038' },
+  { id: 'oxblood-brass', name: 'Oxblood & brass', colour1: '#70253a', colour2: '#b08d57', border: '#f2eee5' },
   { id: 'porcelain', name: 'Porcelain', colour1: '#f4f1de', colour2: '#3d5a80', border: '#e07a5f' },
 ];
 

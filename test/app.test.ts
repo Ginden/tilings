@@ -145,6 +145,16 @@ describe('state', () => {
 });
 
 describe('palettes', () => {
+  it('includes the transcription platform theme colours', () => {
+    expect(PALETTES).toContainEqual({
+      id: 'oxblood-brass',
+      name: 'Oxblood & brass',
+      colour1: '#70253a',
+      colour2: '#b08d57',
+      border: '#f2eee5',
+    });
+  });
+
   it('are unique and use valid colours', () => {
     expect(new Set(PALETTES.map((p) => p.id)).size).toBe(PALETTES.length);
     for (const palette of PALETTES) {
