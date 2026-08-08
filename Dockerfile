@@ -7,6 +7,8 @@ RUN npm ci
 COPY tsconfig.json vite.config.ts index.html ./
 COPY src ./src
 COPY test ./test
+COPY public ./public
+COPY docs ./docs
 RUN npm run typecheck && npm test && npx vite build
 
 FROM nginx:1.29-alpine AS runtime

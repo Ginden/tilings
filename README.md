@@ -9,7 +9,7 @@ Everything is generated in the browser: the tilings are computed in TypeScript
 (compiled by Vite) and emitted as SVG paths — there is no server, no canvas
 rasterisation for display, and no runtime dependencies.
 
-![Penrose P3 rhombs](docs/preview.svg)
+![Penrose P3 rhombs](docs/preview.png)
 
 ## Tilings
 
@@ -71,6 +71,13 @@ npm run dev        # Vite dev server
 npm run typecheck  # tsc --noEmit
 npm test           # vitest
 npm run build      # typecheck + production build into dist/
+```
+
+Static PNG assets are generated from their SVG sources. After changing the
+favicon or preview, regenerate them with:
+
+```bash
+./scripts/generate-assets.sh
 ```
 
 The test suite samples random points inside every generated patch and asserts

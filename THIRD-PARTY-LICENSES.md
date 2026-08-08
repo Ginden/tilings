@@ -1,5 +1,11 @@
 # Third-party licences
 
+## Material Design menu icon
+
+The menu icon embedded in `index.html` is adapted from Google's Material Design
+Icons and is used under the
+[Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
+
 ## hatviz (hat monotile metatile construction)
 
 `src/tilings/hat.ts` is a TypeScript port of the H/T/P/F metatile construction from

@@ -60,6 +60,14 @@ body {
   backdrop-filter: blur(8px);
 }
 
+#panel-toggle svg {
+  display: block;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin: auto;
+  fill: currentColor;
+}
+
 #panel {
   position: fixed;
   top: 1rem;
@@ -235,6 +243,36 @@ output {
   font-size: 0.75rem;
   color: var(--muted);
   min-height: 1rem;
+}
+
+.credits {
+  color: var(--muted);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.no-script {
+  position: fixed;
+  inset: 50% auto auto 50%;
+  z-index: 4;
+  width: min(28rem, calc(100vw - 2rem));
+  padding: 1.25rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 1rem;
+  background: #12141a;
+  box-shadow: 0 1.5rem 3rem rgba(0, 0, 0, 0.45);
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.no-script h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+.no-script p {
+  margin: 0;
+  color: var(--muted);
 }
 
 @media (prefers-reduced-motion: reduce) {
