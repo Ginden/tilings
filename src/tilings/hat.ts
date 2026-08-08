@@ -16,7 +16,6 @@ import {
   add,
   apply,
   area,
-  bounds,
   centroid,
   intersect,
   matchTwo,
@@ -320,10 +319,22 @@ function flatten(geom: Geom, transform: Affine, out: Tile[]): void {
   }
 }
 
-/** Half of the smaller side of the supertile's bounding box. */
+/** Radius of the largest disc around the supertile's centroid that stays inside it. */
 function coverRadius(m: Meta): number {
-  const b = bounds(m.shape);
-  return Math.min(b.maxX - b.minX, b.maxY - b.minY) / 2;
+  if (m.shape.length < 3) return 0;
+  const c = centroid(m.shape);
+  let best = Infinity;
+  for (let i = 0; i < m.shape.length; i++) {
+    const p = m.shape[i]!;
+    const q = m.shape[(i + 1) % m.shape.length]!;
+    const dx = q.x - p.x;
+    const dy = q.y - p.y;
+    const l = Math.hypot(dx, dy);
+    if (l < 1e-9) continue;
+    const d = Math.abs((c.x - p.x) * dy - (c.y - p.y) * dx) / l;
+    if (d < best) best = d;
+  }
+  return best;
 }
 
 const MAX_LEVELS = 12;
@@ -334,7 +345,8 @@ export function buildHatPatch(radius: number): Tile[] {
     tiles = constructMetatiles(constructPatch(tiles[0], tiles[1], tiles[2], tiles[3]));
   }
   const out: Tile[] = [];
-  flatten(tiles[0], IDENTITY, out);
+  const c = tiles[0].shape.length >= 3 ? centroid(tiles[0].shape) : { x: 0, y: 0 };
+  flatten(tiles[0], translation(-c.x, -c.y), out);
   return out;
 }
 
@@ -347,7 +359,8 @@ export const hat: TilingDefinition = {
   kinds: 5,
   kindLabels: ['reflected hat', 'H hat', 'T hat', 'P hat', 'F hat'],
   reference: 'https://en.wikipedia.org/wiki/Einstein_problem',
-  unitTileArea: area(HAT_OUTLINE),
+  // The metatiles place hats at half the scale of the outline above.
+  unitTileArea: area(HAT_OUTLINE) / 4,
   generate(radius) {
     return buildHatPatch(radius);
   },

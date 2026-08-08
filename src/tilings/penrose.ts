@@ -35,23 +35,27 @@ export function subdivideP3(t: Tri): Tri[] {
 /**
  * P2 (kite and dart). Kind 0 is the half-kite (acute golden triangle whose legs
  * are the long edges), kind 1 the half-dart (obtuse gnomon whose equal sides are
- * the short edges). A half-kite becomes two half-kites plus a half-dart, a
- * half-dart becomes one of each.
+ * the short edges). Vertex `a` is the apex and the edge `a-c` is the mirror axis
+ * along which two half-tiles glue into a whole kite or dart; the rule below
+ * preserves that invariant, which is what makes the halves pair up again.
+ *
+ * A half-kite becomes a whole kite (two half-kites) plus a half-dart; a
+ * half-dart becomes a half-kite plus a half-dart.
  */
 export function subdivideP2(t: Tri): Tri[] {
   if (t.kind === 0) {
-    const q = along(t.a, t.b, INV_PHI);
-    const p = along(t.a, t.c, INV_PHI);
+    const p = along(t.a, t.b, INV_PHI * INV_PHI);
+    const q = along(t.a, t.c, INV_PHI);
     return [
-      { kind: 0, a: t.a, b: q, c: p },
-      { kind: 0, a: t.c, b: t.b, c: q },
-      { kind: 1, a: p, b: q, c: t.c },
+      { kind: 1, a: p, b: q, c: t.a },
+      { kind: 0, a: t.b, b: p, c: q },
+      { kind: 0, a: t.b, b: t.c, c: q },
     ];
   }
-  const g = along(t.b, t.c, INV_PHI);
+  const g = along(t.c, t.b, INV_PHI);
   return [
-    { kind: 0, a: t.b, b: t.a, c: g },
-    { kind: 1, a: g, b: t.a, c: t.c },
+    { kind: 0, a: t.c, b: g, c: t.a },
+    { kind: 1, a: g, b: t.a, c: t.b },
   ];
 }
 
@@ -76,14 +80,37 @@ export function sunSeed(radius: number): Tri[] {
   return seed;
 }
 
+/**
+ * Five kites around a point (the "sun" vertex of a P2 tiling), split into ten
+ * half-kites whose mirror axes all lie on the edge a-c.
+ */
+export function kiteSeed(radius: number): Tri[] {
+  const at = (degrees: number): Vec => ({
+    x: radius * Math.cos((degrees * Math.PI) / 180),
+    y: radius * Math.sin((degrees * Math.PI) / 180),
+  });
+  const origin: Vec = { x: 0, y: 0 };
+  const seed: Tri[] = [];
+  for (let k = 0; k < 5; k++) {
+    const axis = 72 * k;
+    seed.push({ kind: 0, a: origin, b: at(axis - 36), c: at(axis) });
+    seed.push({ kind: 0, a: origin, b: at(axis + 36), c: at(axis) });
+  }
+  return seed;
+}
+
 /** Number of deflation steps needed so that the final half-tiles have unit legs. */
 function levelsFor(radius: number): number {
   return Math.max(1, Math.ceil(Math.log(Math.max(radius, 1) / 0.9) / Math.log(PHI)));
 }
 
-function buildTriangles(radius: number, rule: (t: Tri) => Tri[]): Tri[] {
+function buildTriangles(
+  radius: number,
+  rule: (t: Tri) => Tri[],
+  seed: (r: number) => Tri[] = sunSeed,
+): Tri[] {
   const levels = levelsFor(radius);
-  return subdivideTriangles(sunSeed(Math.pow(PHI, levels)), rule, levels);
+  return subdivideTriangles(seed(Math.pow(PHI, levels)), rule, levels);
 }
 
 export const penroseP3: TilingDefinition = {
@@ -112,7 +139,7 @@ export const penroseP2: TilingDefinition = {
   reference: 'https://en.wikipedia.org/wiki/Penrose_tiling#Kite_and_dart_tiling_(P2)',
   unitTileArea: 0.502,
   generate(radius) {
-    return mergeHalfTiles(buildTriangles(radius, subdivideP2), 'legs');
+    return mergeHalfTiles(buildTriangles(radius, subdivideP2, kiteSeed), 'axis');
   },
 };
 

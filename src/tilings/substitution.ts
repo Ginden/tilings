@@ -60,8 +60,12 @@ export function composeChild(parent: Placed, kind: number, local: Affine): Place
   return { kind, transform: mul(parent.transform, local) };
 }
 
-/** Which pair of triangle edges may glue two half-tiles into a full tile. */
-export type GlueEdge = 'base' | 'legs';
+/**
+ * Which triangle edge is the mirror axis that glues two half-tiles into a full
+ * tile: `base` is the edge b-c (Penrose P3 rhombs), `axis` the edge a-c
+ * (Penrose P2 kites and darts).
+ */
+export type GlueEdge = 'base' | 'axis';
 
 interface Keyed {
   tri: Tri;
@@ -109,7 +113,6 @@ export function mergeHalfTiles(tris: readonly Tri[], glue: GlueEdge): { kind: nu
     if (glue === 'base') {
       push({ tri, key: edgeKey(tri.kind, tri.b, tri.c), edge: [tri.b, tri.c], other: tri.a });
     } else {
-      push({ tri, key: edgeKey(tri.kind, tri.a, tri.b), edge: [tri.a, tri.b], other: tri.c });
       push({ tri, key: edgeKey(tri.kind, tri.a, tri.c), edge: [tri.a, tri.c], other: tri.b });
     }
   }

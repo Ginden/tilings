@@ -1,5 +1,5 @@
 import type { Affine, Vec } from '../geometry.js';
-import { IDENTITY, apply, bounds, inv, mul, translation } from '../geometry.js';
+import { IDENTITY, apply, inv, mul, translation } from '../geometry.js';
 import type { Tile, TilingDefinition } from './types.js';
 import { subdivideShapes } from './substitution.js';
 import type { Placed } from './substitution.js';
@@ -19,7 +19,7 @@ const CHILDREN: readonly { transform: Affine; rotation: number }[] = [
   { transform: [0.5, 0, 0, 0, 0.5, 0], rotation: 0 },
   { transform: [0, -0.5, 2, 0.5, 0, 0], rotation: 1 },
   { transform: [0, 0.5, 0, -0.5, 0, 2], rotation: 3 },
-  { transform: [-0.5, 0, 1.5, 0, -0.5, 1.5], rotation: 2 },
+  { transform: [0.5, 0, 0.5, 0, 0.5, 0.5], rotation: 0 },
 ];
 
 export function subdivideChair(p: Placed): Placed[] {
@@ -48,8 +48,10 @@ export const chair: TilingDefinition = {
     for (let i = 0; i < levels; i++) {
       seedTransform = mul(seedTransform, inv(central));
     }
-    const box = bounds(CHAIR_OUTLINE.map((v) => apply(seedTransform, v)));
-    const recentre = translation(-(box.minX + box.maxX) / 2, -(box.minY + box.maxY) / 2);
+    // The chair is L-shaped, so the largest disc it contains sits over the
+    // corner square rather than over the centre of the bounding box.
+    const anchor = apply(seedTransform, { x: 0.5, y: 0.5 });
+    const recentre = translation(-anchor.x, -anchor.y);
     const seed: Placed = { kind: 0, transform: mul(recentre, seedTransform) };
     const placed = subdivideShapes([seed], subdivideChair, levels);
     return placed.map((p) => ({
