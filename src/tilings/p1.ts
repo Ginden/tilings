@@ -90,16 +90,6 @@ interface Turtle {
   step: number;
 }
 
-function expand(seed: string, levels: number): string {
-  let current = seed;
-  for (let level = 0; level < levels; level++) {
-    let next = '';
-    for (const symbol of current) next += RULES[symbol as TileSymbol] ?? symbol;
-    current = next;
-  }
-  return current;
-}
-
 function local(state: Turtle, transform: Affine): void {
   state.transform = mul(state.transform, transform);
 }
@@ -123,14 +113,39 @@ function tileTransform(symbol: TileSymbol, state: Turtle): Affine {
   );
 }
 
-/** Generate a pentagonal supertile after `levels` P1 decomposition steps. */
-export function generateP1(levels: number): Tile[] {
-  const initialStep = Math.pow(INFLATION, levels);
-  let state: Turtle = { transform: IDENTITY, step: initialStep };
-  const stack: Turtle[] = [];
-  const tiles: Tile[] = [];
+function outsideClip(symbol: TileSymbol, state: Turtle, clipRadius: number): boolean {
+  const transform = tileTransform(symbol, state);
+  const margin = state.step;
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const point of P1_OUTLINES[symbol]) {
+    const transformed = apply(transform, point);
+    minX = Math.min(minX, transformed.x);
+    minY = Math.min(minY, transformed.y);
+    maxX = Math.max(maxX, transformed.x);
+    maxY = Math.max(maxY, transformed.y);
+  }
+  return (
+    maxX + margin < -clipRadius ||
+    maxY + margin < -clipRadius ||
+    minX - margin > clipRadius ||
+    minY - margin > clipRadius
+  );
+}
 
-  for (const symbol of expand('P', levels)) {
+function interpret(
+  sequence: string,
+  depth: number,
+  initialState: Turtle,
+  tiles: Tile[],
+  clipRadius?: number,
+): Turtle {
+  let state = initialState;
+  const stack: Turtle[] = [];
+
+  for (const symbol of sequence) {
     if (symbol === '[') {
       stack.push({ ...state });
     } else if (symbol === ']') {
@@ -162,13 +177,33 @@ export function generateP1(levels: number): Tile[] {
       local(state, translation(0, TAN54 * COS36 * state.step));
     } else if (symbol in RULES) {
       const tileSymbol = symbol as TileSymbol;
+      if (depth > 0) {
+        if (clipRadius === undefined || !outsideClip(tileSymbol, state, clipRadius)) {
+          state = interpret(RULES[tileSymbol], depth - 1, state, tiles, clipRadius);
+        }
+        continue;
+      }
       const transform = tileTransform(tileSymbol, state);
-      tiles.push({
-        kind: SYMBOL_KIND[tileSymbol],
-        points: P1_OUTLINES[tileSymbol].map((point) => apply(transform, point)),
-      });
+      const points = P1_OUTLINES[tileSymbol].map((point) => apply(transform, point));
+      if (
+        clipRadius === undefined ||
+        points.some(
+          (point) =>
+            Math.abs(point.x) <= clipRadius + 2 && Math.abs(point.y) <= clipRadius + 2,
+        )
+      ) {
+        tiles.push({ kind: SYMBOL_KIND[tileSymbol], points });
+      }
     }
   }
+  return state;
+}
+
+/** Generate a pentagonal supertile after `levels` P1 decomposition steps. */
+export function generateP1(levels: number, clipRadius?: number): Tile[] {
+  const initialStep = Math.pow(INFLATION, levels);
+  const tiles: Tile[] = [];
+  interpret('P', levels, { transform: IDENTITY, step: initialStep }, tiles, clipRadius);
   return tiles;
 }
 
@@ -184,7 +219,7 @@ export const penroseP1: TilingDefinition = {
   unitTileArea: 1.543,
   generate(radius): Tile[] {
     const neededSide = (radius + 2) * 2 * Math.tan(36 * DEG);
-    const levels = Math.max(2, Math.ceil(Math.log(neededSide) / Math.log(INFLATION)));
-    return generateP1(levels);
+    const levels = Math.max(3, Math.ceil(Math.log(neededSide) / Math.log(INFLATION)) + 1);
+    return generateP1(levels, radius + 2);
   },
 };

@@ -20,8 +20,11 @@ export function multigrid(n: number, offsets: readonly number[], radius: number)
   }
 
   const tiles: Tile[] = [];
-  const limit = radius + 2;
-  const seen = new Set<string>();
+  // The grid intersection p and its dual tiling vertex v satisfy
+  // v = (n / 2) p + a bounded rounding term. Searching to the output radius
+  // in grid space therefore over-generates quadratically (25x for n = 10).
+  const gridLimit = (2 * radius) / n + 4;
+  const outputLimit = radius + 2;
 
   for (let j = 0; j < n; j++) {
     const ej = dirs[j]!;
@@ -34,10 +37,10 @@ export function multigrid(n: number, offsets: readonly number[], radius: number)
       const diff = k - j;
       const kind = Math.min(diff, n - diff) - 1;
 
-      const mMin = Math.ceil(-limit - gj);
-      const mMax = Math.floor(limit - gj);
-      const nMin = Math.ceil(-limit - gk);
-      const nMax = Math.floor(limit - gk);
+      const mMin = Math.ceil(-gridLimit - gj);
+      const mMax = Math.floor(gridLimit - gj);
+      const nMin = Math.ceil(-gridLimit - gk);
+      const nMax = Math.floor(gridLimit - gk);
 
       for (let m = mMin; m <= mMax; m++) {
         const cj = m - gj;
@@ -46,7 +49,7 @@ export function multigrid(n: number, offsets: readonly number[], radius: number)
           // Solve p . ej = cj, p . ek = ck
           const px = (cj * ek.y - ck * ej.y) / det;
           const py = (ck * ej.x - cj * ek.x) / det;
-          if (px * px + py * py > limit * limit) continue;
+          if (px * px + py * py > gridLimit * gridLimit) continue;
 
           // Region indices of the intersection point in every other grid.
           const idx: number[] = new Array<number>(n);
@@ -64,10 +67,6 @@ export function multigrid(n: number, offsets: readonly number[], radius: number)
           }
           if (degenerate) continue;
 
-          const key = `${j}:${k}:${m}:${q}`;
-          if (seen.has(key)) continue;
-          seen.add(key);
-
           const vertex = (dj: number, dk: number): Vec => {
             let x = 0;
             let y = 0;
@@ -79,10 +78,16 @@ export function multigrid(n: number, offsets: readonly number[], radius: number)
             return { x, y };
           };
 
-          tiles.push({
-            kind,
-            points: [vertex(0, 0), vertex(1, 0), vertex(1, 1), vertex(0, 1)],
-          });
+          const points = [vertex(0, 0), vertex(1, 0), vertex(1, 1), vertex(0, 1)];
+          if (
+            points.every((point) => point.x < -outputLimit) ||
+            points.every((point) => point.y < -outputLimit) ||
+            points.every((point) => point.x > outputLimit) ||
+            points.every((point) => point.y > outputLimit)
+          ) {
+            continue;
+          }
+          tiles.push({ kind, points });
         }
       }
     }

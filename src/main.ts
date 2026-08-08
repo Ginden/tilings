@@ -1,7 +1,7 @@
 import { FAMILY_LABELS, TILINGS, tilingById } from './tilings/index.js';
 import { renderSvg } from './render/svg.js';
 import type { RenderOptions } from './render/svg.js';
-import { kindColors } from './render/color.js';
+import { kindColors, mix } from './render/color.js';
 import { PALETTES } from './palettes.js';
 import { DEFAULT_STATE, SIZE_PRESETS, decodeState, encodeState, resolveSize } from './state.js';
 import type { AppState } from './state.js';
@@ -41,7 +41,7 @@ const downloadSvgButton = element<HTMLButtonElement>('download-svg');
 const downloadPngButton = element<HTMLButtonElement>('download-png');
 
 let state: AppState = location.hash.length > 1 ? decodeState(location.hash) : { ...DEFAULT_STATE };
-let lastRender: { options: RenderOptions; svg: string } | null = null;
+let lastRender: { options: RenderOptions } | null = null;
 
 function populateSelects(): void {
   for (const [family, label] of Object.entries(FAMILY_LABELS)) {
@@ -78,7 +78,7 @@ function populateSelects(): void {
         borderTransparent: palette.border === null,
       };
       syncControls();
-      render();
+      updateAppearance();
     });
     paletteBox.append(button);
   }
@@ -176,7 +176,7 @@ function render(): void {
         preserveAspectRatio: 'xMidYMid slice',
       });
       stage.innerHTML = svg;
-      lastRender = { options, svg };
+      lastRender = { options };
       const clamped =
         options.tileSize > state.tileSize
           ? ` · tile size raised to ${Math.round(options.tileSize)} px to stay under ${MAX_TILES.toLocaleString()} tiles`
@@ -188,12 +188,55 @@ function render(): void {
   });
 }
 
+/** Apply palette-only changes without regenerating or reparsing the tiling geometry. */
+function updateAppearance(): void {
+  const svg = stage.querySelector<SVGSVGElement>('svg');
+  if (!svg || !lastRender) {
+    render();
+    return;
+  }
+
+  const def = tilingById(state.tilingId);
+  const colours = kindColors(state.colour1, state.colour2, def.kinds);
+  const border = state.borderTransparent ? null : state.border;
+  const background = border ?? mix(state.colour1, state.colour2, 0.5);
+  svg.querySelector('rect')?.setAttribute('fill', background);
+
+  for (const path of svg.querySelectorAll<SVGPathElement>('path[data-kind]')) {
+    const kind = Number(path.dataset['kind']);
+    path.setAttribute('fill', colours[Math.min(kind, colours.length - 1)] ?? state.colour1);
+    if (border === null) {
+      path.setAttribute('stroke', 'none');
+      path.removeAttribute('stroke-width');
+      path.removeAttribute('stroke-linejoin');
+    } else {
+      path.setAttribute('stroke', border);
+      path.setAttribute('stroke-width', String(state.borderWidth));
+      path.setAttribute('stroke-linejoin', 'round');
+    }
+  }
+
+  lastRender = {
+    options: {
+      ...lastRender.options,
+      colour1: state.colour1,
+      colour2: state.colour2,
+      border,
+      borderWidth: state.borderWidth,
+    },
+  };
+}
+
 function exportOptions(): RenderOptions {
   return lastRender?.options ?? currentOptions();
 }
 
 function exportSvg(): string {
-  return renderSvg(tilingById(state.tilingId), exportOptions()).svg;
+  const svg = stage.querySelector<SVGSVGElement>('svg');
+  if (!svg || !lastRender) return renderSvg(tilingById(state.tilingId), exportOptions()).svg;
+  const standalone = svg.cloneNode(true) as SVGSVGElement;
+  standalone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+  return standalone.outerHTML;
 }
 
 function bindControls(): void {
@@ -211,7 +254,7 @@ function bindControls(): void {
     picker.addEventListener('input', () => {
       apply(picker.value);
       syncControls();
-      render();
+      updateAppearance();
     });
     hex.addEventListener('change', () => {
       const value = hex.value.trim().replace(/^#?/, '#');
@@ -221,7 +264,7 @@ function bindControls(): void {
       }
       apply(value);
       syncControls();
-      render();
+      updateAppearance();
     });
   };
 
@@ -238,13 +281,13 @@ function bindControls(): void {
   borderTransparent.addEventListener('change', () => {
     state = { ...state, borderTransparent: borderTransparent.checked };
     syncControls();
-    render();
+    updateAppearance();
   });
 
   borderWidth.addEventListener('input', () => {
     state = { ...state, borderWidth: Number(borderWidth.value) };
     borderWidthValue.textContent = state.borderWidth.toFixed(1);
-    render();
+    updateAppearance();
   });
 
   sizeSelect.addEventListener('change', () => {

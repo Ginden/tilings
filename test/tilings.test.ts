@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TILINGS } from '../src/tilings/index.js';
 import type { Tile } from '../src/tilings/types.js';
 import { PHI, area } from '../src/geometry.js';
-import { P1_OUTLINES, generateP1 } from '../src/tilings/p1.js';
+import { P1_OUTLINES, generateP1, penroseP1 } from '../src/tilings/p1.js';
 import { subdivideP2, subdivideP3, sunSeed, triangleArea } from '../src/tilings/penrose.js';
 import { subdividePinwheel } from '../src/tilings/pinwheel.js';
 import type { Tri } from '../src/tilings/substitution.js';
@@ -139,6 +139,27 @@ describe('P1 pentagonal decomposition', () => {
         expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeCloseTo(1, 9);
       }
     }
+  });
+
+  it('keeps a large requested disc inside the complete supertile interior', () => {
+    const tiles = penroseP1.generate(192);
+    expect(tiles.length).toBeLessThan(120_000);
+    const probes: readonly [number, number][] = [
+      [-143.7, -95.4],
+      [-127.6, -79.3],
+      [127.4, -95.7],
+      [143.2, -79.6],
+    ];
+    for (const [x, y] of probes) {
+      expect(tiles.filter((tile) => pointInPolygon(x, y, tile.points))).toHaveLength(1);
+    }
+  });
+});
+
+describe('multigrid generation bounds', () => {
+  it('searches in dual-grid scale instead of generating a full-radius grid', () => {
+    const tiles = TILINGS.find((tiling) => tiling.id === 'decagonal')!.generate(100);
+    expect(tiles.length).toBeLessThan(50_000);
   });
 });
 

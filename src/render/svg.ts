@@ -67,7 +67,7 @@ export function renderSvg(def: TilingDefinition, opts: RenderOptions): RenderRes
   for (const [kind, tiles] of [...byKind.entries()].sort((a, b) => a[0] - b[0])) {
     const fill = colours[Math.min(kind, colours.length - 1)] ?? opts.colour1;
     body.push(
-      `<path fill="${fill}"${stroke} d="${pathData(tiles)}"><title>${escapeXml(
+      `<path data-kind="${kind}" fill="${fill}"${stroke} d="${pathData(tiles)}"><title>${escapeXml(
         def.kindLabels[kind] ?? `class ${kind}`,
       )}</title></path>`,
     );

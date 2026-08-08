@@ -71,6 +71,8 @@ describe('svg output', () => {
     expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg"')).toBe(true);
     expect(svg).toContain('viewBox="0 0 800 600"');
     expect(svg.match(/<path /g)).toHaveLength(def.kinds);
+    expect(svg).toContain('<path data-kind="0"');
+    expect(svg).toContain('<path data-kind="1"');
     expect(svg).toContain('<rect width="800" height="600"');
     expect(svg.trimEnd().endsWith('</svg>')).toBe(true);
     expect(svg).not.toContain('NaN');
