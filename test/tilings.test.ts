@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TILINGS } from '../src/tilings/index.js';
 import type { Tile } from '../src/tilings/types.js';
 import { PHI, area } from '../src/geometry.js';
+import { P1_OUTLINES, generateP1 } from '../src/tilings/p1.js';
 import { subdivideP2, subdivideP3, sunSeed, triangleArea } from '../src/tilings/penrose.js';
 import { subdividePinwheel } from '../src/tilings/pinwheel.js';
 import type { Tri } from '../src/tilings/substitution.js';
@@ -116,6 +117,29 @@ describe('Robinson triangle substitutions', () => {
       }
     });
   }
+});
+
+describe('P1 pentagonal decomposition', () => {
+  it('produces all six prototiles with the expected outlines', () => {
+    const tiles = generateP1(3);
+    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2, 3, 4, 5]));
+    expect(P1_OUTLINES.P).toHaveLength(5);
+    expect(P1_OUTLINES.Q).toHaveLength(5);
+    expect(P1_OUTLINES.R).toHaveLength(5);
+    expect(P1_OUTLINES.G).toHaveLength(10);
+    expect(P1_OUTLINES.B).toHaveLength(7);
+    expect(P1_OUTLINES.D).toHaveLength(4);
+  });
+
+  it('uses unit edges for every prototile', () => {
+    for (const outline of Object.values(P1_OUTLINES)) {
+      for (let i = 0; i < outline.length; i++) {
+        const a = outline[i]!;
+        const b = outline[(i + 1) % outline.length]!;
+        expect(Math.hypot(b.x - a.x, b.y - a.y)).toBeCloseTo(1, 9);
+      }
+    }
+  });
 });
 
 describe('pinwheel substitution', () => {

@@ -1,4 +1,5 @@
 import type { TilingDefinition } from './types.js';
+import { penroseP1 } from './p1.js';
 import { penroseP2, penroseP3, robinsonTriangles } from './penrose.js';
 import {
   ammannBeenker,
@@ -14,6 +15,7 @@ import { hat } from './hat.js';
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,
   penroseP2,
+  penroseP1,
   penrosePentagrid,
   robinsonTriangles,
   ammannBeenker,

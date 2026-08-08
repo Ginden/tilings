@@ -17,6 +17,7 @@ rasterisation for display, and no runtime dependencies.
 | --- | --- | --- |
 | Penrose P3 — rhombs | thick + thin rhomb | Robinson triangle deflation, half-tiles glued on their bases |
 | Penrose P2 — kite and dart | kite + dart | Robinson triangle deflation with the mirror axis tracked per half-tile |
+| Penrose P1 — pentagons | 3 matched pentagons + star + boat + diamond | six-prototile pentagonal L-system decomposition |
 | Penrose rhombs — pentagrid | thick + thin rhomb | de Bruijn's pentagrid (dual of five line families, offsets summing to zero) |
 | Robinson triangles | golden triangle + gnomon | the P3 deflation, drawn as half-tiles |
 | Ammann–Beenker (8-fold) | square + 45° rhomb | four-family multigrid |
@@ -27,15 +28,9 @@ rasterisation for display, and no runtime dependencies.
 | Pinwheel (Conway–Radin) | 1–2–√5 right triangle | rep-5 substitution; tiles appear in infinitely many orientations |
 | Chair (L-tromino) | L-tromino | rep-4 substitution, grown outwards from a central supertile |
 
-Tilings with more than two tile classes (the dodecagonal, heptagonal and
-decagonal rhombs, the hat's five metatile classes, the chair's four
-orientations) shade their classes evenly between the two chosen colours.
-
-Penrose's original **P1** set (pentagons, star, boat and diamond) is not
-included: it needs the six-prototile pentagon inflation, whose rules are not
-stated in the sources this was built from, and a half-correct version would be
-worse than none. P1 is mutually locally derivable from P2 and P3, both of which
-are here.
+Tilings with more than two tile classes (P1's six prototiles, the dodecagonal,
+heptagonal and decagonal rhombs, the hat's five metatile classes, the chair's
+four orientations) shade their classes evenly between the two chosen colours.
 
 ## Controls
 
@@ -112,8 +107,9 @@ Gitea Actions:
 
 The hat metatile construction is ported from Craig S. Kaplan's
 [hatviz](https://github.com/isohedral/hatviz) (BSD 3-Clause) — see
-[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). Everything else is derived
-from the geometry described on Wikipedia's
+[THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). The P1 L-system follows the
+rules documented by Andrew Stacey's [Penrose package](https://ctan.org/pkg/penrose).
+Everything else is derived from the geometry described on Wikipedia's
 [Penrose tiling](https://en.wikipedia.org/wiki/Penrose_tiling) and
 [list of aperiodic sets of tiles](https://en.wikipedia.org/wiki/List_of_aperiodic_sets_of_tiles)
 pages.
