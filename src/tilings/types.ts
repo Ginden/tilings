@@ -23,6 +23,11 @@ export type TilingFamily =
   | 'nonperiodic'
   | 'experimental';
 
+export interface TilingReference {
+  readonly label: string;
+  readonly url: string;
+}
+
 export interface TilingDefinition {
   /** Stable identifier, also used in exported file names. */
   readonly id: string;
@@ -36,6 +41,10 @@ export interface TilingDefinition {
   readonly colourMode?: 'gradient' | 'paired';
   /** Reference URL (usually Wikipedia). */
   readonly reference: string;
+  /** Human-readable citation for `reference`; defaults to the tiling name and website. */
+  readonly referenceLabel?: string;
+  /** Other sources that are useful for understanding the construction. */
+  readonly furtherReferences?: readonly TilingReference[];
   /** Area of a typical tile when generated at natural scale, used to normalise tile sizes. */
   readonly unitTileArea: number;
   /**

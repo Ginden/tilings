@@ -783,7 +783,9 @@ describe('Jeandel-Rao 11 Wang tiles', () => {
     const definition = TILINGS.find((tiling) => tiling.id === 'jeandel-rao')!;
     expect(definition.family).toBe('experimental');
     expect(definition.kinds).toBe(4);
-    expect(definition.description).toContain('arXiv:1506.06492');
+    expect(definition.reference).toBe('https://arxiv.org/abs/1506.06492');
+    expect(definition.referenceLabel).toContain('An aperiodic set of 11 Wang tiles');
+    expect(definition.furtherReferences).toHaveLength(2);
     expect(JR_START).toEqual({ x: PHI / 3, y: JR_TORUS_HEIGHT / 7 });
     // The generator is deterministic, so the same cell always gets the same tile.
     expect(jeandelRaoTileAt(0, 0)).toBe(jeandelRaoTileAt(0, 0));

@@ -325,6 +325,7 @@ export const shurikenSupertile: TilingDefinition = {
   kinds: 6,
   kindLabels: ['dodecagon', '1–2–150° triangle', 'triangle', '30° rhomb', '60° rhomb', '90° rhomb'],
   reference: 'https://arxiv.org/abs/1602.00518',
+  referenceLabel: 'Frettlöh, Say-awen & de las Peñas, “Substitution tilings with dense tile orientations” (2017)',
   unitTileArea: 0.7075,
   generate(radius): Tile[] {
     return generateShuriken(radius);

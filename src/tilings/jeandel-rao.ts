@@ -282,10 +282,21 @@ export const jeandelRao: TilingDefinition = {
   name: 'Jeandel–Rao 11 Wang tiles',
   family: 'experimental',
   description:
-    'The smallest possible aperiodic set of Wang tiles: eleven unit squares with coloured edges that tile the plane by translation only, never periodically. Jeandel and Rao proved by exhaustive search that no aperiodic Wang set has fewer than eleven tiles or fewer than four colours, closing a question open since Wang asked it in 1961. Each square is drawn as four triangles carrying its four edge colours, so a legal join is one where the triangles across a grid line merge into a diamond. Patches are not searched for: they are read off Labbé’s Markov partition of the torus ℝ²/⟨(φ,0),(1,φ+3)⟩ into eleven labelled regions, coding a general-position orbit under the two unit translations. Labbé proves that this coding gives the aperiodic minimal subshift X₀, the repetitive hierarchical core of the Jeandel–Rao shift, rather than configurations outside it created by horizontal fault lines. Jeandel & Rao, An aperiodic set of 11 Wang tiles, Advances in Combinatorics 2021:1 (arXiv:1506.06492); Labbé, Markov partitions for toral ℤ²-rotations featuring Jeandel–Rao Wang shift and model sets, Annales Henri Lebesgue 4 (2021) 283–324 (arXiv:1903.06137); Labbé, Substitutive structure of Jeandel–Rao aperiodic tilings, Discrete & Computational Geometry 65 (2021) 800–855 (arXiv:1808.07768).',
+    'The smallest possible aperiodic set of Wang tiles: eleven unit squares with coloured edges that tile the plane by translation, but never periodically. Jeandel and Rao proved that no aperiodic Wang set can use fewer than eleven tiles or four colours.\n\nEach square is drawn as four triangles carrying its edge colours. Across a legal join, matching triangles merge into a diamond. Patches come from Labbé’s Markov partition of a torus into eleven labelled regions, which describes the repetitive hierarchical core of the Jeandel–Rao shift.',
   kinds: JR_COLOURS,
   kindLabels: ['edge colour 0', 'edge colour 1', 'edge colour 2', 'edge colour 3'],
   reference: 'https://arxiv.org/abs/1506.06492',
+  referenceLabel: 'Jeandel & Rao, “An aperiodic set of 11 Wang tiles” (2021)',
+  furtherReferences: [
+    {
+      label: 'Labbé, “Markov partitions for toral ℤ²-rotations” (2021)',
+      url: 'https://arxiv.org/abs/1903.06137',
+    },
+    {
+      label: 'Labbé, “Substitutive structure of Jeandel–Rao aperiodic tilings” (2021)',
+      url: 'https://arxiv.org/abs/1808.07768',
+    },
+  ],
   unitTileArea: 0.25,
   generate(radius): Tile[] {
     return generateJeandelRao(radius);

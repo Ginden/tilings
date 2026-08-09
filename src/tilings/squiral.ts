@@ -223,10 +223,17 @@ export const squiral: TilingDefinition = {
   name: 'Squiral',
   family: 'experimental',
   description:
-    'Baake and Grimm’s squiral: a rep-9 tile with infinitely many edges that winds into a spiralling vertex, in two chiralities, inflated by 3 so that each tile splits into five of its own chirality and four of the other. Four tiles of one chirality always wind into the same vertex. Under the equivalent bijective 3×3 block substitution with balanced weights ±1 the diffraction is purely singular continuous — a planar Thue–Morse, and the first such genuinely two-dimensional example — while the dynamical spectrum stays mixed, part pure point and part singular continuous. Tile: Grünbaum & Shephard, Tilings and Patterns, Fig. 10.1.4; spectra: Baake & Grimm, Squirals and beyond, arXiv:1205.1384 (Ergodic Theory Dynam. Systems 34 (2014) 1077–1102) and Squiral diffraction, arXiv:1211.5471.',
+    'Baake and Grimm’s squiral is a rep-9 tile with infinitely many edges that winds into a spiralling vertex. It comes in two chiralities. Inflation by 3 divides each tile into five copies of its own chirality and four of the other.\n\nIn the equivalent weighted 3×3 block substitution, its diffraction is purely singular continuous: a planar analogue of Thue–Morse. Its dynamical spectrum is mixed, with both pure-point and singular-continuous parts.',
   kinds: 2,
   kindLabels: ['left-handed squiral', 'right-handed squiral'],
   reference: 'https://arxiv.org/abs/1205.1384',
+  referenceLabel: 'Baake & Grimm, “Squirals and beyond” (2014)',
+  furtherReferences: [
+    {
+      label: 'Baake & Grimm, “Squiral diffraction” (2012)',
+      url: 'https://arxiv.org/abs/1211.5471',
+    },
+  ],
   unitTileArea: 1,
   generate(radius): Tile[] {
     return generateSquiral(radius);

@@ -18,8 +18,8 @@ const panel = element<HTMLFormElement>('panel');
 const panelToggle = element<HTMLButtonElement>('panel-toggle');
 const tilingSelect = element<HTMLSelectElement>('tiling');
 const tilingName = element<HTMLHeadingElement>('tiling-name');
-const description = element<HTMLParagraphElement>('tiling-description');
-const reference = element<HTMLAnchorElement>('tiling-reference');
+const description = element<HTMLDivElement>('tiling-description');
+const referenceList = element<HTMLUListElement>('tiling-reference-list');
 const paletteBox = element<HTMLDivElement>('palettes');
 const colour1 = element<HTMLInputElement>('colour1');
 const colour1Hex = element<HTMLInputElement>('colour1-hex');
@@ -92,6 +92,44 @@ function populateSelects(): void {
  */
 const MAX_TILES = 30_000;
 
+function referenceSite(url: string): string {
+  const hostname = new URL(url).hostname.replace(/^www\./, '');
+  if (hostname.endsWith('wikipedia.org')) return 'Wikipedia';
+  if (hostname === 'arxiv.org') return 'arXiv';
+  return hostname;
+}
+
+function syncTilingInfo(def: ReturnType<typeof tilingById>): void {
+  tilingName.textContent = def.name;
+  description.replaceChildren(
+    ...def.description.split(/\n\n+/).map((text) => {
+      const paragraph = document.createElement('p');
+      paragraph.textContent = text;
+      return paragraph;
+    }),
+  );
+
+  const references = [
+    {
+      label: def.referenceLabel ?? `${def.name} — ${referenceSite(def.reference)}`,
+      url: def.reference,
+    },
+    ...(def.furtherReferences ?? []),
+  ];
+  referenceList.replaceChildren(
+    ...references.map(({ label, url }) => {
+      const item = document.createElement('li');
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noreferrer noopener';
+      link.textContent = label;
+      item.append(link);
+      return item;
+    }),
+  );
+}
+
 function currentOptions(): RenderOptions {
   const size = resolveSize(state, { width: window.innerWidth, height: window.innerHeight });
   const budget = Math.sqrt((size.width * size.height) / MAX_TILES);
@@ -109,9 +147,7 @@ function currentOptions(): RenderOptions {
 function syncControls(): void {
   const def = tilingById(state.tilingId);
   tilingSelect.value = def.id;
-  tilingName.textContent = def.name;
-  description.textContent = def.description;
-  reference.href = def.reference;
+  syncTilingInfo(def);
 
   colour1.value = state.colour1;
   colour1Hex.value = state.colour1;
