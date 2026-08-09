@@ -58,12 +58,12 @@ polygonises its planar boundary graph, and emits the bounded nonagonal faces.
 The eleven Wang tiles in `src/tilings/jeandel-rao.ts` are the set of Jeandel and
 Rao, *An aperiodic set of 11 Wang tiles*, Advances in Combinatorics 2021:1
 (arXiv:1506.06492), and the polygonal partition of the torus used to code
-patches is the one of Sébastien Labbé, *A Markov partition for Jeandel–Rao
-aperiodic Wang tilings*, Annales Henri Lebesgue 4 (2021) 283–324
-(arXiv:1903.06137). Both are published mathematical results, reproduced here
-with attribution; no code from Labbé's GPLv2 `slabbe` package (which also
-implements them) is reused, so nothing in this repository is subject to that
-licence.
+patches is the one of Sébastien Labbé, *Markov partitions for toral
+ℤ²-rotations featuring Jeandel–Rao Wang shift and model sets*, Annales Henri
+Lebesgue 4 (2021) 283–324 (arXiv:1903.06137). Both are published mathematical
+results, reproduced here with attribution; no code from Labbé's GPLv2 `slabbe`
+package (which also implements them) is reused, so nothing in this repository
+is subject to that licence.
 
 Every other tiling in this repository is generated from geometry derived in
 `src/tilings/`, with no third-party code.
