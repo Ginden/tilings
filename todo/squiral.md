@@ -2,6 +2,14 @@
 
 Add the square-based scale-3 squiral inflation and its two-symbol presentation.
 
+> **Status.** Done — `src/tilings/squiral.ts`, registered as `squiral` in the
+> Experimental group. The geometric inflation coordinates are read off Eq. (1)
+> of arXiv:1205.1384; every tile belongs to a "rosette" of four like-handed
+> tiles filling a square of side 2, and inflating a rosette gives nine rosettes
+> in a 3×3 block whose four corners flip chirality, which is Eq. (5) of the same
+> paper verbatim. That equivalence is checked in the tests, and patches are
+> generated from the block rule.
+
 ## Acceptance criteria
 
 - Implement the published primitive \(3\times3\) block substitution and the geometric squiral carrier.

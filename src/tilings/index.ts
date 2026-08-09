@@ -18,6 +18,7 @@ import {
 } from './additional.js';
 import { voderberg } from './voderberg.js';
 import { shurikenSupertile } from './shuriken.js';
+import { squiral } from './squiral.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,
@@ -37,6 +38,7 @@ export const TILINGS: readonly TilingDefinition[] = [
   sphinx,
   voderberg,
   shurikenSupertile,
+  squiral,
 ];
 
 export const FAMILY_LABELS: Record<TilingDefinition['family'], string> = {

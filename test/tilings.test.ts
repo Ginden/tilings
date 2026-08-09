@@ -16,8 +16,15 @@ import {
 } from '../src/tilings/additional.js';
 import { VODERBERG_OUTLINE, generateVoderberg } from '../src/tilings/voderberg.js';
 import { LAMBDA, generateShuriken, supertileTiles } from '../src/tilings/shuriken.js';
+import {
+  generateSquiral,
+  squiralBlockStep,
+  squiralOutline,
+  squiralSymbol,
+  subdivideSquiral,
+} from '../src/tilings/squiral.js';
 import { multigrid } from '../src/tilings/multigrid.js';
-import { IDENTITY } from '../src/geometry.js';
+import { IDENTITY, apply, mul, rotation, scaling } from '../src/geometry.js';
 
 function pointInPolygon(x: number, y: number, points: readonly { x: number; y: number }[]): boolean {
   let inside = false;
@@ -87,6 +94,7 @@ describe('tiling registry', () => {
       'sphinx',
       'voderberg',
       'shuriken-supertile-12',
+      'squiral',
     ]);
   });
 
@@ -267,6 +275,144 @@ describe('twelvefold Shuriken supertile', () => {
     }
     const shared = [...longEdges.values()].filter((n) => n === 2).length;
     expect(shared).toBeGreaterThan(longEdges.size * 0.5);
+  });
+});
+
+describe('squiral', () => {
+  const rosette = [0, 1, 2, 3].map((k) => ({
+    kind: 0,
+    transform: rotation((k * Math.PI) / 2),
+  }));
+
+  it('uses the exact 3x3 block rule of the two-symbol presentation', () => {
+    // Eq. (5) of arXiv:1205.1384: the swap sits on the four even-even cells.
+    const block = squiralBlockStep([[0]]);
+    expect(block).toEqual([
+      [1, 0, 1],
+      [0, 0, 0],
+      [1, 0, 1],
+    ]);
+    expect(squiralBlockStep([[1]])).toEqual(block.map((row) => row.map((v) => 1 - v)));
+  });
+
+  it('is primitive with inflation matrix ((5, 4), (4, 5)) and balanced symbols', () => {
+    let grid = [[0]];
+    for (let level = 1; level <= 4; level++) {
+      grid = squiralBlockStep(grid);
+      const cells = grid.flat();
+      const same = cells.filter((v) => v === 0).length;
+      const other = cells.length - same;
+      // ((5, 4), (4, 5))^level has entries (9^level +- 1) / 2, so the two symbol
+      // classes stay exactly one apart: they are balanced in the limit.
+      expect(same + other).toBe(9 ** level);
+      expect(same - other).toBe(1);
+      expect(other).toBeGreaterThan(0);
+    }
+  });
+
+  it('reproduces the iterated block substitution in closed form', () => {
+    let grid = [[0]];
+    for (let levels = 1; levels <= 3; levels++) {
+      grid = squiralBlockStep(grid);
+      for (let m = 0; m < grid.length; m++) {
+        for (let n = 0; n < grid.length; n++) {
+          expect(squiralSymbol(m, n, levels)).toBe(grid[m]![n]!);
+        }
+      }
+    }
+    // Swapping on the even-even cells includes the offset (0, 0), so a single
+    // symbol runs into a 2-cycle rather than a fixed point.
+    expect(squiralSymbol(0, 0, 1)).toBe(1);
+    expect(squiralSymbol(0, 0, 2)).toBe(0);
+  });
+
+  it('gives the geometric inflation the same scale 3 and the same 5:4 split', () => {
+    const children = subdivideSquiral({ kind: 0, transform: IDENTITY });
+    expect(children).toHaveLength(9);
+    expect(children.filter((c) => c.kind === 0)).toHaveLength(5);
+    expect(children.filter((c) => c.kind === 1)).toHaveLength(4);
+    for (const child of children) {
+      const scale = Math.hypot(child.transform[0], child.transform[3]);
+      expect(scale).toBeCloseTo(1 / 3, 12);
+      expect(area(squiralOutline().map((v) => apply(child.transform, v)))).toBeCloseTo(1 / 9, 12);
+    }
+    // The nine children dissect the parent, so their areas add up to its own.
+    const total = children.reduce(
+      (sum, c) => sum + area(squiralOutline().map((v) => apply(c.transform, v))),
+      0,
+    );
+    expect(total).toBeCloseTo(area(squiralOutline()), 12);
+  });
+
+  it('draws a spiral of area exactly one that winds into its vertex', () => {
+    const outline = squiralOutline();
+    expect(area(outline)).toBeCloseTo(1, 12);
+    // Both boundary arms are orbits of the quarter-turn contraction, so the
+    // outline ends at the spiralling vertex at the origin.
+    expect(outline).toContainEqual({ x: 0, y: 0 });
+    const deeper = squiralOutline(10);
+    expect(deeper.length).toBeGreaterThan(outline.length);
+    expect(area(deeper)).toBeCloseTo(1, 12);
+  });
+
+  it('winds four tiles of one chirality into every spiralling vertex', () => {
+    // A rosette of four quarter-turn copies fills the square of side 2 exactly.
+    const tiles = rosette.map((p) => squiralOutline().map((v) => apply(p.transform, v)));
+    const counts = coverCounts(
+      tiles.map((points) => ({ kind: 0, points })),
+      0.9,
+      200,
+    );
+    expect(new Set(counts)).toEqual(new Set([1]));
+    expect(tiles.reduce((sum, points) => sum + area(points), 0)).toBeCloseTo(4, 12);
+  });
+
+  it('induces exactly the block substitution on its rosettes', () => {
+    // Inflating a rosette gives nine rosettes on a 3x3 grid of spacing 2, each
+    // holding one chirality: the geometric rule and Eq. (5) are the same rule.
+    const levels = 3;
+    let placed = rosette.map((p) => ({
+      kind: p.kind,
+      transform: mul(scaling(3 ** levels), p.transform),
+    }));
+    for (let level = 0; level < levels; level++) placed = placed.flatMap(subdivideSquiral);
+
+    const rosettes = new Map<string, number[]>();
+    for (const p of placed) {
+      const key = `${Math.round(p.transform[2])},${Math.round(p.transform[5])}`;
+      rosettes.set(key, [...(rosettes.get(key) ?? []), p.kind]);
+    }
+    const cells = 3 ** levels;
+    expect(rosettes.size).toBe(cells * cells);
+
+    const middle = (cells - 1) / 2;
+    for (let m = 0; m < cells; m++) {
+      for (let n = 0; n < cells; n++) {
+        const kinds = rosettes.get(`${2 * (m - middle)},${2 * (n - middle)}`)!;
+        expect(kinds).toHaveLength(4);
+        expect(new Set(kinds)).toEqual(new Set([squiralSymbol(m, n, levels)]));
+      }
+    }
+  });
+
+  it('splits a supertile into the same counts as the block substitution', () => {
+    let placed = [{ kind: 0, transform: IDENTITY }];
+    for (let level = 1; level <= 3; level++) {
+      placed = placed.flatMap(subdivideSquiral);
+      const left = placed.filter((p) => p.kind === 0).length;
+      // ((5, 4), (4, 5))^level again: (9^level +- 1) / 2 of each chirality.
+      expect(left).toBe((9 ** level + 1) / 2);
+      expect(placed.length - left).toBe((9 ** level - 1) / 2);
+    }
+  });
+
+  it('generates both chiralities in near equal numbers', () => {
+    const tiles = generateSquiral(20);
+    const left = tiles.filter((t) => t.kind === 0).length;
+    const right = tiles.length - left;
+    expect(left).toBeGreaterThan(0);
+    expect(right).toBeGreaterThan(0);
+    expect(Math.abs(left - right)).toBeLessThan(tiles.length * 0.1);
   });
 });
 
