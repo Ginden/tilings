@@ -3,7 +3,14 @@ import { renderSvg } from './render/svg.js';
 import type { RenderOptions } from './render/svg.js';
 import { kindColors, paletteBackground } from './render/color.js';
 import { PALETTES } from './palettes.js';
-import { DEFAULT_STATE, SIZE_PRESETS, decodeState, encodeState, resolveSize } from './state.js';
+import {
+  DEFAULT_STATE,
+  SIZE_PRESETS,
+  decodeState,
+  encodeState,
+  resolveSize,
+  wrappedRotationForKey,
+} from './state.js';
 import type { AppState } from './state.js';
 import { downloadBlob, downloadSvg, exportFileName, svgToPngBlob } from './export.js';
 
@@ -42,6 +49,8 @@ const customWidth = element<HTMLInputElement>('custom-width');
 const customHeight = element<HTMLInputElement>('custom-height');
 const tileSize = element<HTMLInputElement>('tile-size');
 const tileSizeValue = element<HTMLOutputElement>('tile-size-value');
+const rotation = element<HTMLInputElement>('rotation');
+const rotationValue = element<HTMLOutputElement>('rotation-value');
 const status = element<HTMLParagraphElement>('status');
 const downloadSvgButton = element<HTMLButtonElement>('download-svg');
 const downloadPngButton = element<HTMLButtonElement>('download-png');
@@ -161,6 +170,7 @@ function currentOptions(): RenderOptions {
     width: Math.round(size.width),
     height: Math.round(size.height),
     tileSize: Math.max(state.tileSize, budget),
+    rotation: state.rotation,
     colour1: state.colour1,
     colour2: state.colour2,
     colour3: def.supportsThreeColours ? state.colour3 : null,
@@ -200,6 +210,8 @@ function syncControls(): void {
 
   tileSize.value = String(state.tileSize);
   tileSizeValue.textContent = `${state.tileSize} px`;
+  rotation.value = String(state.rotation);
+  rotationValue.textContent = `${state.rotation}\u00b0`;
 
   const activeColour3 = def.supportsThreeColours ? state.colour3 : null;
   const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode, activeColour3);
@@ -408,6 +420,21 @@ function bindControls(): void {
     state = { ...state, tileSize: Number(tileSize.value) };
     tileSizeValue.textContent = `${state.tileSize} px`;
     render();
+  });
+
+  const applyRotation = (value: number): void => {
+    state = { ...state, rotation: value };
+    rotation.value = String(value);
+    rotationValue.textContent = `${value}\u00b0`;
+    location.replace(`#${encodeState(state)}`);
+    render();
+  };
+  rotation.addEventListener('input', () => applyRotation(Number(rotation.value)));
+  rotation.addEventListener('keydown', (event) => {
+    const wrapped = wrappedRotationForKey(state.rotation, event.key);
+    if (wrapped === null) return;
+    event.preventDefault();
+    applyRotation(wrapped);
   });
 
   panelToggle.addEventListener('click', () => {

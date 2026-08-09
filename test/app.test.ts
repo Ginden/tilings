@@ -3,7 +3,14 @@ import { kindColors, mix, paletteBackground, parseHex, toHex } from '../src/rend
 import { renderSvg } from '../src/render/svg.js';
 import { buildScene } from '../src/render/scene.js';
 import { exportFileName } from '../src/export.js';
-import { DEFAULT_STATE, SIZE_PRESETS, decodeState, encodeState, resolveSize } from '../src/state.js';
+import {
+  DEFAULT_STATE,
+  SIZE_PRESETS,
+  decodeState,
+  encodeState,
+  resolveSize,
+  wrappedRotationForKey,
+} from '../src/state.js';
 import { PALETTES } from '../src/palettes.js';
 import { TILINGS, tilingById } from '../src/tilings/index.js';
 
@@ -168,12 +175,25 @@ describe('state', () => {
       customWidth: 1234,
       customHeight: 987,
       tileSize: 77,
+      rotation: 237,
     };
     expect(decodeState(`#${encodeState(state)}`)).toEqual(state);
   });
 
   it('falls back to defaults for unknown values', () => {
-    expect(decodeState('#t=nope&c1=zzz&ts=-4')).toEqual(DEFAULT_STATE);
+    expect(decodeState('#t=nope&c1=zzz&ts=-4&r=360')).toEqual(DEFAULT_STATE);
+  });
+
+  it('accepts both ends of the rotation range', () => {
+    expect(decodeState('#r=0').rotation).toBe(0);
+    expect(decodeState('#r=359').rotation).toBe(359);
+  });
+
+  it('wraps horizontal arrow keys at the rotation endpoints', () => {
+    expect(wrappedRotationForKey(0, 'ArrowLeft')).toBe(359);
+    expect(wrappedRotationForKey(359, 'ArrowRight')).toBe(0);
+    expect(wrappedRotationForKey(1, 'ArrowLeft')).toBeNull();
+    expect(wrappedRotationForKey(358, 'ArrowRight')).toBeNull();
   });
 
   it('resolves sizes', () => {

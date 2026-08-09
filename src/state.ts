@@ -14,6 +14,8 @@ export interface AppState {
   customWidth: number;
   customHeight: number;
   tileSize: number;
+  /** Clockwise rotation of the rendered patch, in whole degrees. */
+  rotation: number;
 }
 
 export interface SizePreset {
@@ -47,6 +49,7 @@ export const DEFAULT_STATE: AppState = {
   customWidth: 1600,
   customHeight: 1000,
   tileSize: 42,
+  rotation: 0,
 };
 
 export function resolveSize(state: AppState, windowSize: { width: number; height: number }): {
@@ -60,6 +63,13 @@ export function resolveSize(state: AppState, windowSize: { width: number; height
   const preset = SIZE_PRESETS.find((p) => p.id === state.sizeId);
   if (preset?.width && preset.height) return { width: preset.width, height: preset.height };
   return windowSize;
+}
+
+/** Return the wrapped endpoint for a horizontal arrow key, or null for native range handling. */
+export function wrappedRotationForKey(rotation: number, key: string): number | null {
+  if (key === 'ArrowLeft' && rotation === 0) return 359;
+  if (key === 'ArrowRight' && rotation === 359) return 0;
+  return null;
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -76,6 +86,7 @@ export function encodeState(state: AppState): string {
     bw: String(state.borderWidth),
     s: state.sizeId,
     ts: String(state.tileSize),
+    r: String(state.rotation),
   });
   if (state.colour3) params.set('c3', state.colour3.replace('#', ''));
   if (state.sizeId === 'custom') {
@@ -114,6 +125,12 @@ export function decodeState(hash: string): AppState {
   };
   state.borderWidth = number('bw', state.borderWidth, 0.1, 6);
   state.tileSize = number('ts', state.tileSize, 8, 200);
+
+  const rotationParam = params.get('r');
+  const rotation = Number(rotationParam);
+  if (rotationParam !== null && Number.isInteger(rotation) && rotation >= 0 && rotation < 360) {
+    state.rotation = rotation;
+  }
 
   const size = params.get('s');
   if (size && SIZE_PRESETS.some((p) => p.id === size)) state.sizeId = size;
