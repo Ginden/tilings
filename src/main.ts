@@ -1,4 +1,4 @@
-import { FAMILY_LABELS, TILINGS, tilingById } from './tilings/index.js';
+import { FAMILY_LABELS, TILINGS_FOR_UI, tilingById } from './tilings/index.js';
 import { renderSvg } from './render/svg.js';
 import type { RenderOptions } from './render/svg.js';
 import { kindColors, mix } from './render/color.js';
@@ -47,7 +47,7 @@ function populateSelects(): void {
   for (const [family, label] of Object.entries(FAMILY_LABELS)) {
     const group = document.createElement('optgroup');
     group.label = label;
-    for (const def of TILINGS.filter((t) => t.family === family)) {
+    for (const def of TILINGS_FOR_UI.filter((t) => t.family === family)) {
       const option = document.createElement('option');
       option.value = def.id;
       option.textContent = def.name;

@@ -34,7 +34,7 @@ four orientations) shade their classes evenly between the two chosen colours.
 
 ## Controls
 
-* **Type** — the tiling, grouped by family.
+* **Type** — the tiling, grouped by family and sorted by name within each group.
 * **Colour 1 / Colour 2** — the two tile colours, as pickers or hex values, plus
   twelve preset palettes.
 * **Border** — colour, width, and a *transparent* switch that drops the stroke

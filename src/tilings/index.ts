@@ -34,6 +34,19 @@ export const FAMILY_LABELS: Record<TilingDefinition['family'], string> = {
   reptile: 'Substitution rep-tiles',
 };
 
+const TILING_NAME_COLLATOR = new Intl.Collator('en', {
+  numeric: true,
+  sensitivity: 'base',
+});
+
+/** Registry order keeps the default stable; this order is for the picker UI. */
+export const TILINGS_FOR_UI: readonly TilingDefinition[] = Object.keys(FAMILY_LABELS).flatMap(
+  (family) =>
+    TILINGS.filter((tiling) => tiling.family === family).sort((a, b) =>
+      TILING_NAME_COLLATOR.compare(a.name, b.name),
+    ),
+);
+
 export function tilingById(id: string): TilingDefinition {
   return TILINGS.find((t) => t.id === id) ?? TILINGS[0]!;
 }

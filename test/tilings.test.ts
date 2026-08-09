@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { TILINGS } from '../src/tilings/index.js';
+import { TILINGS, TILINGS_FOR_UI } from '../src/tilings/index.js';
 import type { Tile } from '../src/tilings/types.js';
 import { PHI, area } from '../src/geometry.js';
 import { P1_OUTLINES, generateP1, penroseP1 } from '../src/tilings/p1.js';
@@ -54,6 +54,23 @@ describe('tiling registry', () => {
       expect(def.unitTileArea).toBeGreaterThan(0);
       expect(def.reference).toMatch(/^https:\/\//);
     }
+  });
+
+  it('sorts tilings naturally within each UI family', () => {
+    expect(TILINGS_FOR_UI.map((tiling) => tiling.id)).toEqual([
+      'penrose-p1',
+      'penrose-p2',
+      'penrose-p3',
+      'penrose-pentagrid',
+      'robinson-triangles',
+      'ammann-beenker',
+      'decagonal',
+      'dodecagonal',
+      'heptagonal',
+      'hat',
+      'chair',
+      'pinwheel',
+    ]);
   });
 
   for (const def of TILINGS) {
