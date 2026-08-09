@@ -1,7 +1,7 @@
 import { FAMILY_LABELS, TILINGS_FOR_UI, tilingById } from './tilings/index.js';
 import { renderSvg } from './render/svg.js';
 import type { RenderOptions } from './render/svg.js';
-import { kindColors, mix } from './render/color.js';
+import { kindColors, paletteBackground } from './render/color.js';
 import { PALETTES } from './palettes.js';
 import { DEFAULT_STATE, SIZE_PRESETS, decodeState, encodeState, resolveSize } from './state.js';
 import type { AppState } from './state.js';
@@ -25,6 +25,10 @@ const colour1 = element<HTMLInputElement>('colour1');
 const colour1Hex = element<HTMLInputElement>('colour1-hex');
 const colour2 = element<HTMLInputElement>('colour2');
 const colour2Hex = element<HTMLInputElement>('colour2-hex');
+const colour3Controls = element<HTMLDivElement>('colour3-controls');
+const colour3Enabled = element<HTMLInputElement>('colour3-enabled');
+const colour3 = element<HTMLInputElement>('colour3');
+const colour3Hex = element<HTMLInputElement>('colour3-hex');
 const kindHint = element<HTMLParagraphElement>('kind-hint');
 const borderInput = element<HTMLInputElement>('border');
 const borderHex = element<HTMLInputElement>('border-hex');
@@ -43,6 +47,7 @@ const downloadPngButton = element<HTMLButtonElement>('download-png');
 
 let state: AppState = location.hash.length > 1 ? decodeState(location.hash) : { ...DEFAULT_STATE };
 let lastRender: { options: RenderOptions } | null = null;
+const DEFAULT_THIRD_COLOUR = '#a05ad7';
 
 function populateSelects(): void {
   for (const [family, label] of Object.entries(FAMILY_LABELS)) {
@@ -67,10 +72,14 @@ function populateSelects(): void {
   for (const [collection, label] of [
     ['classics', 'Classics'],
     ['studio', 'Studio'],
+    ['trios', 'Three colours'],
   ] as const) {
+    const group = document.createElement('section');
+    group.className = 'palette-group';
+    group.dataset['collection'] = collection;
     const heading = document.createElement('h3');
     heading.textContent = label;
-    paletteBox.append(heading);
+    group.append(heading);
 
     const presets = document.createElement('div');
     presets.className = 'palette-collection';
@@ -84,6 +93,7 @@ function populateSelects(): void {
           ...state,
           colour1: palette.colour1,
           colour2: palette.colour2,
+          colour3: palette.colour3 ?? null,
           border: palette.border ?? state.border,
           borderTransparent: palette.border === null,
         };
@@ -92,7 +102,8 @@ function populateSelects(): void {
       });
       presets.append(button);
     }
-    paletteBox.append(presets);
+    group.append(presets);
+    paletteBox.append(group);
   }
 }
 
@@ -142,6 +153,7 @@ function syncTilingInfo(def: ReturnType<typeof tilingById>): void {
 }
 
 function currentOptions(): RenderOptions {
+  const def = tilingById(state.tilingId);
   const size = resolveSize(state, { width: window.innerWidth, height: window.innerHeight });
   const budget = Math.sqrt((size.width * size.height) / MAX_TILES);
   return {
@@ -150,6 +162,7 @@ function currentOptions(): RenderOptions {
     tileSize: Math.max(state.tileSize, budget),
     colour1: state.colour1,
     colour2: state.colour2,
+    colour3: def.supportsThreeColours ? state.colour3 : null,
     border: state.borderTransparent ? null : state.border,
     borderWidth: state.borderWidth,
   };
@@ -164,6 +177,12 @@ function syncControls(): void {
   colour1Hex.value = state.colour1;
   colour2.value = state.colour2;
   colour2Hex.value = state.colour2;
+  colour3Controls.hidden = !def.supportsThreeColours;
+  colour3Enabled.checked = state.colour3 !== null;
+  colour3.value = state.colour3 ?? DEFAULT_THIRD_COLOUR;
+  colour3Hex.value = state.colour3 ?? DEFAULT_THIRD_COLOUR;
+  colour3.disabled = state.colour3 === null;
+  colour3Hex.disabled = state.colour3 === null;
   borderInput.value = state.border;
   borderHex.value = state.border;
   borderInput.disabled = state.borderTransparent;
@@ -181,12 +200,16 @@ function syncControls(): void {
   tileSize.value = String(state.tileSize);
   tileSizeValue.textContent = `${state.tileSize} px`;
 
-  const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode);
+  const activeColour3 = def.supportsThreeColours ? state.colour3 : null;
+  const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode, activeColour3);
   kindHint.textContent =
     def.kinds === 2
       ? `${def.kindLabels[0]} · ${def.kindLabels[1]}`
-      : `${def.kinds} tile classes, shaded between the two colours: ${def.kindLabels.join(', ')}`;
+      : `${def.kinds} tile classes, shaded ${activeColour3 ? 'through three colours' : 'between two colours'}: ${def.kindLabels.join(', ')}`;
   kindHint.title = colours.join(' ');
+
+  const trioGroup = paletteBox.querySelector<HTMLElement>('[data-collection="trios"]');
+  if (trioGroup) trioGroup.hidden = !def.supportsThreeColours;
 
   for (const button of paletteBox.querySelectorAll<HTMLButtonElement>('button')) {
     const palette = PALETTES.find((p) => p.id === button.dataset['palette']);
@@ -197,6 +220,7 @@ function syncControls(): void {
       palette.colour2,
       def.kinds,
       def.colourMode,
+      def.supportsThreeColours ? (palette.colour3 ?? null) : null,
     ).map((colour) => {
       const swatch = document.createElement('span');
       swatch.style.background = colour;
@@ -212,7 +236,8 @@ function syncControls(): void {
 
     const active =
       palette.colour1.toLowerCase() === state.colour1.toLowerCase() &&
-      palette.colour2.toLowerCase() === state.colour2.toLowerCase();
+      palette.colour2.toLowerCase() === state.colour2.toLowerCase() &&
+      (!def.supportsThreeColours || (palette.colour3 ?? null)?.toLowerCase() === state.colour3?.toLowerCase());
     button.setAttribute('aria-pressed', String(active));
   }
 
@@ -257,9 +282,10 @@ function updateAppearance(): void {
   }
 
   const def = tilingById(state.tilingId);
-  const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode);
+  const activeColour3 = def.supportsThreeColours ? state.colour3 : null;
+  const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode, activeColour3);
   const border = state.borderTransparent ? null : state.border;
-  const background = mix(state.colour1, state.colour2, 0.5);
+  const background = paletteBackground(state.colour1, state.colour2, activeColour3);
   svg.querySelector('rect')?.setAttribute('fill', background);
 
   for (const path of svg.querySelectorAll<SVGPathElement>('path[data-kind]')) {
@@ -276,6 +302,7 @@ function updateAppearance(): void {
       ...lastRender.options,
       colour1: state.colour1,
       colour2: state.colour2,
+      colour3: activeColour3,
       border,
       borderWidth: state.borderWidth,
     },
@@ -328,6 +355,14 @@ function bindControls(): void {
   });
   bindColour(colour2, colour2Hex, (value) => {
     state = { ...state, colour2: value };
+  });
+  bindColour(colour3, colour3Hex, (value) => {
+    state = { ...state, colour3: value };
+  });
+  colour3Enabled.addEventListener('change', () => {
+    state = { ...state, colour3: colour3Enabled.checked ? colour3.value : null };
+    syncControls();
+    updateAppearance();
   });
   bindColour(borderInput, borderHex, (value) => {
     state = { ...state, border: value };

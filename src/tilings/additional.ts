@@ -98,6 +98,7 @@ export const socolar: TilingDefinition = {
     'Socolar’s dodecagonal matching-rule tiling: 30° rhombs and squares, with triples of 60° dual-grid rhombs recomposed as regular hexagons.',
   kinds: 3,
   kindLabels: ['30° rhomb', 'square', 'regular hexagon'],
+  supportsThreeColours: true,
   reference: 'https://en.wikipedia.org/wiki/Socolar_tiling',
   unitTileArea: 0.91,
   generate(radius): Tile[] {

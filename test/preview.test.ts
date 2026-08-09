@@ -12,6 +12,9 @@ const requestedTiling = process.env['PREVIEW_TILING'];
 const previewWidth = Number(process.env['PREVIEW_WIDTH'] ?? 900);
 const previewHeight = Number(process.env['PREVIEW_HEIGHT'] ?? 600);
 const previewTileSize = Number(process.env['PREVIEW_TILE_SIZE'] ?? 34);
+const previewColour1 = process.env['PREVIEW_COLOUR_1'] ?? '#f2c14e';
+const previewColour2 = process.env['PREVIEW_COLOUR_2'] ?? '#1b3a5c';
+const previewColour3 = process.env['PREVIEW_COLOUR_3'] ?? null;
 const previewBorder =
   process.env['PREVIEW_BORDER'] === 'none'
     ? null
@@ -31,8 +34,9 @@ describe.skipIf(!dir)('preview', () => {
         width: previewWidth,
         height: previewHeight,
         tileSize: previewTileSize,
-        colour1: '#f2c14e',
-        colour2: '#1b3a5c',
+        colour1: previewColour1,
+        colour2: previewColour2,
+        colour3: previewColour3,
         border: previewBorder,
         borderWidth: 1,
       });

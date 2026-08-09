@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { kindColors, mix, parseHex, toHex } from '../src/render/color.js';
+import { kindColors, mix, paletteBackground, parseHex, toHex } from '../src/render/color.js';
 import { renderSvg } from '../src/render/svg.js';
 import { buildScene } from '../src/render/scene.js';
 import { exportFileName } from '../src/export.js';
@@ -34,6 +34,17 @@ describe('colours', () => {
       '#f2c14e',
       '#bd973d',
     ]);
+  });
+
+  it('spreads tile classes through an optional third colour', () => {
+    expect(kindColors('#000000', '#ff0000', 5, 'gradient', '#ffffff')).toEqual([
+      '#000000',
+      '#800000',
+      '#ff0000',
+      '#ff8080',
+      '#ffffff',
+    ]);
+    expect(paletteBackground('#000000', '#ff0000', '#ffffff')).toBe('#aa5555');
   });
 });
 
@@ -103,6 +114,15 @@ describe('svg output', () => {
     expect(svg).toContain(`<title>${def.name}</title>`);
     for (const label of def.kindLabels) expect(svg).toContain(`<title>${label}</title>`);
   });
+
+  it('uses a third colour only on tilings that support it', () => {
+    const colour3 = '#00ff00';
+    const socolar = renderSvg(tilingById('socolar'), { ...options, colour3 }).svg;
+    expect(socolar).toContain(`<path data-kind="2" fill="${colour3}"`);
+
+    const penrose = renderSvg(tilingById('penrose-p3'), { ...options, colour3 }).svg;
+    expect(penrose).not.toContain(colour3);
+  });
 });
 
 describe('export file names', () => {
@@ -112,6 +132,9 @@ describe('export file names', () => {
     );
     expect(exportFileName(tilingById('hat'), { ...options, border: null }, 'png')).toBe(
       'hat_800x600_tile40_e8b53b-1b3a5c_border-none.png',
+    );
+    expect(exportFileName(tilingById('hat'), { ...options, colour3: '#c084fc' }, 'svg')).toBe(
+      'hat_800x600_tile40_e8b53b-1b3a5c-c084fc_border-101820.svg',
     );
   });
 });
@@ -123,6 +146,7 @@ describe('state', () => {
       tilingId: 'ammann-beenker',
       colour1: '#123456',
       colour2: '#abcdef',
+      colour3: '#fedcba',
       borderTransparent: true,
       borderWidth: 2.5,
       sizeId: 'custom',
@@ -169,12 +193,23 @@ describe('palettes', () => {
     ]);
   });
 
+  it('offers three-colour palettes only on the selected tilings', () => {
+    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(4);
+    expect(TILINGS.filter((tiling) => tiling.supportsThreeColours).map((tiling) => tiling.id).sort()).toEqual([
+      'hat',
+      'heptagonal',
+      'shuriken-supertile-12',
+      'socolar',
+    ]);
+  });
+
   it('are unique and use valid colours', () => {
     expect(new Set(PALETTES.map((p) => p.id)).size).toBe(PALETTES.length);
     for (const palette of PALETTES) {
-      expect(['classics', 'studio']).toContain(palette.collection);
+      expect(['classics', 'studio', 'trios']).toContain(palette.collection);
       expect(palette.colour1).toMatch(/^#[0-9a-f]{6}$/);
       expect(palette.colour2).toMatch(/^#[0-9a-f]{6}$/);
+      if (palette.collection === 'trios') expect(palette.colour3).toMatch(/^#[0-9a-f]{6}$/);
       if (palette.border !== null) expect(palette.border).toMatch(/^#[0-9a-f]{6}$/);
     }
   });

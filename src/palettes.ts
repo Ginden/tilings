@@ -1,9 +1,10 @@
 export interface PalettePreset {
   readonly id: string;
   readonly name: string;
-  readonly collection: 'classics' | 'studio';
+  readonly collection: 'classics' | 'studio' | 'trios';
   readonly colour1: string;
   readonly colour2: string;
+  readonly colour3?: string;
   readonly border: string | null;
 }
 
@@ -17,8 +18,12 @@ export const PALETTES: readonly PalettePreset[] = [
   { id: 'ukiyo-e', name: 'Ukiyo-e', collection: 'studio', colour1: '#315a7d', colour2: '#d06c4b', border: '#f2e2cf' },
   { id: 'verdigris', name: 'Verdigris', collection: 'studio', colour1: '#b85c38', colour2: '#2a9d8f', border: '#173f3a' },
   { id: 'lichen', name: 'Lichen', collection: 'studio', colour1: '#435b3b', colour2: '#c8a96a', border: '#202a20' },
-  { id: 'night-bloom', name: 'Night bloom', collection: 'studio', colour1: '#312e81', colour2: '#c084fc', border: '#f5f3ff' },
+  { id: 'night-bloom', name: 'Night bloom', collection: 'studio', colour1: '#312e81', colour2: '#c084fc', border: '#e0b96a' },
   { id: 'signal', name: 'Signal', collection: 'studio', colour1: '#ef476f', colour2: '#06d6a0', border: '#073b4c' },
+  { id: 'night-garden', name: 'Night garden', collection: 'trios', colour1: '#24124d', colour2: '#a05ad7', colour3: '#e0b96a', border: '#160d27' },
+  { id: 'understory', name: 'Understory', collection: 'trios', colour1: '#334f38', colour2: '#c8a96a', colour3: '#b85c38', border: '#202a20' },
+  { id: 'stained-glass', name: 'Stained glass', collection: 'trios', colour1: '#1d3557', colour2: '#e63946', colour3: '#f1c453', border: '#f4f1de' },
+  { id: 'tidepool', name: 'Tidepool', collection: 'trios', colour1: '#073b4c', colour2: '#2a9d8f', colour3: '#e76f51', border: '#d9f0ee' },
 ];
 
 export const DEFAULT_PALETTE = PALETTES[0]!;

@@ -3,7 +3,7 @@ import type { Vec } from '../geometry.js';
 /**
  * A single tile of a tiling. `kind` selects the colour: it is an index into the
  * tiling's tile classes (`0 .. kinds - 1`) which the renderer maps onto the
- * two user-chosen colours.
+ * user-chosen colour stops.
  */
 export interface Tile {
   readonly kind: number;
@@ -34,9 +34,11 @@ export interface TilingDefinition {
   readonly name: string;
   readonly family: TilingFamily;
   readonly description: string;
-  /** Number of tile classes; class `i` gets colour `lerp(colour1, colour2, i/(kinds-1))`. */
+  /** Number of tile classes; their colours are spread evenly across the active colour stops. */
   readonly kinds: number;
   readonly kindLabels: readonly string[];
+  /** Offer a third colour stop for tilings whose class structure benefits from one. */
+  readonly supportsThreeColours?: boolean;
   /** Pair adjacent states around each selected endpoint colour instead of using one linear gradient. */
   readonly colourMode?: 'gradient' | 'paired';
   /** Reference URL (usually Wikipedia). */

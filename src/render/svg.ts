@@ -1,11 +1,12 @@
 import type { Tile, TilingDefinition } from '../tilings/types.js';
 import { buildScene } from './scene.js';
 import type { SceneOptions } from './scene.js';
-import { kindColors, mix } from './color.js';
+import { kindColors, paletteBackground } from './color.js';
 
 export interface Palette {
   readonly colour1: string;
   readonly colour2: string;
+  readonly colour3?: string | null;
   /** Border colour, or `null` for a transparent (invisible) border. */
   readonly border: string | null;
   readonly borderWidth: number;
@@ -75,8 +76,9 @@ function edgePathChunks(tiles: readonly Tile[], chunkSize = 1_024): string[] {
  */
 export function renderSvg(def: TilingDefinition, opts: RenderOptions): RenderResult {
   const scene = buildScene(def, opts);
-  const colours = kindColors(opts.colour1, opts.colour2, def.kinds, def.colourMode);
-  const background = mix(opts.colour1, opts.colour2, 0.5);
+  const colour3 = def.supportsThreeColours ? (opts.colour3 ?? null) : null;
+  const colours = kindColors(opts.colour1, opts.colour2, def.kinds, def.colourMode, colour3);
+  const background = paletteBackground(opts.colour1, opts.colour2, colour3);
 
   const byKind = new Map<number, Tile[]>();
   for (const tile of scene.tiles) {

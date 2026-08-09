@@ -358,6 +358,7 @@ export const hat: TilingDefinition = {
     'The 2023 "hat": a single 13-sided tile that tiles the plane only aperiodically. Built from H/T/P/F metatiles; reflected hats form their own class.',
   kinds: 5,
   kindLabels: ['reflected hat', 'H hat', 'T hat', 'P hat', 'F hat'],
+  supportsThreeColours: true,
   reference: 'https://en.wikipedia.org/wiki/Einstein_problem',
   // The metatiles place hats at half the scale of the outline above.
   unitTileArea: area(HAT_OUTLINE) / 4,

@@ -25,7 +25,10 @@ export function exportFileName(
     slug(def.id),
     `${Math.round(opts.width)}x${Math.round(opts.height)}`,
     `tile${Math.round(opts.tileSize)}`,
-    `${colourToken(opts.colour1)}-${colourToken(opts.colour2)}`,
+    [opts.colour1, opts.colour2, opts.colour3]
+      .filter((colour): colour is string => Boolean(colour))
+      .map(colourToken)
+      .join('-'),
     `border-${colourToken(opts.border)}`,
   ];
   return `${parts.join('_')}.${extension}`;

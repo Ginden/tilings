@@ -125,6 +125,7 @@ function makeMultigridTiling(opts: {
   reference: string;
   kindLabels: string[];
   family?: TilingDefinition['family'];
+  supportsThreeColours?: boolean;
 }): TilingDefinition {
   const offsets = offsetsFor(opts.n);
   return {
@@ -134,6 +135,7 @@ function makeMultigridTiling(opts: {
     description: opts.description,
     kinds: Math.floor(opts.n / 2),
     kindLabels: opts.kindLabels,
+    supportsThreeColours: opts.supportsThreeColours,
     reference: opts.reference,
     unitTileArea: averageRhombArea(opts.n),
     generate(radius) {
@@ -181,6 +183,7 @@ export const heptagonal = makeMultigridTiling({
     'A seven-fold multigrid quasicrystal with three rhomb shapes — the Danzer-style heptagonal cousin of the Penrose tiling.',
   reference: 'https://en.wikipedia.org/wiki/Quasicrystal',
   kindLabels: ['thin rhomb', 'medium rhomb', 'wide rhomb'],
+  supportsThreeColours: true,
 });
 
 export const decagonal = makeMultigridTiling({

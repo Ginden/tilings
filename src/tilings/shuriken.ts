@@ -324,6 +324,7 @@ export const shurikenSupertile: TilingDefinition = {
     'The Frettlöh–Say-awen–de las Peñas dissection of the inflated dodecagon at n = 12: twelve 1–2–150° triangles on the rim, a unit dodecagon in the centre, and a twelvefold shuriken star of 96 rhombi between them, with inflation sqrt(5 + 2*sqrt3). Their substitution does not close on these prototiles, so the supertiles are laid out periodically on the 4.6.12 Archimedean tiling rather than by inflation; this is not Paz’s dense-orientation twelvefold Shuriken.',
   kinds: 6,
   kindLabels: ['dodecagon', '1–2–150° triangle', 'triangle', '30° rhomb', '60° rhomb', '90° rhomb'],
+  supportsThreeColours: true,
   reference: 'https://arxiv.org/abs/1602.00518',
   referenceLabel: 'Frettlöh, Say-awen & de las Peñas, “Substitution tilings with dense tile orientations” (2017)',
   unitTileArea: 0.7075,

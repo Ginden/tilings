@@ -257,7 +257,7 @@ output {
   font-weight: 600;
 }
 
-.palettes h3:not(:first-child) {
+.palette-group:not(:first-child) h3 {
   margin-top: 0.65rem;
 }
 

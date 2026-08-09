@@ -35,15 +35,18 @@ rasterisation for display, and no runtime dependencies.
 | Squiral | one rep-9 spiral tile, in two chiralities | Baake and Grimm's scale-3 bijective 3×3 block substitution, run on the rosettes of four like-handed tiles and drawn with the spiral carrier |
 | Jeandel–Rao 11 Wang tiles | eleven unit squares with four edge colours | coding the orbit of a point under the two unit translations of the torus ℝ²/⟨(φ,0),(1,φ+3)⟩ through Labbé's eleven-letter Markov partition; each square drawn as four triangles carrying its edge colours |
 
-Tilings with more than two tile classes (including P1, the Tübingen handed
-states, and the hat's five metatile classes) shade their classes evenly between
-the two chosen colours.
+Tilings with more than two tile classes shade their classes evenly between the
+chosen colours. Socolar, Heptagonal, the Hat monotile, and Shuriken can add a
+third stop, giving three-class tilings exact colours and larger class sets a
+two-part gradient through the middle colour.
 
 ## Controls
 
 * **Type** — the tiling, grouped by family and sorted by name within each group.
-* **Colour 1 / Colour 2** — the two tile colours, as pickers or hex values, plus
-  ten named preset palettes grouped into classic and studio collections.
+* **Colour 1 / Colour 2** — the two base tile colours, as pickers or hex values,
+  plus ten named preset palettes grouped into classic and studio collections.
+* **Third colour** — available on selected multi-class tilings, with four extra
+  three-colour palettes that appear only when they can be used.
 * **Border** — colour, width, and a *transparent* switch that drops the stroke
   entirely (the background is then filled with a blend of the two colours so no
   seams show).

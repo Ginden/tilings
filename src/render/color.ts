@@ -39,12 +39,13 @@ export function mix(a: string, b: string, t: number): string {
   });
 }
 
-/** Colours for tile classes, normally interpolated between the two chosen colours. */
+/** Colours for tile classes, interpolated through two or three chosen colour stops. */
 export function kindColors(
   colour1: string,
   colour2: string,
   kinds: number,
   mode: 'gradient' | 'paired' = 'gradient',
+  colour3: string | null = null,
 ): string[] {
   if (kinds <= 1) return [colour1];
   if (mode === 'paired' && kinds === 4) {
@@ -53,8 +54,23 @@ export function kindColors(
     return [colour1, companion(colour1), colour2, companion(colour2)];
   }
   const out: string[] = [];
-  for (let i = 0; i < kinds; i++) out.push(mix(colour1, colour2, i / (kinds - 1)));
+  for (let i = 0; i < kinds; i++) {
+    const t = i / (kinds - 1);
+    if (!colour3) {
+      out.push(mix(colour1, colour2, t));
+    } else if (t <= 0.5) {
+      out.push(mix(colour1, colour2, t * 2));
+    } else {
+      out.push(mix(colour2, colour3, (t - 0.5) * 2));
+    }
+  }
   return out;
+}
+
+/** Canvas fill behind the tiles: the arithmetic mean of the active colour stops. */
+export function paletteBackground(colour1: string, colour2: string, colour3: string | null): string {
+  if (!colour3) return mix(colour1, colour2, 0.5);
+  return mix(mix(colour1, colour2, 0.5), colour3, 1 / 3);
 }
 
 export function relativeLuminance(colour: string): number {

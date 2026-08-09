@@ -5,6 +5,7 @@ export interface AppState {
   tilingId: string;
   colour1: string;
   colour2: string;
+  colour3: string | null;
   border: string;
   borderTransparent: boolean;
   borderWidth: number;
@@ -38,6 +39,7 @@ export const DEFAULT_STATE: AppState = {
   tilingId: TILINGS[0]!.id,
   colour1: DEFAULT_PALETTE.colour1,
   colour2: DEFAULT_PALETTE.colour2,
+  colour3: null,
   border: DEFAULT_PALETTE.border ?? '#101820',
   borderTransparent: DEFAULT_PALETTE.border === null,
   borderWidth: 1,
@@ -75,6 +77,7 @@ export function encodeState(state: AppState): string {
     s: state.sizeId,
     ts: String(state.tileSize),
   });
+  if (state.colour3) params.set('c3', state.colour3.replace('#', ''));
   if (state.sizeId === 'custom') {
     params.set('w', String(state.customWidth));
     params.set('h', String(state.customHeight));
@@ -94,6 +97,8 @@ export function decodeState(hash: string): AppState {
   };
   state.colour1 = colour('c1', state.colour1);
   state.colour2 = colour('c2', state.colour2);
+  const colour3 = params.get('c3');
+  state.colour3 = colour3 && /^[0-9a-f]{6}$/i.test(colour3) ? `#${colour3}` : null;
 
   const border = params.get('b');
   if (border === 'none') {
