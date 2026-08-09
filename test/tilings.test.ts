@@ -44,6 +44,13 @@ import {
   generateDanzerSevenfold,
   subdivideDanzer,
 } from '../src/tilings/danzer-sevenfold.js';
+import {
+  WATANABE_ITO_SOMA_CLUSTER_COUNTS,
+  WATANABE_ITO_SOMA_EFFECTIVE_COUNTS,
+  WATANABE_ITO_SOMA_INFLATION,
+  generateWatanabeItoSomaEightfold,
+  subdivideWatanabeItoSoma,
+} from '../src/tilings/watanabe-ito-soma-eightfold.js';
 
 function pointInPolygon(x: number, y: number, points: readonly { x: number; y: number }[]): boolean {
   let inside = false;
@@ -116,6 +123,7 @@ describe('tiling registry', () => {
       'jeandel-rao',
       'shuriken-supertile-12',
       'squiral',
+      'watanabe-ito-soma-eightfold',
     ]);
   });
 
@@ -152,6 +160,67 @@ describe('tiling registry', () => {
       });
     });
   }
+});
+
+describe('Watanabe–Ito–Soma eightfold tiling', () => {
+  function edges(points: readonly Vec[]): number[] {
+    return points.map((point, index) => {
+      const next = points[(index + 1) % points.length]!;
+      return Math.hypot(next.x - point.x, next.y - point.y);
+    });
+  }
+
+  it('uses the explicit overlapping square and rhomb clusters', () => {
+    const square = subdivideWatanabeItoSoma([{ kind: 0, x: 0, y: 0, rotation: 0 }]);
+    const rhomb = subdivideWatanabeItoSoma([{ kind: 1, x: 0, y: 0, rotation: 0 }]);
+    const counts = (tiles: typeof square): number[] => [
+      tiles.filter((tile) => tile.kind === 0).length,
+      tiles.filter((tile) => tile.kind === 1).length,
+    ];
+    expect(counts(square)).toEqual(WATANABE_ITO_SOMA_CLUSTER_COUNTS[0]);
+    expect(counts(rhomb)).toEqual(WATANABE_ITO_SOMA_CLUSTER_COUNTS[1]);
+  });
+
+  it('preserves both prototile areas after shared boundary halves are paired', () => {
+    const areas = [1, Math.SQRT1_2];
+    const inflationArea = WATANABE_ITO_SOMA_INFLATION ** 2;
+    for (let parent = 0; parent < 2; parent++) {
+      const childArea = WATANABE_ITO_SOMA_EFFECTIVE_COUNTS[parent]!.reduce(
+        (sum, count, kind) => sum + count * areas[kind]!,
+        0,
+      );
+      expect(childArea).toBeCloseTo(inflationArea * areas[parent]!, 12);
+    }
+    expect(WATANABE_ITO_SOMA_INFLATION).toBeCloseTo(2 + Math.sqrt(2), 12);
+  });
+
+  it('produces unit squares and 45-degree unit rhombs', () => {
+    const tiles = generateWatanabeItoSomaEightfold(8);
+    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1]));
+    for (const tile of tiles) {
+      for (const edge of edges(tile.points)) expect(edge).toBeCloseTo(1, 9);
+      expect(area(tile.points)).toBeCloseTo(tile.kind === 0 ? 1 : Math.SQRT1_2, 9);
+    }
+  });
+
+  it('retains the complete eightfold orbit in the requested disc', () => {
+    const tiles = generateWatanabeItoSomaEightfold(8);
+    const keys = new Set(
+      tiles.map(
+        (tile) =>
+          `${tile.kind}:${Math.round(tile.centre.x * 1e6)}:${Math.round(tile.centre.y * 1e6)}:${tile.rotation}`,
+      ),
+    );
+    for (const tile of tiles.filter((candidate) => Math.hypot(candidate.centre.x, candidate.centre.y) < 7)) {
+      const rotatedX = -tile.centre.y;
+      const rotatedY = tile.centre.x;
+      const period = tile.kind === 0 ? 2 : 8;
+      const rotation = (tile.rotation + 2) % period;
+      const rotatedKey =
+        `${tile.kind}:${Math.round(rotatedX * 1e6)}:${Math.round(rotatedY * 1e6)}:${rotation}`;
+      expect(keys.has(rotatedKey), rotatedKey).toBe(true);
+    }
+  });
 });
 
 describe('Danzer sevenfold triangles', () => {

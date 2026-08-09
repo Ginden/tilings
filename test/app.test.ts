@@ -131,6 +131,13 @@ describe('svg output', () => {
     for (const kind of [0, 1, 2]) expect(svg).toContain(`<path data-kind="${kind}"`);
     expect(svg).not.toContain('NaN');
   });
+
+  it('renders both Watanabe–Ito–Soma prototiles', () => {
+    const { svg, tileCount } = renderSvg(tilingById('watanabe-ito-soma-eightfold'), options);
+    expect(tileCount).toBeGreaterThan(100);
+    expect(svg.match(/data-kind=/g)).toHaveLength(2);
+    for (const kind of [0, 1]) expect(svg).toContain(`<path data-kind="${kind}"`);
+  });
 });
 
 describe('export file names', () => {
