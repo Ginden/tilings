@@ -23,6 +23,18 @@ import {
   squiralSymbol,
   subdivideSquiral,
 } from '../src/tilings/squiral.js';
+import {
+  ATOMS,
+  JEANDEL_RAO_T,
+  JEANDEL_RAO_T_PRIME,
+  JR_START,
+  JR_TORUS_HEIGHT,
+  generateJeandelRao,
+  jeandelRaoTileAt,
+  toTorus,
+  torusToTile,
+  wangTileTriangles,
+} from '../src/tilings/jeandel-rao.js';
 import { multigrid } from '../src/tilings/multigrid.js';
 import { IDENTITY, apply, mul, rotation, scaling } from '../src/geometry.js';
 
@@ -93,6 +105,7 @@ describe('tiling registry', () => {
       'pinwheel',
       'sphinx',
       'voderberg',
+      'jeandel-rao',
       'shuriken-supertile-12',
       'squiral',
     ]);
@@ -548,5 +561,231 @@ describe('additional tiling constructions', () => {
     for (let index = 1; index < ring.length; index++) {
       expect(ring[index]!.kind).not.toBe(ring[index - 1]!.kind);
     }
+  });
+});
+
+describe('Jeandel-Rao 11 Wang tiles', () => {
+  const [EAST, NORTH, WEST, SOUTH] = [0, 1, 2, 3];
+
+  /** The coded tile at every cell of the square [-n, n]^2. */
+  function codedGrid(n: number): Map<string, number> {
+    const grid = new Map<string, number>();
+    for (let a = -n; a <= n; a++) {
+      for (let b = -n; b <= n; b++) grid.set(`${a},${b}`, jeandelRaoTileAt(a, b));
+    }
+    return grid;
+  }
+
+  function strictlyInside(polygon: readonly Vec[], x: number, y: number): boolean {
+    for (let i = 0; i < polygon.length; i++) {
+      const a = polygon[i]!;
+      const b = polygon[(i + 1) % polygon.length]!;
+      if ((b.x - a.x) * (y - a.y) - (b.y - a.y) * (x - a.x) <= 1e-9) return false;
+    }
+    return true;
+  }
+
+  it('encodes the exact eleven tiles of the paper on four horizontal colours', () => {
+    // Figure 3 of arXiv:1506.06492, as (east, north, west, south).
+    expect(JEANDEL_RAO_T).toEqual([
+      [2, 4, 2, 1],
+      [2, 2, 2, 0],
+      [1, 1, 3, 1],
+      [1, 2, 3, 2],
+      [3, 1, 3, 3],
+      [0, 1, 3, 1],
+      [0, 0, 0, 1],
+      [3, 1, 0, 2],
+      [0, 2, 1, 2],
+      [1, 2, 1, 4],
+      [3, 3, 1, 2],
+    ]);
+    const horizontal = JEANDEL_RAO_T.flatMap((t) => [t[EAST], t[WEST]]);
+    const vertical = JEANDEL_RAO_T.flatMap((t) => [t[NORTH], t[SOUTH]]);
+    expect(new Set(horizontal)).toEqual(new Set([0, 1, 2, 3]));
+    expect(new Set(vertical)).toEqual(new Set([0, 1, 2, 3, 4]));
+  });
+
+  it('collapses colours 4 and 0 into the minimal four-colour set T-prime', () => {
+    // Figure 4 of the paper: "obtained from T by collapsing the colors 4 and 0".
+    expect(new Set(JEANDEL_RAO_T_PRIME.flat())).toEqual(new Set([0, 1, 2, 3]));
+    expect(JEANDEL_RAO_T_PRIME).toHaveLength(11);
+    // Collapsing must not merge two tiles, or the set would not have 11 of them.
+    expect(new Set(JEANDEL_RAO_T_PRIME.map((t) => t.join(','))).size).toBe(11);
+    for (let i = 0; i < JEANDEL_RAO_T.length; i++) {
+      const before = JEANDEL_RAO_T[i]!;
+      const after = JEANDEL_RAO_T_PRIME[i]!;
+      expect(after[EAST]).toBe(before[EAST]);
+      expect(after[WEST]).toBe(before[WEST]);
+      for (const side of [NORTH, SOUTH]) {
+        expect(after[side]).toBe(before[side] === 4 ? 0 : before[side]);
+      }
+    }
+  });
+
+  it('partitions the torus into 24 atoms labelled by the 11 tiles', () => {
+    expect(ATOMS).toHaveLength(24);
+    expect(new Set(ATOMS.map((atom) => atom.tile))).toEqual(new Set([...Array(11).keys()]));
+    // The fundamental domain of Gamma_0 is phi wide and phi + 3 tall.
+    const total = ATOMS.reduce((sum, atom) => sum + area(atom.polygon), 0);
+    expect(total).toBeCloseTo(PHI * JR_TORUS_HEIGHT, 12);
+    expect(total).toBeCloseTo(4 * PHI + 1, 12);
+  });
+
+  it('covers the fundamental domain without overlap', () => {
+    const random = makeRandom(19060492);
+    for (let i = 0; i < 4000; i++) {
+      const x = random() * PHI;
+      const y = random() * JR_TORUS_HEIGHT;
+      expect(torusToTile(x, y)).toBeGreaterThanOrEqual(0);
+      const hits = ATOMS.filter((atom) => strictlyInside(atom.polygon, x, y));
+      expect(hits.length).toBeLessThanOrEqual(1);
+    }
+  });
+
+  it('gives the published tile frequencies as relative atom areas', () => {
+    // slabbe.org, tile frequencies of the Jeandel-Rao partition.
+    const expected = [
+      -PHI / 22 + 2 / 11,
+      -PHI / 22 + 2 / 11,
+      (9 * PHI) / 22 - 7 / 11,
+      -PHI / 22 + 2 / 11,
+      (2 * PHI) / 11 - 5 / 22,
+      (-5 * PHI) / 11 + 9 / 11,
+      -PHI / 22 + 2 / 11,
+      (-3 * PHI) / 11 + 13 / 22,
+      (2 * PHI) / 11 - 5 / 22,
+      -PHI / 22 + 2 / 11,
+      (2 * PHI) / 11 - 5 / 22,
+    ];
+    const total = ATOMS.reduce((sum, atom) => sum + area(atom.polygon), 0);
+    for (let tile = 0; tile < 11; tile++) {
+      const measure = ATOMS.filter((atom) => atom.tile === tile).reduce(
+        (sum, atom) => sum + area(atom.polygon),
+        0,
+      );
+      expect(measure / total).toBeCloseTo(expected[tile]!, 12);
+    }
+    expect(expected.reduce((sum, f) => sum + f, 0)).toBeCloseTo(1, 12);
+  });
+
+  it('reduces the plane modulo the lattice generated by (phi, 0) and (1, phi + 3)', () => {
+    const random = makeRandom(1808_07768);
+    for (let i = 0; i < 500; i++) {
+      const x = (random() - 0.5) * 60;
+      const y = (random() - 0.5) * 60;
+      const p = toTorus(x, y);
+      expect(p.x).toBeGreaterThanOrEqual(0);
+      expect(p.x).toBeLessThan(PHI);
+      expect(p.y).toBeGreaterThanOrEqual(0);
+      expect(p.y).toBeLessThan(JR_TORUS_HEIGHT);
+      for (const [u, v] of [
+        [PHI, 0],
+        [1, JR_TORUS_HEIGHT],
+      ] as const) {
+        const shifted = toTorus(x + u, y + v);
+        expect(shifted.x).toBeCloseTo(p.x, 9);
+        expect(shifted.y).toBeCloseTo(p.y, 9);
+      }
+    }
+  });
+
+  it('codes a legal tiling: every horizontal and vertical adjacency matches', () => {
+    const n = 45;
+    const grid = codedGrid(n);
+    let checked = 0;
+    for (let a = -n; a < n; a++) {
+      for (let b = -n; b < n; b++) {
+        const here = JEANDEL_RAO_T[grid.get(`${a},${b}`)!]!;
+        const east = JEANDEL_RAO_T[grid.get(`${a + 1},${b}`)!]!;
+        const north = JEANDEL_RAO_T[grid.get(`${a},${b + 1}`)!]!;
+        expect(here[EAST]).toBe(east[WEST]);
+        expect(here[NORTH]).toBe(north[SOUTH]);
+        checked += 2;
+      }
+    }
+    expect(checked).toBe(2 * (2 * n) ** 2);
+    // A T-tiling stays legal after the colours are collapsed.
+    for (let a = -n; a < n; a++) {
+      for (let b = -n; b < n; b++) {
+        const here = JEANDEL_RAO_T_PRIME[grid.get(`${a},${b}`)!]!;
+        expect(here[EAST]).toBe(JEANDEL_RAO_T_PRIME[grid.get(`${a + 1},${b}`)!]![WEST]);
+        expect(here[NORTH]).toBe(JEANDEL_RAO_T_PRIME[grid.get(`${a},${b + 1}`)!]![SOUTH]);
+      }
+    }
+  });
+
+  it('uses all eleven tiles and repeats none of the small translations', () => {
+    const n = 30;
+    const grid = codedGrid(n);
+    expect(new Set(grid.values()).size).toBe(11);
+    for (let u = 0; u <= 8; u++) {
+      for (let v = -8; v <= 8; v++) {
+        if (u === 0 && v === 0) continue;
+        const broken = [...grid.keys()].some((key) => {
+          const [a, b] = key.split(',').map(Number) as [number, number];
+          const other = grid.get(`${a + u},${b + v}`);
+          return other !== undefined && other !== grid.get(key);
+        });
+        expect({ u, v, broken }).toEqual({ u, v, broken: true });
+      }
+    }
+  });
+
+  it('draws each square as four triangles carrying its four edge colours', () => {
+    const triangles = wangTileTriangles(0, 0, 9);
+    expect(triangles.map((t) => t.kind)).toEqual([
+      JEANDEL_RAO_T_PRIME[9]![SOUTH],
+      JEANDEL_RAO_T_PRIME[9]![EAST],
+      JEANDEL_RAO_T_PRIME[9]![NORTH],
+      JEANDEL_RAO_T_PRIME[9]![WEST],
+    ]);
+    // Tile 9 is (1, 2, 1, 4) in T, so the collapse shows up as a south colour 0.
+    expect(triangles[0]!.kind).toBe(0);
+    for (const triangle of triangles) {
+      expect(triangle.points).toHaveLength(3);
+      expect(area(triangle.points)).toBeCloseTo(0.25, 12);
+    }
+    expect(triangles.reduce((sum, t) => sum + area(t.points), 0)).toBeCloseTo(1, 12);
+  });
+
+  it('merges matching edges into diamonds across every grid line', () => {
+    // The visual claim of the rendering: a legal join is exactly a pair of
+    // triangles of the same colour meeting along a grid line.
+    const n = 12;
+    for (let a = -n; a < n; a++) {
+      for (let b = -n; b < n; b++) {
+        const here = wangTileTriangles(a, b, jeandelRaoTileAt(a, b));
+        const east = wangTileTriangles(a + 1, b, jeandelRaoTileAt(a + 1, b));
+        const north = wangTileTriangles(a, b + 1, jeandelRaoTileAt(a, b + 1));
+        expect(here[1]!.kind).toBe(east[3]!.kind);
+        expect(here[2]!.kind).toBe(north[0]!.kind);
+      }
+    }
+  });
+
+  it('grows patches that fill the requested disc with unit squares', () => {
+    for (const radius of [6, 18]) {
+      const tiles = generateJeandelRao(radius);
+      expect(tiles.length % 4).toBe(0);
+      const squares = tiles.length / 4;
+      // The squares covering the disc number roughly its area.
+      expect(squares).toBeGreaterThan(Math.PI * radius * radius);
+      expect(squares).toBeLessThan(Math.PI * (radius + 2) ** 2);
+      for (const tile of tiles) {
+        expect(tile.kind).toBeGreaterThanOrEqual(0);
+        expect(tile.kind).toBeLessThan(4);
+      }
+    }
+  });
+
+  it('is registered in the experimental family with a stable start point', () => {
+    const definition = TILINGS.find((tiling) => tiling.id === 'jeandel-rao')!;
+    expect(definition.family).toBe('experimental');
+    expect(definition.kinds).toBe(4);
+    expect(definition.description).toContain('arXiv:1506.06492');
+    expect(JR_START).toEqual({ x: PHI / 3, y: JR_TORUS_HEIGHT / 7 });
+    // The generator is deterministic, so the same cell always gets the same tile.
+    expect(jeandelRaoTileAt(0, 0)).toBe(jeandelRaoTileAt(0, 0));
   });
 });

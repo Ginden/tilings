@@ -33,6 +33,7 @@ rasterisation for display, and no runtime dependencies.
 | Voderberg spiral | congruent interlocking nonagons | plane-covering double spiral grown recursively in successive beak-to-butt layers |
 | Shuriken supertile (12-fold) | dodecagon + 1–2–150° triangle + triangle + three rhombs | the n = 12 dissection of the inflated dodecagon (rim triangles, central dodecagon, 96-rhomb shuriken star), laid out on the 4.6.12 Archimedean tiling |
 | Squiral | one rep-9 spiral tile, in two chiralities | Baake and Grimm's scale-3 bijective 3×3 block substitution, run on the rosettes of four like-handed tiles and drawn with the spiral carrier |
+| Jeandel–Rao 11 Wang tiles | eleven unit squares with four edge colours | coding the orbit of a point under the two unit translations of the torus ℝ²/⟨(φ,0),(1,φ+3)⟩ through Labbé's eleven-letter Markov partition; each square drawn as four triangles carrying its edge colours |
 
 Tilings with more than two tile classes (including P1, the Tübingen handed
 states, and the hat's five metatile classes) shade their classes evenly between
