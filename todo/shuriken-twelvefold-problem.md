@@ -1,5 +1,11 @@
 # The twelvefold Shuriken: what is settled and what is open
 
+> **Historical note (2026-08-09).** This document records the investigation
+> which led to the old periodic 4.6.12 fallback. It has been superseded for the
+> application by the exact 14-state reconstruction in
+> [shuriken_solution.md](../shuriken_solution.md). Its open problems concern the
+> narrower lattice recipe, not Paz's reconstructed substitution.
+
 A self-contained statement of the construction problem behind
 [shuriken-twelvefold.md](shuriken-twelvefold.md), written so it can be handed to
 a prover or a stronger search without re-deriving anything. Everything below was

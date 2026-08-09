@@ -2,12 +2,12 @@
 
 Add the dense-orientation dodecagonal Shuriken substitution.
 
-> **Status.** Blocked, and the blockage is understood. Paz's 14-state rule is
-> published only as raster images, so it cannot be transcribed; and rebuilding it
-> from the paper's own recipe stalls on two specific obstructions. The exact
-> \(n = 12\) supertile *is* settled — see
-> [shuriken-twelvefold-problem.md](shuriken-twelvefold-problem.md) for the
-> verified dissection, the orbit data, and the precise open problems.
+> **Status.** Implemented. The supplied reconstruction recovers Paz's complete
+> primitive 14-state rule; see [shuriken_solution.md](../shuriken_solution.md)
+> for the exact prototiles, substitution counts, primitivity proof, and dense-
+> orientation certificate. The earlier periodic fallback and the narrower
+> lattice-vocabulary investigation are retained in
+> [shuriken-twelvefold-problem.md](shuriken-twelvefold-problem.md) as history.
 
 ## Acceptance criteria
 

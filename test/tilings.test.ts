@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { TILINGS, TILINGS_FOR_UI } from '../src/tilings/index.js';
 import type { Tile } from '../src/tilings/types.js';
-import { PHI, area } from '../src/geometry.js';
+import { PHI, area, centroid } from '../src/geometry.js';
 import type { Vec } from '../src/geometry.js';
 import { P1_OUTLINES, generateP1, penroseP1 } from '../src/tilings/p1.js';
 import { subdivideP2, subdivideP3, sunSeed, triangleArea } from '../src/tilings/penrose.js';
@@ -15,7 +15,14 @@ import {
   subdivideSphinx,
 } from '../src/tilings/additional.js';
 import { VODERBERG_OUTLINE, generateVoderberg } from '../src/tilings/voderberg.js';
-import { LAMBDA, generateShuriken, supertileTiles } from '../src/tilings/shuriken.js';
+import {
+  LAMBDA,
+  SHURIKEN_PROTOTILES,
+  SHURIKEN_SUBSTITUTION_COUNTS,
+  generateShuriken,
+  supertileTiles,
+} from '../src/tilings/shuriken.js';
+import { SHURIKEN_RULES } from '../src/tilings/shuriken-rule-data.js';
 import {
   generateSquiral,
   squiralBlockStep,
@@ -441,56 +448,98 @@ describe('pinwheel substitution', () => {
   });
 });
 
-describe('twelvefold Shuriken supertile', () => {
+describe('twelvefold Shuriken substitution', () => {
   const ROOT3 = Math.sqrt(3);
 
-  it('dissects the inflated dodecagon into a rim, a centre and a 96-rhomb star', () => {
+  it('uses the reconstructed 349-child dodecagon rule', () => {
     const tiles = supertileTiles();
-    expect(tiles).toHaveLength(109);
-    // dodecagon, rim triangle, triangle, then the 30/60/90 rhombs
-    const counts = [0, 1, 2, 3, 4, 5].map((k) => tiles.filter((t) => t.kind === k).length);
-    expect(counts).toEqual([1, 12, 0, 24, 48, 24]);
-    // The dissection fills exactly lambda^2 times the unit dodecagon.
+    expect(tiles).toHaveLength(SHURIKEN_SUBSTITUTION_COUNTS[0]);
+    const counts = Array.from({ length: 14 }, (_, kind) => tiles.filter((tile) => tile.kind === kind).length);
+    expect(counts).toEqual([1, 12, 144, 96, 48, 48, 0, 0, 0, 0, 0, 0, 0, 0]);
     const total = tiles.reduce((sum, t) => sum + area(t.points), 0);
-    expect(total).toBeCloseTo(48 + 27 * ROOT3, 9);
+    // The runtime table is recovered from six-decimal SVG coordinates.
+    expect(total).toBeCloseTo(LAMBDA ** 2 * (6 + 3 * ROOT3), 5);
   });
 
-  it('gives every prototile its exact area', () => {
-    const expected = [6 + 3 * ROOT3, 0.5, ROOT3 / 4, 0.5, ROOT3 / 2, 1];
-    for (const tile of generateShuriken(12)) {
-      expect(area(tile.points)).toBeCloseTo(expected[tile.kind]!, 9);
+  it('gives all fourteen prototile states their exact areas', () => {
+    const small = [
+      6 + 3 * ROOT3,
+      0.5,
+      (ROOT3 - 1) / 4,
+      0.25,
+      ROOT3 / 4,
+      (2 - ROOT3) / 2,
+      (2 * ROOT3 - 3) / 4,
+      (2 - ROOT3) / 2,
+    ];
+    const expected = [...small, ...small.slice(2).map((value) => value * LAMBDA ** 2)];
+    for (let kind = 0; kind < 14; kind++) {
+      expect(area(SHURIKEN_PROTOTILES[kind]!)).toBeCloseTo(expected[kind]!, 12);
     }
   });
 
-  it('only ever uses edges of length 1, 2 and lambda', () => {
-    // Every vertex lies in Z[xi], so the rim triangle's long edge is exactly
-    // |2 + xi| = lambda and nothing else can appear.
-    const seen = new Set<number>();
-    for (const tile of generateShuriken(12)) {
-      for (let i = 0; i < tile.points.length; i++) {
-        const a = tile.points[i]!;
-        const b = tile.points[(i + 1) % tile.points.length]!;
-        seen.add(Math.round(Math.hypot(b.x - a.x, b.y - a.y) * 1e6) / 1e6);
-      }
-    }
-    expect([...seen].sort((a, b) => a - b)).toEqual([1, 2, Math.round(LAMBDA * 1e6) / 1e6]);
+  it('emits the published number of children for every state', () => {
+    expect(SHURIKEN_SUBSTITUTION_COUNTS).toEqual([349, 13, 1, 1, 1, 1, 1, 1, 65, 67, 84, 55, 67, 61]);
   });
 
-  it('pairs the rim triangles into Theorem 5 parallelograms', () => {
-    // Each cell puts a triangle on its own side of every shared edge; the two
-    // glue along their lambda edge into the 1x2 parallelogram at 30 degrees.
-    const key = (a: Vec, b: Vec): string => {
-      const [p, q] = a.x < b.x || (a.x === b.x && a.y < b.y) ? [a, b] : [b, a];
-      return `${p.x.toFixed(6)},${p.y.toFixed(6)}:${q.x.toFixed(6)},${q.y.toFixed(6)}`;
+  it('is primitive with exponent nine', () => {
+    let reachability = SHURIKEN_RULES.map((rule) =>
+      Array.from({ length: 14 }, (_, child) => rule.some(([kind]) => kind === child)),
+    );
+    const step = (): void => {
+      reachability = reachability.map((row) =>
+        Array.from({ length: 14 }, (_, child) =>
+          row.some((reachable, middle) => reachable && SHURIKEN_RULES[middle]!.some(([kind]) => kind === child)),
+        ),
+      );
     };
-    const longEdges = new Map<string, number>();
-    for (const tile of generateShuriken(12)) {
-      if (tile.kind !== 1) continue;
-      const [a, , c] = tile.points as readonly Vec[];
-      longEdges.set(key(a!, c!), (longEdges.get(key(a!, c!)) ?? 0) + 1);
-    }
-    const shared = [...longEdges.values()].filter((n) => n === 2).length;
-    expect(shared).toBeGreaterThan(longEdges.size * 0.5);
+    for (let power = 2; power <= 8; power++) step();
+    expect(reachability.every((row) => row.every(Boolean))).toBe(false);
+    step();
+    expect(reachability.every((row) => row.every(Boolean))).toBe(true);
+  });
+
+  it('contains the irrational relative-orientation certificate in sigma cubed of T1', () => {
+    type Linear = readonly [number, number, number, number];
+    const linear = (child: (typeof SHURIKEN_RULES)[number][number]): Linear =>
+      [child[1], child[2], child[4], child[5]];
+    const compose = (a: Linear, b: Linear): Linear => [
+      a[0] * b[0] + a[1] * b[2],
+      a[0] * b[1] + a[1] * b[3],
+      a[2] * b[0] + a[3] * b[2],
+      a[2] * b[1] + a[3] * b[3],
+    ];
+    const angle = (transform: Linear): number => Math.atan2(transform[2], transform[0]);
+    const central = linear(SHURIKEN_RULES[0]!.find(([kind]) => kind === 0)!);
+    const centralPath = compose(compose(central, central), central);
+    const t11ToT1 = linear(SHURIKEN_RULES[10]!.find(([kind]) => kind === 0)!);
+    const period = Math.PI / 6;
+    const alpha = Math.atan2(0.5, 2 + ROOT3 / 2);
+    const target = Math.min(2 * alpha, period - 2 * alpha);
+    const residuals = SHURIKEN_RULES[0]!
+      .filter(([kind, a, b, , d, e]) => kind === 4 && a * e - b * d > 0)
+      .map((placement) => {
+        let difference = Math.abs(angle(compose(linear(placement), t11ToT1)) - angle(centralPath)) % period;
+        difference = Math.min(difference, period - difference);
+        return Math.abs(difference - target);
+      });
+    expect(Math.min(...residuals)).toBeLessThan(1e-7);
+  });
+
+  it('keeps the central frame fixed when the requested radius adds a hierarchy level', () => {
+    const centralAngle = (radius: number): number => {
+      const central = generateShuriken(radius)
+        .filter((tile) => tile.kind === 0)
+        .map((tile) => ({ tile, centre: centroid(tile.points) }))
+        .sort((a, b) => Math.hypot(a.centre.x, a.centre.y) - Math.hypot(b.centre.x, b.centre.y))[0]!;
+      const first = central.tile.points[0]!;
+      return Math.atan2(first.y - central.centre.y, first.x - central.centre.x);
+    };
+    const difference = Math.atan2(
+      Math.sin(centralAngle(47) - centralAngle(45)),
+      Math.cos(centralAngle(47) - centralAngle(45)),
+    );
+    expect(Math.abs(difference)).toBeLessThan(1e-7);
   });
 });
 
