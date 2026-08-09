@@ -247,27 +247,63 @@ output {
 }
 
 .palettes {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(3.6rem, 1fr));
-  gap: 0.4rem;
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.65rem;
 }
 
-.palettes button {
-  height: 1.9rem;
+.palettes h3 {
+  margin: 0 0 0.3rem;
+  color: var(--muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.palettes h3:not(:first-child) {
+  margin-top: 0.65rem;
+}
+
+.palette-collection {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.palette-collection button {
+  min-width: 0;
+  height: 2.85rem;
   border-radius: 0.4rem;
   border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
   cursor: pointer;
   padding: 0;
   overflow: hidden;
-  display: flex;
+  text-align: left;
 }
 
-.palettes button span {
+.palette-colours {
+  display: flex;
+  height: 1.25rem;
+}
+
+.palette-colours > span {
   flex: 1;
 }
 
-.palettes button[aria-pressed='true'] {
+.palette-name {
+  display: block;
+  overflow: hidden;
+  padding: 0.25rem 0.4rem 0;
+  font-size: 0.68rem;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palette-collection button:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+}
+
+.palette-collection button[aria-pressed='true'] {
   outline: 2px solid var(--accent);
   outline-offset: 1px;
 }

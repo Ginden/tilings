@@ -64,24 +64,35 @@ function populateSelects(): void {
     sizeSelect.append(option);
   }
 
-  for (const palette of PALETTES) {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.title = palette.name;
-    button.dataset['palette'] = palette.id;
-    button.setAttribute('aria-label', palette.name);
-    button.addEventListener('click', () => {
-      state = {
-        ...state,
-        colour1: palette.colour1,
-        colour2: palette.colour2,
-        border: palette.border ?? state.border,
-        borderTransparent: palette.border === null,
-      };
-      syncControls();
-      updateAppearance();
-    });
-    paletteBox.append(button);
+  for (const [collection, label] of [
+    ['classics', 'Classics'],
+    ['studio', 'Studio'],
+  ] as const) {
+    const heading = document.createElement('h3');
+    heading.textContent = label;
+    paletteBox.append(heading);
+
+    const presets = document.createElement('div');
+    presets.className = 'palette-collection';
+    for (const palette of PALETTES.filter((entry) => entry.collection === collection)) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.dataset['palette'] = palette.id;
+      button.setAttribute('aria-label', palette.name);
+      button.addEventListener('click', () => {
+        state = {
+          ...state,
+          colour1: palette.colour1,
+          colour2: palette.colour2,
+          border: palette.border ?? state.border,
+          borderTransparent: palette.border === null,
+        };
+        syncControls();
+        updateAppearance();
+      });
+      presets.append(button);
+    }
+    paletteBox.append(presets);
   }
 }
 
@@ -191,7 +202,13 @@ function syncControls(): void {
       swatch.style.background = colour;
       return swatch;
     });
-    button.replaceChildren(...swatches);
+    const colours = document.createElement('span');
+    colours.className = 'palette-colours';
+    colours.replaceChildren(...swatches);
+    const name = document.createElement('span');
+    name.className = 'palette-name';
+    name.textContent = palette.name;
+    button.replaceChildren(colours, name);
 
     const active =
       palette.colour1.toLowerCase() === state.colour1.toLowerCase() &&

@@ -159,19 +159,20 @@ describe('state', () => {
 });
 
 describe('palettes', () => {
-  it('includes the transcription platform theme colours', () => {
-    expect(PALETTES).toContainEqual({
-      id: 'oxblood-brass',
-      name: 'Oxblood & brass',
-      colour1: '#70253a',
-      colour2: '#b08d57',
-      border: '#f2eee5',
-    });
+  it('keeps the established classics together', () => {
+    expect(PALETTES.filter((palette) => palette.collection === 'classics').map((palette) => palette.id)).toEqual([
+      'penrose-classic',
+      'blueprint',
+      'monochrome',
+      'islamic-tile',
+      'archive',
+    ]);
   });
 
   it('are unique and use valid colours', () => {
     expect(new Set(PALETTES.map((p) => p.id)).size).toBe(PALETTES.length);
     for (const palette of PALETTES) {
+      expect(['classics', 'studio']).toContain(palette.collection);
       expect(palette.colour1).toMatch(/^#[0-9a-f]{6}$/);
       expect(palette.colour2).toMatch(/^#[0-9a-f]{6}$/);
       if (palette.border !== null) expect(palette.border).toMatch(/^#[0-9a-f]{6}$/);
