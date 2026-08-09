@@ -9,6 +9,7 @@ import type { Tri } from '../src/tilings/substitution.js';
 import {
   SPHINX_CHILDREN,
   SPHINX_OUTLINE,
+  VODERBERG_OUTLINE,
   generateAmmannA1,
   generateSocolarTaylor,
   generateSphinx,
@@ -254,11 +255,12 @@ describe('additional tiling constructions', () => {
     expect(children.length * parentArea * 0.25).toBeCloseTo(parentArea, 10);
   });
 
-  it('builds Voderberg carriers as congruent nonagon pairs', () => {
-    const pair = generateVoderberg(0);
-    expect(pair.length).toBeGreaterThanOrEqual(2);
-    expect(pair.every((tile) => tile.points.length === 9)).toBe(true);
-    const signatures = pair.slice(0, 2).map((tile) =>
+  it('builds the Voderberg spiral from congruent nonagons in turning sectors', () => {
+    expect(VODERBERG_OUTLINE).toHaveLength(9);
+    const patch = generateVoderberg(8);
+    expect(patch.length).toBeGreaterThan(100);
+    expect(patch.every((tile) => tile.points.length === 9)).toBe(true);
+    const signatures = patch.slice(0, 2).map((tile) =>
       tile.points
         .map((point, index) => {
           const next = tile.points[(index + 1) % tile.points.length]!;
@@ -269,5 +271,12 @@ describe('additional tiling constructions', () => {
     for (let index = 0; index < signatures[0]!.length; index++) {
       expect(signatures[0]![index]).toBeCloseTo(signatures[1]![index]!, 10);
     }
+    const orientations = new Set(
+      patch.map((tile) => {
+        const [first, second] = tile.points;
+        return Math.round((Math.atan2(second!.y - first!.y, second!.x - first!.x) * 180) / Math.PI);
+      }),
+    );
+    expect(orientations.size).toBeGreaterThanOrEqual(15);
   });
 });

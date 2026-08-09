@@ -329,44 +329,111 @@ export const tubingenTriangle: TilingDefinition = {
   generate: generateTubingen,
 };
 
-/** Split a rectangular carrier into a congruent, interlocking nonagon pair. */
-function voderbergPair(x: number, y: number, width: number, height: number, phase: number): Tile[] {
-  const mid = y + height / 2;
-  const notch = height * 0.2;
-  const path: Vec[] = [
-    { x, y: mid },
-    { x: x + width * 0.22, y: mid - notch },
-    { x: x + width * 0.5, y: mid },
-    { x: x + width * 0.78, y: mid + notch },
-    { x: x + width, y: mid },
+const VODERBERG_SECTORS = 30;
+const VODERBERG_ANGLE = (2 * Math.PI) / VODERBERG_SECTORS;
+const VODERBERG_BETA = (132 * Math.PI) / 180;
+const VODERBERG_CORONA_HEIGHT = 1 / (2 * Math.tan(VODERBERG_ANGLE / 2));
+const VODERBERG_SHIFT = 1 / (2 * Math.sin(VODERBERG_ANGLE / 2));
+
+/**
+ * The classic Voderberg nonagon in V orientation. The side lengths and
+ * internal angles are Waldman's one-parameter reconstruction at beta=132°.
+ * @see https://old.nationalcurvebank.org/waldman9/voderbergdeconstructed.pdf
+ */
+function makeVoderbergOutline(): Vec[] {
+  const long =
+    (2 * Math.sin((Math.PI - VODERBERG_ANGLE) / 2)) /
+    Math.cos(VODERBERG_BETA - Math.PI / 2);
+  const short =
+    (1 / Math.sin(VODERBERG_ANGLE / 2) / 2 -
+      long * Math.cos(Math.PI - VODERBERG_BETA)) /
+      2 -
+    Math.sin(VODERBERG_ANGLE / 2);
+  const lengths = [1, short, long, short, 1, short, long, short, 1];
+  const angles = [
+    VODERBERG_ANGLE,
+    (3 * Math.PI - VODERBERG_ANGLE) / 2,
+    2 * Math.PI - VODERBERG_BETA,
+    VODERBERG_BETA,
+    (Math.PI + VODERBERG_ANGLE) / 2,
+    (Math.PI - 3 * VODERBERG_ANGLE) / 2,
+    2 * Math.PI - VODERBERG_BETA,
+    VODERBERG_BETA,
+    (Math.PI + VODERBERG_ANGLE) / 2,
   ];
-  return [
-    {
-      kind: phase,
-      points: [path[0]!, { x, y }, { x: x + width * 0.25, y }, { x: x + width * 0.5, y }, { x: x + width, y }, path[4]!, path[3]!, path[2]!, path[1]!],
-    },
-    {
-      kind: 1 - phase,
-      points: [path[0]!, path[1]!, path[2]!, path[3]!, path[4]!, { x: x + width, y: y + height }, { x: x + width * 0.75, y: y + height }, { x: x + width * 0.5, y: y + height }, { x, y: y + height }],
-    },
-  ];
+
+  const points: Vec[] = [{ x: 0, y: 0 }];
+  let direction = 0;
+  for (let index = 0; index < lengths.length; index++) {
+    direction += Math.PI - angles[index]!;
+    const previous = points[points.length - 1]!;
+    points.push({
+      x: previous.x + lengths[index]! * Math.cos(direction),
+      y: previous.y + lengths[index]! * Math.sin(direction),
+    });
+  }
+  points.pop(); // the ninth edge closes the polygon
+  return points;
+}
+
+export const VODERBERG_OUTLINE: readonly Vec[] = makeVoderbergOutline();
+
+function transformVoderberg(
+  outline: readonly Vec[],
+  offsetX: number,
+  offsetY: number,
+  angle: number,
+  shiftX: number,
+): Vec[] {
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  return outline.map((point) => {
+    const x = point.x + offsetX;
+    const y = point.y + offsetY;
+    return { x: x * cos - y * sin + shiftX, y: x * sin + y * cos };
+  });
 }
 
 export function generateVoderberg(radius: number): Tile[] {
-  const width = 2.4;
-  const height = 1;
-  const columns = Math.ceil(radius / width) + 2;
-  const rows = Math.ceil(radius / height) + 2;
+  const coronas = Math.max(2, Math.ceil((radius + VODERBERG_SHIFT) / VODERBERG_CORONA_HEIGHT) + 1);
+  const maxY = Math.max(...VODERBERG_OUTLINE.map((point) => point.y));
+  const aOutline = VODERBERG_OUTLINE.map((point) => ({
+    x: -point.x + 0.5,
+    y: -point.y + maxY,
+  }));
+  const sectorTiles: { outline: readonly Vec[]; x: number; y: number }[] = [
+    { outline: VODERBERG_OUTLINE, x: 0, y: 0 },
+  ];
+
+  for (let corona = 1; corona <= coronas; corona++) {
+    for (let pair = 1; pair <= corona; pair++) {
+      const x = -corona / 2 + pair - 1;
+      const y = corona * VODERBERG_CORONA_HEIGHT;
+      sectorTiles.push({ outline: VODERBERG_OUTLINE, x, y });
+      sectorTiles.push({ outline: aOutline, x, y });
+    }
+    sectorTiles.push({
+      outline: VODERBERG_OUTLINE,
+      x: corona / 2,
+      y: corona * VODERBERG_CORONA_HEIGHT,
+    });
+  }
+
+  // Rotate the sector onto the negative x-axis, repeat it thirty times, then
+  // shift the lower fifteen sectors by one reference-triangle leg. This is
+  // Goldberg's construction of the two interlocking spiral arms.
+  const baseRotation = Math.PI / 2 - VODERBERG_ANGLE / 2;
+  const centre = VODERBERG_SHIFT / 2;
   const tiles: Tile[] = [];
-  for (let row = -rows; row <= rows; row++) {
-    for (let column = -columns; column <= columns; column++) {
-      const x = column * width;
-      const y = row * height;
-      const angle = Math.atan2(y + height / 2, x + width / 2);
-      const distance = Math.hypot(x + width / 2, y + height / 2);
-      const spiralPhase = angle + 0.55 * Math.log1p(distance);
-      const phase = parity(Math.floor((spiralPhase + Math.PI) / (Math.PI / 12)));
-      tiles.push(...voderbergPair(x, y, width, height, phase));
+  for (let sector = 0; sector < VODERBERG_SECTORS; sector++) {
+    const angle = baseRotation - sector * VODERBERG_ANGLE;
+    const lowerHalfShift = sector >= VODERBERG_SECTORS / 2 ? VODERBERG_SHIFT : 0;
+    for (const tile of sectorTiles) {
+      const points = transformVoderberg(tile.outline, tile.x, tile.y, angle, lowerHalfShift);
+      tiles.push({
+        kind: sector >= VODERBERG_SECTORS / 2 ? 1 : 0,
+        points: points.map((point) => ({ x: point.x - centre, y: point.y })),
+      });
     }
   }
   return tiles;
@@ -377,10 +444,10 @@ export const voderberg: TilingDefinition = {
   name: 'Voderberg spiral',
   family: 'nonperiodic',
   description:
-    'Interlocking congruent nonagons with the handed phase turning around the origin, recalling Voderberg’s non-translational double spiral. The prototile also admits periodic tilings.',
+    'The genuine Voderberg double spiral: exact congruent nonagons in thirty radial sectors, converted to two interlocking arms by a one-tile Goldberg shift.',
   kinds: 2,
   kindLabels: ['clockwise arm', 'counter-clockwise arm'],
   reference: 'https://en.wikipedia.org/wiki/Voderberg_tiling',
-  unitTileArea: 1.2,
+  unitTileArea: area(VODERBERG_OUTLINE),
   generate: generateVoderberg,
 };
