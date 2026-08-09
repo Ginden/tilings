@@ -21,7 +21,8 @@ export type TilingFamily =
   | 'matching'
   | 'monotile'
   | 'reptile'
-  | 'nonperiodic';
+  | 'nonperiodic'
+  | 'experimental';
 
 export interface TilingDefinition {
   /** Stable identifier, also used in exported file names. */

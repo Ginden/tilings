@@ -2,6 +2,13 @@
 
 Add the dense-orientation dodecagonal Shuriken substitution.
 
+> **Status.** Blocked, and the blockage is understood. Paz's 14-state rule is
+> published only as raster images, so it cannot be transcribed; and rebuilding it
+> from the paper's own recipe stalls on two specific obstructions. The exact
+> \(n = 12\) supertile *is* settled — see
+> [shuriken-twelvefold-problem.md](shuriken-twelvefold-problem.md) for the
+> verified dissection, the orbit data, and the precise open problems.
+
 ## Acceptance criteria
 
 - Implement all fourteen published prototile states and inflation \(\sqrt{5+2\sqrt3}\).

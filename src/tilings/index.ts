@@ -19,6 +19,7 @@ import {
   tubingenTriangle,
 } from './additional.js';
 import { voderberg } from './voderberg.js';
+import { shurikenSupertile } from './shuriken.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,
@@ -39,6 +40,7 @@ export const TILINGS: readonly TilingDefinition[] = [
   chair,
   sphinx,
   voderberg,
+  shurikenSupertile,
 ];
 
 export const FAMILY_LABELS: Record<TilingDefinition['family'], string> = {
@@ -48,6 +50,7 @@ export const FAMILY_LABELS: Record<TilingDefinition['family'], string> = {
   monotile: 'Aperiodic monotiles',
   reptile: 'Substitution rep-tiles',
   nonperiodic: 'Other non-periodic tilings',
+  experimental: 'Experimental',
 };
 
 const TILING_NAME_COLLATOR = new Intl.Collator('en', {

@@ -17,6 +17,7 @@ import {
   subdivideSphinx,
 } from '../src/tilings/additional.js';
 import { VODERBERG_OUTLINE, generateVoderberg } from '../src/tilings/voderberg.js';
+import { LAMBDA, generateShuriken, supertileTiles } from '../src/tilings/shuriken.js';
 import { multigrid } from '../src/tilings/multigrid.js';
 import { IDENTITY } from '../src/geometry.js';
 
@@ -89,6 +90,7 @@ describe('tiling registry', () => {
       'pinwheel',
       'sphinx',
       'voderberg',
+      'shuriken-supertile-12',
     ]);
   });
 
@@ -216,6 +218,59 @@ describe('pinwheel substitution', () => {
     }
     // Both chiralities occur, which is what the two colours show.
     expect(new Set(children.map((c) => c.kind)).size).toBe(2);
+  });
+});
+
+describe('twelvefold Shuriken supertile', () => {
+  const ROOT3 = Math.sqrt(3);
+
+  it('dissects the inflated dodecagon into a rim, a centre and a 96-rhomb star', () => {
+    const tiles = supertileTiles();
+    expect(tiles).toHaveLength(109);
+    // dodecagon, rim triangle, triangle, then the 30/60/90 rhombs
+    const counts = [0, 1, 2, 3, 4, 5].map((k) => tiles.filter((t) => t.kind === k).length);
+    expect(counts).toEqual([1, 12, 0, 24, 48, 24]);
+    // The dissection fills exactly lambda^2 times the unit dodecagon.
+    const total = tiles.reduce((sum, t) => sum + area(t.points), 0);
+    expect(total).toBeCloseTo(48 + 27 * ROOT3, 9);
+  });
+
+  it('gives every prototile its exact area', () => {
+    const expected = [6 + 3 * ROOT3, 0.5, ROOT3 / 4, 0.5, ROOT3 / 2, 1];
+    for (const tile of generateShuriken(12)) {
+      expect(area(tile.points)).toBeCloseTo(expected[tile.kind]!, 9);
+    }
+  });
+
+  it('only ever uses edges of length 1, 2 and lambda', () => {
+    // Every vertex lies in Z[xi], so the rim triangle's long edge is exactly
+    // |2 + xi| = lambda and nothing else can appear.
+    const seen = new Set<number>();
+    for (const tile of generateShuriken(12)) {
+      for (let i = 0; i < tile.points.length; i++) {
+        const a = tile.points[i]!;
+        const b = tile.points[(i + 1) % tile.points.length]!;
+        seen.add(Math.round(Math.hypot(b.x - a.x, b.y - a.y) * 1e6) / 1e6);
+      }
+    }
+    expect([...seen].sort((a, b) => a - b)).toEqual([1, 2, Math.round(LAMBDA * 1e6) / 1e6]);
+  });
+
+  it('pairs the rim triangles into Theorem 5 parallelograms', () => {
+    // Each cell puts a triangle on its own side of every shared edge; the two
+    // glue along their lambda edge into the 1x2 parallelogram at 30 degrees.
+    const key = (a: Vec, b: Vec): string => {
+      const [p, q] = a.x < b.x || (a.x === b.x && a.y < b.y) ? [a, b] : [b, a];
+      return `${p.x.toFixed(6)},${p.y.toFixed(6)}:${q.x.toFixed(6)},${q.y.toFixed(6)}`;
+    };
+    const longEdges = new Map<string, number>();
+    for (const tile of generateShuriken(12)) {
+      if (tile.kind !== 1) continue;
+      const [a, , c] = tile.points as readonly Vec[];
+      longEdges.set(key(a!, c!), (longEdges.get(key(a!, c!)) ?? 0) + 1);
+    }
+    const shared = [...longEdges.values()].filter((n) => n === 2).length;
+    expect(shared).toBeGreaterThan(longEdges.size * 0.5);
   });
 });
 
