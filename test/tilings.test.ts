@@ -170,6 +170,14 @@ describe('Watanabe–Ito–Soma eightfold tiling', () => {
     });
   }
 
+  function edgeKey(a: Vec, b: Vec): string {
+    const pointKey = (point: Vec): string =>
+      `${Math.round(point.x * 1e7)},${Math.round(point.y * 1e7)}`;
+    const first = pointKey(a);
+    const second = pointKey(b);
+    return first < second ? `${first}|${second}` : `${second}|${first}`;
+  }
+
   it('uses the explicit overlapping square and rhomb clusters', () => {
     const square = subdivideWatanabeItoSoma([{ kind: 0, x: 0, y: 0, rotation: 0 }]);
     const rhomb = subdivideWatanabeItoSoma([{ kind: 1, x: 0, y: 0, rotation: 0 }]);
@@ -220,6 +228,28 @@ describe('Watanabe–Ito–Soma eightfold tiling', () => {
         `${tile.kind}:${Math.round(rotatedX * 1e6)}:${Math.round(rotatedY * 1e6)}:${rotation}`;
       expect(keys.has(rotatedKey), rotatedKey).toBe(true);
     }
+  });
+
+  it('covers the requested disc without gaps or overlapping tile edges', () => {
+    const radius = 8;
+    const tiles = generateWatanabeItoSomaEightfold(radius);
+    const multiplicities = new Map<string, number>();
+    for (const tile of tiles) {
+      for (let index = 0; index < tile.points.length; index++) {
+        const key = edgeKey(tile.points[index]!, tile.points[(index + 1) % tile.points.length]!);
+        multiplicities.set(key, (multiplicities.get(key) ?? 0) + 1);
+      }
+    }
+
+    const interiorEdges = tiles.flatMap((tile) =>
+      tile.points.flatMap((point, index) => {
+        const next = tile.points[(index + 1) % tile.points.length]!;
+        const midpointRadius = Math.hypot((point.x + next.x) / 2, (point.y + next.y) / 2);
+        return midpointRadius < radius - 1 ? [edgeKey(point, next)] : [];
+      }),
+    );
+    expect(interiorEdges.length).toBeGreaterThan(500);
+    expect(interiorEdges.every((key) => multiplicities.get(key) === 2)).toBe(true);
   });
 });
 
