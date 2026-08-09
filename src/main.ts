@@ -25,6 +25,7 @@ const colour1 = element<HTMLInputElement>('colour1');
 const colour1Hex = element<HTMLInputElement>('colour1-hex');
 const colour2 = element<HTMLInputElement>('colour2');
 const colour2Hex = element<HTMLInputElement>('colour2-hex');
+const swapColoursButton = element<HTMLButtonElement>('swap-colours');
 const colour3Controls = element<HTMLDivElement>('colour3-controls');
 const colour3Enabled = element<HTMLInputElement>('colour3-enabled');
 const colour3 = element<HTMLInputElement>('colour3');
@@ -355,6 +356,11 @@ function bindControls(): void {
   });
   bindColour(colour2, colour2Hex, (value) => {
     state = { ...state, colour2: value };
+  });
+  swapColoursButton.addEventListener('click', () => {
+    state = { ...state, colour1: state.colour2, colour2: state.colour1 };
+    syncControls();
+    updateAppearance();
   });
   bindColour(colour3, colour3Hex, (value) => {
     state = { ...state, colour3: value };

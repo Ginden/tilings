@@ -68,16 +68,23 @@
         <legend>Colours</legend>
         <div id="palettes" class="palettes" role="group" aria-label="Preset palettes"></div>
 
-        <div class="row">
-          <label for="colour1">Colour 1</label>
-          <input type="color" id="colour1" />
-          <input type="text" id="colour1-hex" class="hex" spellcheck="false" aria-label="Colour 1 hex value" />
-        </div>
+        <div class="colour-pair">
+          <div class="row">
+            <label for="colour1">Colour 1</label>
+            <input type="color" id="colour1" />
+            <input type="text" id="colour1-hex" class="hex" spellcheck="false" aria-label="Colour 1 hex value" />
+          </div>
 
-        <div class="row">
-          <label for="colour2">Colour 2</label>
-          <input type="color" id="colour2" />
-          <input type="text" id="colour2-hex" class="hex" spellcheck="false" aria-label="Colour 2 hex value" />
+          <div class="row">
+            <label for="colour2">Colour 2</label>
+            <input type="color" id="colour2" />
+            <input type="text" id="colour2-hex" class="hex" spellcheck="false" aria-label="Colour 2 hex value" />
+          </div>
+          <button id="swap-colours" class="icon-button" type="button" aria-label="Swap colours 1 and 2" title="Swap colours 1 and 2">
+            <svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">
+              <path d="M7 7 12 12 7 17v-4H2v-2h5V7m10 0v4h5v2h-5v4l-5-5 5-5Z" />
+            </svg>
+          </button>
         </div>
         <div id="colour3-controls" hidden>
           <div class="row">
