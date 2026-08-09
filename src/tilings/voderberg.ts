@@ -85,32 +85,42 @@ export const VODERBERG_OUTLINE: readonly Vec[] = VODERBERG_V;
  */
 export function generateVoderberg(radius: number): Tile[] {
   const coronas = Math.max(3, Math.ceil((radius + GOLDBERG_SHIFT) / CORONA_HEIGHT));
-  const sector: { kind: 0 | 1; points: readonly Vec[] }[] = [
-    { kind: 0, points: VODERBERG_V },
+  const sector: { kind: 0 | 1; corona: number; points: readonly Vec[] }[] = [
+    { kind: 0, corona: 0, points: VODERBERG_V },
   ];
   for (let row = 1; row <= coronas; row++) {
     for (let column = 0; column < row; column++) {
       const offset = { x: -row / 2 + column, y: row * CORONA_HEIGHT };
-      sector.push({ kind: 0, points: translate(VODERBERG_V, offset) });
-      sector.push({ kind: 1, points: translate(VODERBERG_A, offset) });
+      sector.push({ kind: 0, corona: row, points: translate(VODERBERG_V, offset) });
+      sector.push({ kind: 1, corona: row, points: translate(VODERBERG_A, offset) });
     }
     sector.push({
       kind: 0,
+      corona: row,
       points: translate(VODERBERG_V, { x: row / 2, y: row * CORONA_HEIGHT }),
     });
   }
 
   const tiles: Tile[] = [];
   for (let sectorIndex = 0; sectorIndex < SECTORS; sectorIndex++) {
-    const arm = sectorIndex < SECTORS / 2 ? 0 : 1;
+    const half = sectorIndex < SECTORS / 2 ? 0 : 1;
     const shift = rotate(
-      { x: (arm === 0 ? -1 : 1) * GOLDBERG_SHIFT / 2, y: 0 },
+      { x: (half === 0 ? -1 : 1) * GOLDBERG_SHIFT / 2, y: 0 },
       DISPLAY_ROTATION,
     );
     const angle = SECTOR_ROTATION + DISPLAY_ROTATION - sectorIndex * ALPHA;
     for (const tile of sector) {
+      // The Goldberg shift slides one half-plane out by a single tile, so a
+      // corona only rejoins its neighbour across the cut one ring further out.
+      // Stepping the arm with the corona follows that join, which is what makes
+      // the two arms wind around each other; keying the arm off the half-plane
+      // alone would just paint a straight seam across the whole tiling.
+      const arm = (half + tile.corona) % 2;
+      // Every corona holds an odd number of tiles, so adding the sector index
+      // to the V/A index keeps the alternation running unbroken around the
+      // whole ring instead of restarting V-V at each sector seam.
       tiles.push({
-        kind: arm * 2 + tile.kind,
+        kind: arm * 2 + ((sectorIndex + tile.kind) % 2),
         points: tile.points.map((point) => add(rotate(point, angle), shift)),
       });
     }
@@ -123,9 +133,14 @@ export const voderberg: TilingDefinition = {
   name: 'Voderberg spiral',
   family: 'nonperiodic',
   description:
-    'The classic plane-covering Voderberg double spiral: thirty radial sectors become two interlocking arms through a one-tile Goldberg shift.',
+    'The classic plane-covering Voderberg double spiral: thirty radial sectors become two arms through a one-tile Goldberg shift. Each corona hands its ring to the opposite arm, so the two arms wind around each other, and neighbouring blades alternate shade so every nonagon reads separately.',
   kinds: 4,
-  kindLabels: ['first arm V', 'first arm A', 'second arm V', 'second arm A'],
+  kindLabels: [
+    'first arm, blade A',
+    'first arm, blade B',
+    'second arm, blade A',
+    'second arm, blade B',
+  ],
   colourMode: 'paired',
   reference: 'https://en.wikipedia.org/wiki/Voderberg_tiling',
   unitTileArea: area(VODERBERG_OUTLINE),

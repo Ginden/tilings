@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { TILINGS, TILINGS_FOR_UI } from '../src/tilings/index.js';
 import type { Tile } from '../src/tilings/types.js';
 import { PHI, area } from '../src/geometry.js';
+import type { Vec } from '../src/geometry.js';
 import { P1_OUTLINES, generateP1, penroseP1 } from '../src/tilings/p1.js';
 import { subdivideP2, subdivideP3, sunSeed, triangleArea } from '../src/tilings/penrose.js';
 import { subdividePinwheel } from '../src/tilings/pinwheel.js';
@@ -282,14 +283,86 @@ describe('additional tiling constructions', () => {
     expect(orientations.size).toBeGreaterThanOrEqual(15);
   });
 
-  it('assigns every Voderberg sector to an exact arm and V/A class', () => {
+  it('splits Voderberg tiles evenly between the two winding arms and their shades', () => {
     const patch = generateVoderberg(8);
     const counts = [0, 1, 2, 3].map(
       (kind) => patch.filter((tile) => tile.kind === kind).length,
     );
-    // Three coronas contain 10 V and 6 A positions per sector. Each arm is
-    // exactly fifteen of the thirty sectors in the Goldberg construction.
-    expect(counts).toEqual([150, 90, 150, 90]);
+    // The arm steps with the corona as well as the half-plane, so each corona
+    // hands half its ring to one arm and half to the other; over the whole
+    // patch that lands exactly even.
+    expect(counts).toEqual([120, 120, 120, 120]);
+    expect(counts.reduce((sum, count) => sum + count, 0)).toBe(patch.length);
     expect(generateVoderberg(20)).toHaveLength(30 * 7 * 7);
+  });
+
+  it('hands each Voderberg corona to the opposite arm from the one before it', () => {
+    const patch = generateVoderberg(8);
+    // Sample a ray that stays inside one half-plane and walk outwards: the arm
+    // must flip every corona, which is what makes the two arms interlock
+    // instead of meeting along one straight seam.
+    const contains = (points: readonly Vec[], x: number, y: number): boolean => {
+      let inside = false;
+      for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
+        const a = points[i]!;
+        const b = points[j]!;
+        if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) {
+          inside = !inside;
+        }
+      }
+      return inside;
+    };
+    const height = 1 / (2 * Math.tan((6 * Math.PI) / 180));
+    const direction = (135 * Math.PI) / 180;
+    const arms: number[] = [];
+    for (let corona = 0; corona < 4; corona++) {
+      const r = (corona + 0.5) * height;
+      const x = r * Math.cos(direction);
+      const y = r * Math.sin(direction);
+      const hit = patch.find((tile) => contains(tile.points, x, y));
+      expect(hit).toBeDefined();
+      arms.push(hit!.kind < 2 ? 0 : 1);
+    }
+    expect(arms).toEqual([arms[0], 1 - arms[0]!, arms[0], 1 - arms[0]!]);
+  });
+
+  it('alternates Voderberg blade shades around every corona', () => {
+    const patch = generateVoderberg(8);
+    // Walk a corona of one half-plane: each tile must differ in shade from the
+    // tile beside it, sector seams included. Select by half-plane rather than
+    // arm, since the arm now alternates from corona to corona.
+    const arm = patch;
+    // Measure from that arm's own apex, which the Goldberg shift moves off the
+    // origin, so a corona really is an annulus of constant tile count.
+    const shift = 1 / (2 * Math.sin((6 * Math.PI) / 180));
+    const hub: Vec = {
+      x: (-shift / 2) * Math.cos(Math.PI / 4),
+      y: (-shift / 2) * Math.sin(Math.PI / 4),
+    };
+    const height = 1 / (2 * Math.tan((6 * Math.PI) / 180));
+    const ring = arm
+      .map((tile) => {
+        const x = tile.points.reduce((sum, p) => sum + p.x, 0) / tile.points.length - hub.x;
+        const y = tile.points.reduce((sum, p) => sum + p.y, 0) / tile.points.length - hub.y;
+        // This half-plane spans 46°-214°, so measure angles in [0, 2pi) to keep
+        // the sweep contiguous instead of splitting it at the atan2 branch cut.
+        const angle = (Math.atan2(y, x) + 2 * Math.PI) % (2 * Math.PI);
+        return { kind: tile.kind, r: Math.hypot(x, y), angle };
+      })
+      // Stay clear of the two seams where this annulus crosses into the other
+      // arm; everything between them is one continuous run of blades.
+      .filter(
+        (tile) =>
+          tile.r > 2 * height &&
+          tile.r < 3 * height &&
+          tile.angle > (60 * Math.PI) / 180 &&
+          tile.angle < (280 * Math.PI) / 180,
+      )
+      .sort((left, right) => left.angle - right.angle);
+    expect(ring.length).toBeGreaterThan(80);
+    expect(ring.every((tile) => tile.kind < 2)).toBe(true);
+    for (let index = 1; index < ring.length; index++) {
+      expect(ring[index]!.kind).not.toBe(ring[index - 1]!.kind);
+    }
   });
 });
