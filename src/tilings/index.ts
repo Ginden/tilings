@@ -20,6 +20,7 @@ import { voderberg } from './voderberg.js';
 import { shurikenSupertile } from './shuriken.js';
 import { squiral } from './squiral.js';
 import { jeandelRao } from './jeandel-rao.js';
+import { danzerSevenfold } from './danzer-sevenfold.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,
@@ -41,6 +42,7 @@ export const TILINGS: readonly TilingDefinition[] = [
   shurikenSupertile,
   squiral,
   jeandelRao,
+  danzerSevenfold,
 ];
 
 export const FAMILY_LABELS: Record<TilingDefinition['family'], string> = {

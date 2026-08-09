@@ -37,6 +37,12 @@ import {
 } from '../src/tilings/jeandel-rao.js';
 import { multigrid } from '../src/tilings/multigrid.js';
 import { IDENTITY, apply, mul, rotation, scaling } from '../src/geometry.js';
+import {
+  DANZER_INFLATION,
+  DANZER_SINES,
+  DANZER_SUBSTITUTION_COUNTS,
+  generateDanzerSevenfold,
+} from '../src/tilings/danzer-sevenfold.js';
 
 function pointInPolygon(x: number, y: number, points: readonly { x: number; y: number }[]): boolean {
   let inside = false;
@@ -105,6 +111,7 @@ describe('tiling registry', () => {
       'pinwheel',
       'sphinx',
       'voderberg',
+      'danzer-sevenfold',
       'jeandel-rao',
       'shuriken-supertile-12',
       'squiral',
@@ -144,6 +151,46 @@ describe('tiling registry', () => {
       });
     });
   }
+});
+
+describe('Danzer sevenfold triangles', () => {
+  const triangleAreas = [DANZER_SINES[0] / 2, DANZER_SINES[2] / 2, DANZER_SINES[1] / 2];
+
+  it('uses the three generalized Robinson triangle metrics', () => {
+    const tiles = generateDanzerSevenfold(8);
+    expect(new Set(tiles.map((tile) => tile.shape))).toEqual(new Set([0, 1, 2]));
+    for (const tile of tiles) {
+      const [apex, left, right] = tile.points;
+      expect(Math.hypot(apex!.x - left!.x, apex!.y - left!.y)).toBeCloseTo(1, 9);
+      expect(Math.hypot(apex!.x - right!.x, apex!.y - right!.y)).toBeCloseTo(1, 9);
+      expect(area(tile.points)).toBeCloseTo(triangleAreas[tile.shape]!, 9);
+    }
+  });
+
+  it('preserves substitution area with the published non-Pisot inflation', () => {
+    for (let parent = 0; parent < DANZER_SUBSTITUTION_COUNTS.length; parent++) {
+      const childrenArea = DANZER_SUBSTITUTION_COUNTS[parent]!.reduce(
+        (sum, count, child) => sum + count * triangleAreas[child]!,
+        0,
+      );
+      expect(childrenArea).toBeCloseTo(DANZER_INFLATION ** 2 * triangleAreas[parent]!, 9);
+    }
+
+    expect(DANZER_INFLATION).toBeCloseTo(1 + 2 * Math.cos(Math.PI / 7), 12);
+    // A conjugate of x^3 - 4x^2 + 3x + 1 is outside the unit circle, so the
+    // algebraic integer is not Pisot--Vijayaraghavan.
+    expect(Math.abs(1 + 2 * Math.cos((3 * Math.PI) / 7))).toBeGreaterThan(1);
+  });
+
+  it('retains both hands and valid fourteen-direction vertex-star states', () => {
+    const tiles = generateDanzerSevenfold(8);
+    expect(new Set(tiles.map((tile) => tile.hand))).toEqual(new Set([0, 1]));
+    expect(new Set(tiles.map((tile) => tile.star)).size).toBeGreaterThanOrEqual(7);
+    for (const tile of tiles) {
+      expect(tile.star).toBeGreaterThanOrEqual(0);
+      expect(tile.star).toBeLessThan(14);
+    }
+  });
 });
 
 describe('Robinson triangle substitutions', () => {
