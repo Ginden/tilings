@@ -49,9 +49,18 @@
 
     <form id="panel" aria-label="Tiling controls">
       <header>
-        <h1>Aperiodic tilings</h1>
-        <p id="tiling-description"></p>
-        <p><a id="tiling-reference" href="#" target="_blank" rel="noreferrer noopener">Read about this tiling</a></p>
+        <p class="panel-kicker">Aperiodic tilings</p>
+        <h1 id="tiling-name"></h1>
+        <details class="tiling-info">
+          <summary>About this tiling</summary>
+          <div class="tiling-info-body">
+            <p id="tiling-description"></p>
+            <a id="tiling-reference" href="#" target="_blank" rel="noreferrer noopener">
+              Read the reference
+              <span aria-hidden="true">↗</span>
+            </a>
+          </div>
+        </details>
       </header>
 
       <fieldset>

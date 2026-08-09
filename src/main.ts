@@ -17,6 +17,7 @@ const stage = element<HTMLElement>('stage');
 const panel = element<HTMLFormElement>('panel');
 const panelToggle = element<HTMLButtonElement>('panel-toggle');
 const tilingSelect = element<HTMLSelectElement>('tiling');
+const tilingName = element<HTMLHeadingElement>('tiling-name');
 const description = element<HTMLParagraphElement>('tiling-description');
 const reference = element<HTMLAnchorElement>('tiling-reference');
 const paletteBox = element<HTMLDivElement>('palettes');
@@ -108,6 +109,7 @@ function currentOptions(): RenderOptions {
 function syncControls(): void {
   const def = tilingById(state.tilingId);
   tilingSelect.value = def.id;
+  tilingName.textContent = def.name;
   description.textContent = def.description;
   reference.href = def.reference;
 
