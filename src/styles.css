@@ -387,6 +387,22 @@ output {
   text-align: right;
 }
 
+#panel .repository-link {
+  display: inline-flex;
+  vertical-align: -0.15rem;
+  color: var(--muted);
+}
+
+#panel .repository-link:hover {
+  color: var(--text);
+}
+
+.repository-link svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  fill: currentColor;
+}
+
 .no-script {
   position: fixed;
   inset: 50% auto auto 50%;

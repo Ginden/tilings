@@ -29,7 +29,8 @@ describe('static page shell', () => {
 
   it('attributes the author without loading external resources', () => {
     expect(html).toContain('href="https://michalwadas.pl"');
-    expect(html).toContain('href="https://github.com/Ginden"');
+    expect(html).toContain('href="https://github.com/Ginden/tilings"');
+    expect(html).toContain('aria-label="Source code on GitHub"');
     expect(html).not.toMatch(/<(?:script|link)[^>]+https?:\/\//i);
   });
 });

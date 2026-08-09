@@ -1,9 +1,9 @@
 # Third-party licences
 
-## Material Design menu icon
+## Material Design icons
 
-The menu icon embedded in `index.html` is adapted from Google's Material Design
-Icons and is used under the
+The menu and GitHub icons embedded in `index.html` are adapted from Material
+Design Icons and are used under the
 [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0).
 
 ## hatviz (hat monotile metatile construction)
