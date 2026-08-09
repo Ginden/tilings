@@ -11,7 +11,6 @@ import {
   SPHINX_CHILDREN,
   SPHINX_OUTLINE,
   generateAmmannA1,
-  generateSocolarTaylor,
   generateSphinx,
   mergeSocolarHexagons,
   subdivideSphinx,
@@ -85,7 +84,6 @@ describe('tiling registry', () => {
       'tubingen-triangle',
       'ammann-a1',
       'hat',
-      'socolar-taylor',
       'chair',
       'pinwheel',
       'sphinx',
@@ -286,13 +284,6 @@ describe('additional tiling constructions', () => {
     const tiles = mergeSocolarHexagons(source);
     expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2]));
     expect(tiles.filter((tile) => tile.kind === 2).every((tile) => tile.points.length === 6)).toBe(true);
-  });
-
-  it('uses regular hexagonal carriers for all Socolar-Taylor hierarchy phases', () => {
-    const tiles = generateSocolarTaylor(12);
-    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2, 3, 4, 5]));
-    expect(tiles.every((tile) => tile.points.length === 6)).toBe(true);
-    expect(tiles.every((tile) => tile.parts?.length === 7)).toBe(true);
   });
 
   it('dissects one Sphinx into four half-scale pentagonal hexiamonds', () => {

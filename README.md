@@ -28,7 +28,6 @@ rasterisation for display, and no runtime dependencies.
 | Tübingen triangle | four handed Robinson triangles | golden-ratio substitution retaining left/right hierarchy state |
 | Ammann A1 | six notched square-based pieces | 2-adic binary-tree matching hierarchy on shared edges |
 | Hat monotile (einstein) | one 13-sided tile | H/T/P/F metatile substitution (see credits) |
-| Socolar–Taylor monotile | disconnected monotile on a hexagonal carrier | six phases of the nested triangular matching hierarchy |
 | Pinwheel (Conway–Radin) | 1–2–√5 right triangle | rep-5 substitution; tiles appear in infinitely many orientations |
 | Chair (L-tromino) | L-tromino | rep-4 substitution, grown outwards from a central supertile |
 | Sphinx hexiamond | pentagonal hexiamond + mirror image | exact rep-4 affine dissection |
@@ -36,8 +35,8 @@ rasterisation for display, and no runtime dependencies.
 | Shuriken supertile (12-fold) | dodecagon + 1–2–150° triangle + triangle + three rhombs | the n = 12 dissection of the inflated dodecagon (rim triangles, central dodecagon, 96-rhomb shuriken star), laid out on the 4.6.12 Archimedean tiling |
 
 Tilings with more than two tile classes (including P1 and A1's six prototiles,
-the Tübingen handed states, the Socolar–Taylor hierarchy phases, and the hat's
-five metatile classes) shade their classes evenly between the two chosen colours.
+the Tübingen handed states, and the hat's five metatile classes) shade their
+classes evenly between the two chosen colours.
 
 ## Controls
 

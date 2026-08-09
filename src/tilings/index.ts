@@ -14,7 +14,6 @@ import { hat } from './hat.js';
 import {
   ammannA1,
   socolar,
-  socolarTaylor,
   sphinx,
   tubingenTriangle,
 } from './additional.js';
@@ -35,7 +34,6 @@ export const TILINGS: readonly TilingDefinition[] = [
   tubingenTriangle,
   ammannA1,
   hat,
-  socolarTaylor,
   pinwheel,
   chair,
   sphinx,
