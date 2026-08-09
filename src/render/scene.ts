@@ -38,7 +38,7 @@ export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
     let minY = Infinity;
     let maxX = -Infinity;
     let maxY = -Infinity;
-    const points = tile.points.map((p) => {
+    const transformPoint = (p: { x: number; y: number }): { x: number; y: number } => {
       const x = cx + (p.x * cos - p.y * sin) * scale;
       const y = cy + (p.x * sin + p.y * cos) * scale;
       if (x < minX) minX = x;
@@ -46,9 +46,11 @@ export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
       if (x > maxX) maxX = x;
       if (y > maxY) maxY = y;
       return { x, y };
-    });
+    };
+    const points = tile.points.map(transformPoint);
+    const parts = tile.parts?.map((part) => part.map(transformPoint));
     if (maxX < 0 || maxY < 0 || minX > opts.width || minY > opts.height) continue;
-    tiles.push({ kind: tile.kind, points });
+    tiles.push({ kind: tile.kind, points, ...(parts ? { parts } : {}) });
   }
   return { tiles, generated: raw.length };
 }

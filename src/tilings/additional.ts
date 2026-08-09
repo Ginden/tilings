@@ -1,0 +1,386 @@
+import { PHI, area } from '../geometry.js';
+import type { Affine, Vec } from '../geometry.js';
+import type { Tile, TilingDefinition } from './types.js';
+import { multigrid } from './multigrid.js';
+import { subdivideP3, sunSeed } from './penrose.js';
+import { composeChild, placedPolygon, subdivideShapes, subdivideTriangles } from './substitution.js';
+import type { Placed } from './substitution.js';
+
+const SQRT3 = Math.sqrt(3);
+
+function parity(value: number): number {
+  return Math.abs(value) % 2;
+}
+
+/** Exponent of two in n. The zero case is deliberately given a finite phase. */
+function twoAdicOrder(value: number): number {
+  let n = Math.abs(value);
+  if (n === 0) return 5;
+  let order = 0;
+  while (n % 2 === 0) {
+    order++;
+    n /= 2;
+  }
+  return order;
+}
+
+function latticeRange(radius: number, padding = 3): number {
+  return Math.ceil(radius) + padding;
+}
+
+/** A shared kink on a horizontal A1 grid edge. */
+function horizontalKink(x: number, y: number): Vec {
+  const sign = parity(x + 2 * y + twoAdicOrder(x + y + 1)) === 0 ? 1 : -1;
+  return { x: x + 0.5, y: y + sign * 0.11 };
+}
+
+/** A shared kink on a vertical A1 grid edge. */
+function verticalKink(x: number, y: number): Vec {
+  const sign = parity(2 * x - y + twoAdicOrder(x - y || 2)) === 0 ? 1 : -1;
+  return { x: x + sign * 0.11, y: y + 0.5 };
+}
+
+export function generateAmmannA1(radius: number): Tile[] {
+  const limit = latticeRange(radius);
+  const tiles: Tile[] = [];
+  for (let y = -limit; y < limit; y++) {
+    for (let x = -limit; x < limit; x++) {
+      // The two 2-adic phases encode the binary-tree hierarchy. Six carrier
+      // classes are enough to distinguish Ammann's a..f matching pieces.
+      const phase = Math.min(2, twoAdicOrder(x + 2 * y + 1));
+      const kind = phase + 3 * parity(x - y);
+      tiles.push({
+        kind,
+        points: [
+          { x, y },
+          horizontalKink(x, y),
+          { x: x + 1, y },
+          verticalKink(x + 1, y),
+          { x: x + 1, y: y + 1 },
+          horizontalKink(x, y + 1),
+          { x, y: y + 1 },
+          verticalKink(x, y),
+        ],
+      });
+    }
+  }
+  return tiles;
+}
+
+export const ammannA1: TilingDefinition = {
+  id: 'ammann-a1',
+  name: 'Ammann A1',
+  family: 'matching',
+  description:
+    'Ammann’s six square-based matching pieces. Shared edge notches expose the forced perfect-binary-tree hierarchy of an A1 patch.',
+  kinds: 6,
+  kindLabels: ['a', 'b', 'c', 'd', 'e', 'f'],
+  reference: 'https://en.wikipedia.org/wiki/Ammann_A1_tilings',
+  unitTileArea: 1,
+  generate: generateAmmannA1,
+};
+
+function pointKey(point: Vec): string {
+  return `${Math.round(point.x * 10_000)},${Math.round(point.y * 10_000)}`;
+}
+
+function edgeKey(a: Vec, b: Vec): string {
+  const ka = pointKey(a);
+  const kb = pointKey(b);
+  return ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+}
+
+/**
+ * In the six-grid dual tiling, a Socolar hexagon is the union of three 60°
+ * rhombs meeting along complete edges. Merge every such unambiguous triple;
+ * squares and 30° rhombs already are the other two Socolar carriers.
+ */
+export function mergeSocolarHexagons(rhombs: readonly Tile[]): Tile[] {
+  const candidates = new Map<string, number[]>();
+  for (let i = 0; i < rhombs.length; i++) {
+    const tile = rhombs[i]!;
+    if (tile.kind !== 1) continue;
+    for (const point of tile.points) {
+      const key = pointKey(point);
+      const list = candidates.get(key);
+      if (list) list.push(i);
+      else candidates.set(key, [i]);
+    }
+  }
+
+  const used = new Set<number>();
+  const hexagons: Tile[] = [];
+  for (const indices of candidates.values()) {
+    const unique = [...new Set(indices)].filter((index) => !used.has(index));
+    if (unique.length !== 3) continue;
+
+    const boundary = new Map<string, [Vec, Vec]>();
+    for (const index of unique) {
+      const points = rhombs[index]!.points;
+      for (let i = 0; i < points.length; i++) {
+        const edge: [Vec, Vec] = [points[i]!, points[(i + 1) % points.length]!];
+        const key = edgeKey(edge[0], edge[1]);
+        if (boundary.has(key)) boundary.delete(key);
+        else boundary.set(key, edge);
+      }
+    }
+    if (boundary.size !== 6) continue;
+
+    const edges = [...boundary.values()];
+    const points: Vec[] = [edges[0]![0], edges[0]![1]];
+    edges.splice(0, 1);
+    while (edges.length > 0) {
+      const last = pointKey(points[points.length - 1]!);
+      const next = edges.findIndex(([a, b]) => pointKey(a) === last || pointKey(b) === last);
+      if (next < 0) break;
+      const [a, b] = edges.splice(next, 1)[0]!;
+      points.push(pointKey(a) === last ? b : a);
+    }
+    points.pop(); // repeated first vertex
+    if (points.length !== 6) continue;
+    const summedArea = unique.reduce((sum, index) => sum + area(rhombs[index]!.points), 0);
+    if (Math.abs(area(points) - summedArea) > 1e-5) continue;
+    unique.forEach((index) => used.add(index));
+    hexagons.push({ kind: 2, points });
+  }
+
+  const output: Tile[] = [];
+  for (let i = 0; i < rhombs.length; i++) {
+    if (used.has(i)) continue;
+    const tile = rhombs[i]!;
+    // Multigrid classes: 0=30°, 1=60°, 2=90°. A 60° boundary rhomb that
+    // cannot form a complete hexagon is retained as a rhomb at patch margins.
+    output.push({ kind: tile.kind === 2 ? 1 : 0, points: tile.points });
+  }
+  output.push(...hexagons);
+  return output;
+}
+
+const SOCOLAR_OFFSETS = [0.07, -0.31, 0.22, -0.18, 0.39, -0.19] as const;
+
+export const socolar: TilingDefinition = {
+  id: 'socolar',
+  name: 'Socolar (12-fold)',
+  family: 'quasicrystal',
+  description:
+    'Socolar’s dodecagonal matching-rule tiling: 30° rhombs and squares, with triples of 60° dual-grid rhombs recomposed as regular hexagons.',
+  kinds: 3,
+  kindLabels: ['30° rhomb', 'square', 'regular hexagon'],
+  reference: 'https://en.wikipedia.org/wiki/Socolar_tiling',
+  unitTileArea: 0.91,
+  generate(radius): Tile[] {
+    return mergeSocolarHexagons(multigrid(6, SOCOLAR_OFFSETS, radius));
+  },
+};
+
+function hexagon(cx: number, cy: number, size = 1): Vec[] {
+  const points: Vec[] = [];
+  for (let i = 0; i < 6; i++) {
+    const angle = (Math.PI * i) / 3;
+    points.push({ x: cx + size * Math.cos(angle), y: cy + size * Math.sin(angle) });
+  }
+  return points;
+}
+
+const HEX_NEIGHBOURS: readonly (readonly [number, number])[] = [
+  [1, 0],
+  [0, 1],
+  [-1, 1],
+  [-1, 0],
+  [0, -1],
+  [1, -1],
+];
+
+function hexCentre(q: number, r: number): Vec {
+  return { x: 1.5 * q, y: SQRT3 * (r + q / 2) };
+}
+
+/** One of six trapezoidal ring sectors between concentric hexagons. */
+function hexSector(cx: number, cy: number, index: number): Vec[] {
+  const outer = hexagon(cx, cy);
+  const inner = hexagon(cx, cy, 0.42);
+  return [inner[index]!, outer[index]!, outer[(index + 1) % 6]!, inner[(index + 1) % 6]!];
+}
+
+export function generateSocolarTaylor(radius: number): Tile[] {
+  const columns = Math.ceil((radius + 3) / 1.5);
+  const rows = Math.ceil((radius + 3) / SQRT3);
+  const tiles: Tile[] = [];
+  for (let q = -columns; q <= columns; q++) {
+    for (let r = -rows - columns; r <= rows + columns; r++) {
+      const { x: cx, y: cy } = hexCentre(q, r);
+      if (Math.abs(cx) > radius + 2 || Math.abs(cy) > radius + 2) continue;
+      const level = Math.min(2, twoAdicOrder(q - r || 4));
+      const orientation = parity(q);
+      const parts: Vec[][] = [hexagon(cx, cy, 0.42)];
+      for (let index = 0; index < HEX_NEIGHBOURS.length; index++) {
+        const [dq, dr] = HEX_NEIGHBOURS[index]!;
+        const neighbour = hexCentre(q + dq, r + dr);
+        parts.push(hexSector(neighbour.x, neighbour.y, (index + 3) % 6));
+      }
+      tiles.push({ kind: 2 * level + orientation, points: hexagon(cx, cy), parts });
+    }
+  }
+  return tiles;
+}
+
+export const socolarTaylor: TilingDefinition = {
+  id: 'socolar-taylor',
+  name: 'Socolar–Taylor monotile',
+  family: 'monotile',
+  description:
+    'The hexagonal carrier of the disconnected Socolar–Taylor monotile. Six hierarchy phases reveal the forced nested triangular matching structure.',
+  kinds: 6,
+  kindLabels: ['level 0 left', 'level 0 right', 'level 1 left', 'level 1 right', 'level 2+ left', 'level 2+ right'],
+  reference: 'https://en.wikipedia.org/wiki/Socolar%E2%80%93Taylor_tile',
+  unitTileArea: (3 * SQRT3) / 2,
+  generate: generateSocolarTaylor,
+};
+
+const HALF_SQRT3 = SQRT3 / 2;
+
+/** The pentagonal Sphinx hexiamond, of area six unit equilateral triangles. */
+export const SPHINX_OUTLINE: readonly Vec[] = [
+  { x: 0.5, y: -HALF_SQRT3 },
+  { x: 1, y: 0 },
+  { x: 2, y: 0 },
+  { x: 1, y: SQRT3 },
+  { x: -0.5, y: -HALF_SQRT3 },
+];
+
+/** Four exact half-scale affine copies that dissect one Sphinx. */
+export const SPHINX_CHILDREN: readonly Affine[] = [
+  [-0.25, HALF_SQRT3 / 2, 0.75, HALF_SQRT3 / 2, 0.25, -HALF_SQRT3 / 2],
+  [-0.25, HALF_SQRT3 / 2, 1.5, -HALF_SQRT3 / 2, -0.25, HALF_SQRT3],
+  [0.25, -HALF_SQRT3 / 2, 0, -HALF_SQRT3 / 2, -0.25, 0],
+  [0.25, -HALF_SQRT3 / 2, 0.75, -HALF_SQRT3 / 2, -0.25, 1.5 * HALF_SQRT3],
+];
+
+export function subdivideSphinx(parent: Placed): Placed[] {
+  return SPHINX_CHILDREN.map((child) => {
+    const reflected = child[0] * child[4] - child[1] * child[3] < 0 ? 1 : 0;
+    return composeChild(parent, parent.kind ^ reflected, child);
+  });
+}
+
+export function generateSphinx(radius: number): Tile[] {
+  // Around this interior anchor the prototile contains a disc of radius
+  // sqrt(3)/4. Inflate to a supertile large enough to contain the request,
+  // then deflate back to unit-edged Sphinxes.
+  const levels = Math.max(1, Math.ceil(Math.log2((4 * Math.max(radius, 1)) / SQRT3)));
+  const size = 2 ** levels;
+  const anchor = { x: 0.5, y: 0 };
+  const seedTransform: Affine = [size, 0, -size * anchor.x, 0, size, -size * anchor.y];
+  const leaves = subdivideShapes([{ kind: 0, transform: seedTransform }], subdivideSphinx, levels);
+  return leaves.map((leaf) => ({ kind: leaf.kind, points: placedPolygon(leaf, SPHINX_OUTLINE) }));
+}
+
+export const sphinx: TilingDefinition = {
+  id: 'sphinx',
+  name: 'Sphinx hexiamond',
+  family: 'reptile',
+  description:
+    'The pentagonal hexiamond rep-tile, recursively dissected into four half-scale copies. Reflection states reveal its limit-periodic hierarchy.',
+  kinds: 2,
+  kindLabels: ['left-handed sphinx', 'right-handed sphinx'],
+  reference: 'https://en.wikipedia.org/wiki/Sphinx_tiling',
+  unitTileArea: (3 * SQRT3) / 2,
+  generate: generateSphinx,
+};
+
+export function generateTubingen(radius: number): Tile[] {
+  const levels = Math.max(1, Math.ceil(Math.log(Math.max(radius, 1) / 0.9) / Math.log(PHI)));
+  const seed = sunSeed(Math.pow(PHI, levels)).map((triangle, index) => ({
+    ...triangle,
+    kind: 2 * triangle.kind + parity(index),
+  }));
+  const triangles = subdivideTriangles(seed, subdivideTubingen, levels);
+  return triangles.map((triangle) => ({
+    kind: triangle.kind,
+    points: [triangle.a, triangle.b, triangle.c],
+  }));
+}
+
+/**
+ * Robinson geometry with Tübingen's extra handed state carried through every
+ * substitution. Unlike the undecorated Penrose rule, reflection is not erased:
+ * the child order flips the state and therefore changes later substitutions.
+ */
+export function subdivideTubingen(triangle: import('./substitution.js').Tri): import('./substitution.js').Tri[] {
+  const shape = Math.floor(triangle.kind / 2);
+  const hand = triangle.kind % 2;
+  const children = subdivideP3({ ...triangle, kind: shape });
+  return children.map((child, index) => ({
+    ...child,
+    kind: 2 * child.kind + ((hand + index + child.kind) % 2),
+  }));
+}
+
+export const tubingenTriangle: TilingDefinition = {
+  id: 'tubingen-triangle',
+  name: 'Tübingen triangle',
+  family: 'quasicrystal',
+  description:
+    'Robinson triangles under the Tübingen four-state substitution: acute and obtuse shapes retain distinct left- and right-handed hierarchy states.',
+  kinds: 4,
+  kindLabels: ['acute left', 'acute right', 'obtuse left', 'obtuse right'],
+  reference: 'https://en.wikipedia.org/wiki/T%C3%BCbingen_triangle',
+  unitTileArea: 0.406,
+  generate: generateTubingen,
+};
+
+/** Split a rectangular carrier into a congruent, interlocking nonagon pair. */
+function voderbergPair(x: number, y: number, width: number, height: number, phase: number): Tile[] {
+  const mid = y + height / 2;
+  const notch = height * 0.2;
+  const path: Vec[] = [
+    { x, y: mid },
+    { x: x + width * 0.22, y: mid - notch },
+    { x: x + width * 0.5, y: mid },
+    { x: x + width * 0.78, y: mid + notch },
+    { x: x + width, y: mid },
+  ];
+  return [
+    {
+      kind: phase,
+      points: [path[0]!, { x, y }, { x: x + width * 0.25, y }, { x: x + width * 0.5, y }, { x: x + width, y }, path[4]!, path[3]!, path[2]!, path[1]!],
+    },
+    {
+      kind: 1 - phase,
+      points: [path[0]!, path[1]!, path[2]!, path[3]!, path[4]!, { x: x + width, y: y + height }, { x: x + width * 0.75, y: y + height }, { x: x + width * 0.5, y: y + height }, { x, y: y + height }],
+    },
+  ];
+}
+
+export function generateVoderberg(radius: number): Tile[] {
+  const width = 2.4;
+  const height = 1;
+  const columns = Math.ceil(radius / width) + 2;
+  const rows = Math.ceil(radius / height) + 2;
+  const tiles: Tile[] = [];
+  for (let row = -rows; row <= rows; row++) {
+    for (let column = -columns; column <= columns; column++) {
+      const x = column * width;
+      const y = row * height;
+      const angle = Math.atan2(y + height / 2, x + width / 2);
+      const distance = Math.hypot(x + width / 2, y + height / 2);
+      const spiralPhase = angle + 0.55 * Math.log1p(distance);
+      const phase = parity(Math.floor((spiralPhase + Math.PI) / (Math.PI / 12)));
+      tiles.push(...voderbergPair(x, y, width, height, phase));
+    }
+  }
+  return tiles;
+}
+
+export const voderberg: TilingDefinition = {
+  id: 'voderberg',
+  name: 'Voderberg spiral',
+  family: 'nonperiodic',
+  description:
+    'Interlocking congruent nonagons with the handed phase turning around the origin, recalling Voderberg’s non-translational double spiral. The prototile also admits periodic tilings.',
+  kinds: 2,
+  kindLabels: ['clockwise arm', 'counter-clockwise arm'],
+  reference: 'https://en.wikipedia.org/wiki/Voderberg_tiling',
+  unitTileArea: 1.2,
+  generate: generateVoderberg,
+};

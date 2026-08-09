@@ -31,11 +31,13 @@ function fmt(v: number): string {
 function pathData(tiles: readonly Tile[]): string {
   const parts: string[] = [];
   for (const tile of tiles) {
-    const [first, ...rest] = tile.points;
-    if (!first) continue;
-    let d = `M${fmt(first.x)} ${fmt(first.y)}`;
-    for (const p of rest) d += `L${fmt(p.x)} ${fmt(p.y)}`;
-    parts.push(`${d}Z`);
+    for (const polygon of tile.parts ?? [tile.points]) {
+      const [first, ...rest] = polygon;
+      if (!first) continue;
+      let d = `M${fmt(first.x)} ${fmt(first.y)}`;
+      for (const p of rest) d += `L${fmt(p.x)} ${fmt(p.y)}`;
+      parts.push(`${d}Z`);
+    }
   }
   return parts.join('');
 }

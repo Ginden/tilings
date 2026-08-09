@@ -24,13 +24,19 @@ rasterisation for display, and no runtime dependencies.
 | Dodecagonal (12-fold) | 30°/60°/90° rhombs | six-family multigrid |
 | Heptagonal (14-fold) | three rhombs | seven-family multigrid |
 | Decagonal (20-fold) | five rhombs | ten-family multigrid |
+| Socolar (12-fold) | 30° rhomb + square + hexagon | six-family dual grid, with 60° rhomb triples recomposed as hexagons |
+| Tübingen triangle | four handed Robinson triangles | golden-ratio substitution retaining left/right hierarchy state |
+| Ammann A1 | six notched square-based pieces | 2-adic binary-tree matching hierarchy on shared edges |
 | Hat monotile (einstein) | one 13-sided tile | H/T/P/F metatile substitution (see credits) |
+| Socolar–Taylor monotile | disconnected monotile on a hexagonal carrier | six phases of the nested triangular matching hierarchy |
 | Pinwheel (Conway–Radin) | 1–2–√5 right triangle | rep-5 substitution; tiles appear in infinitely many orientations |
 | Chair (L-tromino) | L-tromino | rep-4 substitution, grown outwards from a central supertile |
+| Sphinx hexiamond | pentagonal hexiamond + mirror image | exact rep-4 affine dissection |
+| Voderberg spiral | congruent interlocking nonagons | double-spiral phase over congruent nonagon pairs |
 
-Tilings with more than two tile classes (P1's six prototiles, the dodecagonal,
-heptagonal and decagonal rhombs, the hat's five metatile classes, the chair's
-four orientations) shade their classes evenly between the two chosen colours.
+Tilings with more than two tile classes (including P1 and A1's six prototiles,
+the Tübingen handed states, the Socolar–Taylor hierarchy phases, and the hat's
+five metatile classes) shade their classes evenly between the two chosen colours.
 
 ## Controls
 
@@ -109,7 +115,8 @@ The hat metatile construction is ported from Craig S. Kaplan's
 [hatviz](https://github.com/isohedral/hatviz) (BSD 3-Clause) — see
 [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). The P1 L-system follows the
 rules documented by Andrew Stacey's [Penrose package](https://ctan.org/pkg/penrose).
-Everything else is derived from the geometry described on Wikipedia's
+The Sphinx rep-4 child maps follow the classical four-copy hexiamond
+dissection. Everything else is derived from the geometry described on Wikipedia's
 [Penrose tiling](https://en.wikipedia.org/wiki/Penrose_tiling) and
 [list of aperiodic sets of tiles](https://en.wikipedia.org/wiki/List_of_aperiodic_sets_of_tiles)
 pages.

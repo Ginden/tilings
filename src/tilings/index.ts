@@ -11,6 +11,14 @@ import {
 import { pinwheel } from './pinwheel.js';
 import { chair } from './chair.js';
 import { hat } from './hat.js';
+import {
+  ammannA1,
+  socolar,
+  socolarTaylor,
+  sphinx,
+  tubingenTriangle,
+  voderberg,
+} from './additional.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,
@@ -22,16 +30,24 @@ export const TILINGS: readonly TilingDefinition[] = [
   dodecagonal,
   heptagonal,
   decagonal,
+  socolar,
+  tubingenTriangle,
+  ammannA1,
   hat,
+  socolarTaylor,
   pinwheel,
   chair,
+  sphinx,
+  voderberg,
 ];
 
 export const FAMILY_LABELS: Record<TilingDefinition['family'], string> = {
   penrose: 'Penrose tilings',
   quasicrystal: 'Other quasicrystals',
+  matching: 'Aperiodic matching sets',
   monotile: 'Aperiodic monotiles',
   reptile: 'Substitution rep-tiles',
+  nonperiodic: 'Other non-periodic tilings',
 };
 
 const TILING_NAME_COLLATOR = new Intl.Collator('en', {

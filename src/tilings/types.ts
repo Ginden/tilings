@@ -7,10 +7,21 @@ import type { Vec } from '../geometry.js';
  */
 export interface Tile {
   readonly kind: number;
+  /**
+   * Optional disconnected visible components. `points` remains the carrier
+   * used for coverage and clipping; the renderer draws these polygons instead.
+   */
+  readonly parts?: readonly (readonly Vec[])[];
   readonly points: readonly Vec[];
 }
 
-export type TilingFamily = 'penrose' | 'quasicrystal' | 'monotile' | 'reptile';
+export type TilingFamily =
+  | 'penrose'
+  | 'quasicrystal'
+  | 'matching'
+  | 'monotile'
+  | 'reptile'
+  | 'nonperiodic';
 
 export interface TilingDefinition {
   /** Stable identifier, also used in exported file names. */

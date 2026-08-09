@@ -6,6 +6,18 @@ import { P1_OUTLINES, generateP1, penroseP1 } from '../src/tilings/p1.js';
 import { subdivideP2, subdivideP3, sunSeed, triangleArea } from '../src/tilings/penrose.js';
 import { subdividePinwheel } from '../src/tilings/pinwheel.js';
 import type { Tri } from '../src/tilings/substitution.js';
+import {
+  SPHINX_CHILDREN,
+  SPHINX_OUTLINE,
+  generateAmmannA1,
+  generateSocolarTaylor,
+  generateSphinx,
+  generateVoderberg,
+  mergeSocolarHexagons,
+  subdivideSphinx,
+} from '../src/tilings/additional.js';
+import { multigrid } from '../src/tilings/multigrid.js';
+import { IDENTITY } from '../src/geometry.js';
 
 function pointInPolygon(x: number, y: number, points: readonly { x: number; y: number }[]): boolean {
   let inside = false;
@@ -67,9 +79,15 @@ describe('tiling registry', () => {
       'decagonal',
       'dodecagonal',
       'heptagonal',
+      'socolar',
+      'tubingen-triangle',
+      'ammann-a1',
       'hat',
+      'socolar-taylor',
       'chair',
       'pinwheel',
+      'sphinx',
+      'voderberg',
     ]);
   });
 
@@ -197,5 +215,59 @@ describe('pinwheel substitution', () => {
     }
     // Both chiralities occur, which is what the two colours show.
     expect(new Set(children.map((c) => c.kind)).size).toBe(2);
+  });
+});
+
+describe('additional tiling constructions', () => {
+  it('uses all six Ammann A1 matching pieces with shared notched edges', () => {
+    const tiles = generateAmmannA1(8);
+    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2, 3, 4, 5]));
+    expect(tiles.every((tile) => tile.points.length === 8)).toBe(true);
+  });
+
+  it('recomposes 60-degree dual-grid rhombs into Socolar hexagons', () => {
+    const source = multigrid(6, [0.07, -0.31, 0.22, -0.18, 0.39, -0.19], 16);
+    const tiles = mergeSocolarHexagons(source);
+    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2]));
+    expect(tiles.filter((tile) => tile.kind === 2).every((tile) => tile.points.length === 6)).toBe(true);
+  });
+
+  it('uses regular hexagonal carriers for all Socolar-Taylor hierarchy phases', () => {
+    const tiles = generateSocolarTaylor(12);
+    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2, 3, 4, 5]));
+    expect(tiles.every((tile) => tile.points.length === 6)).toBe(true);
+    expect(tiles.every((tile) => tile.parts?.length === 7)).toBe(true);
+  });
+
+  it('dissects one Sphinx into four half-scale pentagonal hexiamonds', () => {
+    expect(SPHINX_OUTLINE).toHaveLength(5);
+    expect(SPHINX_CHILDREN).toHaveLength(4);
+    const children = subdivideSphinx({ kind: 0, transform: IDENTITY });
+    expect(children).toHaveLength(4);
+    const parentArea = area(SPHINX_OUTLINE);
+    const generated = generateSphinx(4);
+    expect(generated.every((tile) => tile.points.length === 5)).toBe(true);
+    for (const child of children) {
+      const det = Math.abs(child.transform[0] * child.transform[4] - child.transform[1] * child.transform[3]);
+      expect(det).toBeCloseTo(0.25, 10);
+    }
+    expect(children.length * parentArea * 0.25).toBeCloseTo(parentArea, 10);
+  });
+
+  it('builds Voderberg carriers as congruent nonagon pairs', () => {
+    const pair = generateVoderberg(0);
+    expect(pair.length).toBeGreaterThanOrEqual(2);
+    expect(pair.every((tile) => tile.points.length === 9)).toBe(true);
+    const signatures = pair.slice(0, 2).map((tile) =>
+      tile.points
+        .map((point, index) => {
+          const next = tile.points[(index + 1) % tile.points.length]!;
+          return Math.hypot(next.x - point.x, next.y - point.y);
+        })
+        .sort((a, b) => a - b),
+    );
+    for (let index = 0; index < signatures[0]!.length; index++) {
+      expect(signatures[0]![index]).toBeCloseTo(signatures[1]![index]!, 10);
+    }
   });
 });
