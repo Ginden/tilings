@@ -123,6 +123,14 @@ describe('svg output', () => {
     const penrose = renderSvg(tilingById('penrose-p3'), { ...options, colour3 }).svg;
     expect(penrose).not.toContain(colour3);
   });
+
+  it('renders all three Danzer prototile classes', () => {
+    const { svg, tileCount } = renderSvg(tilingById('danzer-sevenfold'), options);
+    expect(tileCount).toBeGreaterThan(100);
+    expect(svg.match(/data-kind=/g)).toHaveLength(3);
+    for (const kind of [0, 1, 2]) expect(svg).toContain(`<path data-kind="${kind}"`);
+    expect(svg).not.toContain('NaN');
+  });
 });
 
 describe('export file names', () => {

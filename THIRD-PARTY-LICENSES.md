@@ -65,5 +65,16 @@ results, reproduced here with attribution; no code from Labbé's GPLv2 `slabbe`
 package (which also implements them) is reused, so nothing in this repository
 is subject to that licence.
 
-Every other tiling in this repository is generated from geometry derived in
-`src/tilings/`, with no third-party code.
+## plotz_rs Danzer coordinate transcription
+
+The sine-section coordinates in `src/tilings/danzer-sevenfold.ts` are a
+TypeScript port of the Danzer subdivision in James Adam Buckland's
+[`plotz_rs`](https://github.com/ambuc/plotz_rs/blob/main/art/tilings/src/danzers.rs)
+(2023). The upstream source is licensed under Apache License 2.0; the required
+licence text is included at [`licenses/Apache-2.0.txt`](licenses/Apache-2.0.txt).
+The port preserves the upstream attribution and documents the Tilings
+Encyclopedia rule on which it is based. No upstream or encyclopedia graphic
+asset is copied into this repository.
+
+Every other tiling in this repository is generated from independently derived
+geometry in `src/tilings/`, with no third-party code.

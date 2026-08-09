@@ -38,10 +38,11 @@ import {
 import { multigrid } from '../src/tilings/multigrid.js';
 import { IDENTITY, apply, mul, rotation, scaling } from '../src/geometry.js';
 import {
+  DANZER_EDGE_LENGTHS,
   DANZER_INFLATION,
-  DANZER_SINES,
   DANZER_SUBSTITUTION_COUNTS,
   generateDanzerSevenfold,
+  subdivideDanzer,
 } from '../src/tilings/danzer-sevenfold.js';
 
 function pointInPolygon(x: number, y: number, points: readonly { x: number; y: number }[]): boolean {
@@ -154,26 +155,47 @@ describe('tiling registry', () => {
 });
 
 describe('Danzer sevenfold triangles', () => {
-  const triangleAreas = [DANZER_SINES[0] / 2, DANZER_SINES[2] / 2, DANZER_SINES[1] / 2];
+  const [a, b, c] = DANZER_EDGE_LENGTHS;
+  const expectedEdges = [
+    [a, b, c],
+    [a, c, c],
+    [b, b, c],
+  ] as const;
 
-  it('uses the three generalized Robinson triangle metrics', () => {
+  function edges(points: readonly Vec[]): number[] {
+    return points.map((point, index) => {
+      const next = points[(index + 1) % points.length]!;
+      return Math.hypot(next.x - point.x, next.y - point.y);
+    });
+  }
+
+  it('uses all three published sine-edge prototiles at natural scale', () => {
     const tiles = generateDanzerSevenfold(8);
     expect(new Set(tiles.map((tile) => tile.shape))).toEqual(new Set([0, 1, 2]));
     for (const tile of tiles) {
-      const [apex, left, right] = tile.points;
-      expect(Math.hypot(apex!.x - left!.x, apex!.y - left!.y)).toBeCloseTo(1, 9);
-      expect(Math.hypot(apex!.x - right!.x, apex!.y - right!.y)).toBeCloseTo(1, 9);
-      expect(area(tile.points)).toBeCloseTo(triangleAreas[tile.shape]!, 9);
+      const actual = edges(tile.points);
+      for (let edge = 0; edge < 3; edge++) {
+        expect(actual[edge]).toBeCloseTo(expectedEdges[tile.shape]![edge]!, 9);
+      }
     }
   });
 
-  it('preserves substitution area with the published non-Pisot inflation', () => {
-    for (let parent = 0; parent < DANZER_SUBSTITUTION_COUNTS.length; parent++) {
-      const childrenArea = DANZER_SUBSTITUTION_COUNTS[parent]!.reduce(
-        (sum, count, child) => sum + count * triangleAreas[child]!,
-        0,
-      );
-      expect(childrenArea).toBeCloseTo(DANZER_INFLATION ** 2 * triangleAreas[parent]!, 9);
+  it('applies every archived supertriangle with the published counts and area', () => {
+    const representatives = new Map(generateDanzerSevenfold(8).map((tile) => [tile.shape, tile]));
+    for (const shape of [0, 1, 2] as const) {
+      const parent = representatives.get(shape)!;
+      const children = subdivideDanzer(parent);
+      const counts = [0, 0, 0];
+      for (const child of children) counts[child.shape] = counts[child.shape]! + 1;
+      expect(counts).toEqual(DANZER_SUBSTITUTION_COUNTS[shape]);
+      expect(children.reduce((sum, child) => sum + area(child.points), 0)).toBeCloseTo(area(parent.points), 11);
+
+      for (const child of children) {
+        const actual = edges(child.points);
+        for (let edge = 0; edge < 3; edge++) {
+          expect(actual[edge]! * DANZER_INFLATION).toBeCloseTo(expectedEdges[child.shape]![edge]!, 9);
+        }
+      }
     }
 
     expect(DANZER_INFLATION).toBeCloseTo(1 + 2 * Math.cos(Math.PI / 7), 12);
@@ -182,13 +204,48 @@ describe('Danzer sevenfold triangles', () => {
     expect(Math.abs(1 + 2 * Math.cos((3 * Math.PI) / 7))).toBeGreaterThan(1);
   });
 
-  it('retains both hands and valid fourteen-direction vertex-star states', () => {
+  it('retains the reflected arrow state and fourteen finite rotations', () => {
     const tiles = generateDanzerSevenfold(8);
     expect(new Set(tiles.map((tile) => tile.hand))).toEqual(new Set([0, 1]));
-    expect(new Set(tiles.map((tile) => tile.star)).size).toBeGreaterThanOrEqual(7);
+    expect(new Set(tiles.map((tile) => tile.rotation))).toEqual(new Set(Array.from({ length: 14 }, (_, i) => i)));
     for (const tile of tiles) {
-      expect(tile.star).toBeGreaterThanOrEqual(0);
-      expect(tile.star).toBeLessThan(14);
+      expect(tile.rotation).toBeGreaterThanOrEqual(0);
+      expect(tile.rotation).toBeLessThan(14);
+      for (let corner = 0; corner < 3; corner++) {
+        expect(tile.vertexStars[corner]).toContain(`${tile.shape}:${tile.hand}:${tile.rotation}:${corner}`);
+      }
+    }
+  });
+
+  it('carries complete, gap-free vertex-star states in the requested disc', () => {
+    const tiles = generateDanzerSevenfold(8);
+    const stars = new Map<string, { angle: number; signature: string }[]>();
+    for (const tile of tiles) {
+      for (let corner = 0; corner < 3; corner++) {
+        const point = tile.points[corner]!;
+        if (Math.hypot(point.x, point.y) >= 5.6) continue;
+        const previous = tile.points[(corner + 2) % 3]!;
+        const next = tile.points[(corner + 1) % 3]!;
+        const u = { x: previous.x - point.x, y: previous.y - point.y };
+        const v = { x: next.x - point.x, y: next.y - point.y };
+        const angle = Math.acos((u.x * v.x + u.y * v.y) / (Math.hypot(u.x, u.y) * Math.hypot(v.x, v.y)));
+        const key = `${Math.round(point.x * 1e7)},${Math.round(point.y * 1e7)}`;
+        const incident = { angle, signature: tile.vertexStars[corner]! };
+        const list = stars.get(key);
+        if (list) list.push(incident);
+        else stars.set(key, [incident]);
+      }
+    }
+
+    expect(stars.size).toBeGreaterThan(100);
+    for (const [key, incidents] of stars) {
+      const signature = incidents[0]!.signature;
+      const straightAngles = signature.split('|').filter((incident) => incident.includes(':e')).length;
+      expect(
+        incidents.reduce((sum, incident) => sum + incident.angle, straightAngles * Math.PI),
+        `${key}: ${incidents.map((incident) => incident.signature).join(';')}`,
+      ).toBeCloseTo(2 * Math.PI, 8);
+      expect(new Set(incidents.map((incident) => incident.signature)).size).toBe(1);
     }
   });
 });
