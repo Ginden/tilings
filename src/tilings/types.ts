@@ -18,7 +18,6 @@ export interface Tile {
 export type TilingFamily =
   | 'penrose'
   | 'quasicrystal'
-  | 'matching'
   | 'monotile'
   | 'reptile'
   | 'nonperiodic'

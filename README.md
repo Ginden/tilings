@@ -26,7 +26,6 @@ rasterisation for display, and no runtime dependencies.
 | Decagonal (20-fold) | five rhombs | ten-family multigrid |
 | Socolar (12-fold) | 30° rhomb + square + hexagon | six-family dual grid, with 60° rhomb triples recomposed as hexagons |
 | Tübingen triangle | four handed Robinson triangles | golden-ratio substitution retaining left/right hierarchy state |
-| Ammann A1 | six notched square-based pieces | 2-adic binary-tree matching hierarchy on shared edges |
 | Hat monotile (einstein) | one 13-sided tile | H/T/P/F metatile substitution (see credits) |
 | Pinwheel (Conway–Radin) | 1–2–√5 right triangle | rep-5 substitution; tiles appear in infinitely many orientations |
 | Chair (L-tromino) | L-tromino | rep-4 substitution, grown outwards from a central supertile |
@@ -34,9 +33,9 @@ rasterisation for display, and no runtime dependencies.
 | Voderberg spiral | congruent interlocking nonagons | plane-covering double spiral grown recursively in successive beak-to-butt layers |
 | Shuriken supertile (12-fold) | dodecagon + 1–2–150° triangle + triangle + three rhombs | the n = 12 dissection of the inflated dodecagon (rim triangles, central dodecagon, 96-rhomb shuriken star), laid out on the 4.6.12 Archimedean tiling |
 
-Tilings with more than two tile classes (including P1 and A1's six prototiles,
-the Tübingen handed states, and the hat's five metatile classes) shade their
-classes evenly between the two chosen colours.
+Tilings with more than two tile classes (including P1, the Tübingen handed
+states, and the hat's five metatile classes) shade their classes evenly between
+the two chosen colours.
 
 ## Controls
 

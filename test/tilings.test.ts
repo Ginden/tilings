@@ -10,7 +10,6 @@ import type { Tri } from '../src/tilings/substitution.js';
 import {
   SPHINX_CHILDREN,
   SPHINX_OUTLINE,
-  generateAmmannA1,
   generateSphinx,
   mergeSocolarHexagons,
   subdivideSphinx,
@@ -82,7 +81,6 @@ describe('tiling registry', () => {
       'heptagonal',
       'socolar',
       'tubingen-triangle',
-      'ammann-a1',
       'hat',
       'chair',
       'pinwheel',
@@ -273,12 +271,6 @@ describe('twelvefold Shuriken supertile', () => {
 });
 
 describe('additional tiling constructions', () => {
-  it('uses all six Ammann A1 matching pieces with shared notched edges', () => {
-    const tiles = generateAmmannA1(8);
-    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2, 3, 4, 5]));
-    expect(tiles.every((tile) => tile.points.length === 8)).toBe(true);
-  });
-
   it('recomposes 60-degree dual-grid rhombs into Socolar hexagons', () => {
     const source = multigrid(6, [0.07, -0.31, 0.22, -0.18, 0.39, -0.19], 16);
     const tiles = mergeSocolarHexagons(source);

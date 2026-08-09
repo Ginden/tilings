@@ -12,7 +12,6 @@ import { pinwheel } from './pinwheel.js';
 import { chair } from './chair.js';
 import { hat } from './hat.js';
 import {
-  ammannA1,
   socolar,
   sphinx,
   tubingenTriangle,
@@ -32,7 +31,6 @@ export const TILINGS: readonly TilingDefinition[] = [
   decagonal,
   socolar,
   tubingenTriangle,
-  ammannA1,
   hat,
   pinwheel,
   chair,
@@ -44,7 +42,6 @@ export const TILINGS: readonly TilingDefinition[] = [
 export const FAMILY_LABELS: Record<TilingDefinition['family'], string> = {
   penrose: 'Penrose tilings',
   quasicrystal: 'Other quasicrystals',
-  matching: 'Aperiodic matching sets',
   monotile: 'Aperiodic monotiles',
   reptile: 'Substitution rep-tiles',
   nonperiodic: 'Other non-periodic tilings',
