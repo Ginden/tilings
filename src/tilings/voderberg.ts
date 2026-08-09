@@ -33,9 +33,10 @@ const RULES: Readonly<Record<string, string>> = {
   Z: String.raw`[D\78D\46.37236@3.393427D@I3.393427/46.37236D\114D\78D\46.37236@3.393427D@I3.393427/46.37236D/78D]`,
 };
 const DEG = Math.PI / 180;
-const POINT_PRECISION = 10_000;
+const POINT_PRECISION = 1_000;
 const SPIRAL_PHASE_PER_UNIT = 0.275;
 const SPIRAL_PHASE_OFFSET = 1.22;
+const MIN_SPIRAL_ARM_RUN = 12;
 const cache = new Map<number, readonly Tile[]>();
 
 /**
@@ -194,27 +195,70 @@ function polygonize(segments: readonly Segment[]): Tile[] {
       edgeFaces.set(edgeKey, adjacent);
     }
   });
+  // The two long edges join every nonagon into one construction path. Walking
+  // that path gives the exact alternating V/A placement; colouring the full
+  // face-adjacency graph instead can flip phase where spiral layers touch.
+  const longEdgeNeighbours = Array.from({ length: faces.length }, () => new Set<number>());
+  for (const [edgeKey, adjacent] of edgeFaces) {
+    if (adjacent.length !== 2) continue;
+    const [leftKey, rightKey] = edgeKey.split('|');
+    const left = points.get(leftKey!)!;
+    const right = points.get(rightKey!)!;
+    if (Math.hypot(right.x - left.x, right.y - left.y) < 2) continue;
+    longEdgeNeighbours[adjacent[0]!]!.add(adjacent[1]!);
+    longEdgeNeighbours[adjacent[1]!]!.add(adjacent[0]!);
+  }
   const placements = Array<number>(faces.length).fill(-1);
+  const constructionPaths: number[][] = [];
   for (let seed = 0; seed < faces.length; seed++) {
-    if (placements[seed] !== -1) continue;
-    placements[seed] = 0;
-    const queue = [seed];
-    for (let cursor = 0; cursor < queue.length; cursor++) {
-      const index = queue[cursor]!;
-      const face = faces[index]!;
-      for (const edgeKey of face.edgeKeys) {
-        for (const adjacent of edgeFaces.get(edgeKey)!) {
-          if (adjacent === index || faces[adjacent]!.arm !== face.arm) continue;
-          if (placements[adjacent] === -1) {
-            placements[adjacent] = 1 - placements[index]!;
-            queue.push(adjacent);
-          }
-        }
+    if (placements[seed] !== -1 || longEdgeNeighbours[seed]!.size !== 1) continue;
+    const path: number[] = [];
+    let previous = -1;
+    let current = seed;
+    let placement = 0;
+    while (current !== -1 && placements[current] === -1) {
+      path.push(current);
+      placements[current] = placement;
+      const next = [...longEdgeNeighbours[current]!].find((index) => index !== previous) ?? -1;
+      previous = current;
+      current = next;
+      placement = 1 - placement;
+    }
+    constructionPaths.push(path);
+  }
+  for (let index = 0; index < placements.length; index++) {
+    if (placements[index] === -1) placements[index] = index % 2;
+  }
+
+  const arms = faces.map((face) => face.arm);
+  for (const path of constructionPaths) {
+    // The polar phase identifies the broad spiral arms, while the construction
+    // path makes their continuity exact. Near a staircase boundary the smooth
+    // phase can briefly cross two or three adjacent tile centroids, creating a
+    // false opposite-colour spur. Absorb only those tiny internal runs; genuine
+    // arm runs are at least dozens of nonagons long (including at the core).
+    while (true) {
+      const runs: { arm: 0 | 1; start: number; end: number }[] = [];
+      for (let order = 0; order < path.length; order++) {
+        const arm = arms[path[order]!]!;
+        const previousRun = runs.at(-1);
+        if (previousRun?.arm === arm) previousRun.end = order + 1;
+        else runs.push({ arm, start: order, end: order + 1 });
       }
+      const noise = runs.find(
+        (run, index) =>
+          index > 0 &&
+          index < runs.length - 1 &&
+          run.end - run.start < MIN_SPIRAL_ARM_RUN &&
+          runs[index - 1]!.arm === runs[index + 1]!.arm,
+      );
+      if (!noise) break;
+      const arm = runs[runs.indexOf(noise) - 1]!.arm;
+      for (let order = noise.start; order < noise.end; order++) arms[path[order]!] = arm;
     }
   }
   return faces.map((face, index) => ({
-    kind: face.arm * 2 + placements[index]!,
+    kind: arms[index]! * 2 + placements[index]!,
     points: face.points,
   }));
 }

@@ -204,21 +204,16 @@ function updateAppearance(): void {
   const def = tilingById(state.tilingId);
   const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode);
   const border = state.borderTransparent ? null : state.border;
-  const background = border ?? mix(state.colour1, state.colour2, 0.5);
+  const background = mix(state.colour1, state.colour2, 0.5);
   svg.querySelector('rect')?.setAttribute('fill', background);
 
   for (const path of svg.querySelectorAll<SVGPathElement>('path[data-kind]')) {
     const kind = Number(path.dataset['kind']);
     path.setAttribute('fill', colours[Math.min(kind, colours.length - 1)] ?? state.colour1);
-    if (border === null) {
-      path.setAttribute('stroke', 'none');
-      path.removeAttribute('stroke-width');
-      path.removeAttribute('stroke-linejoin');
-    } else {
-      path.setAttribute('stroke', border);
-      path.setAttribute('stroke-width', String(state.borderWidth));
-      path.setAttribute('stroke-linejoin', 'round');
-    }
+  }
+  for (const borderPath of svg.querySelectorAll<SVGPathElement>('path[data-border]')) {
+    borderPath.setAttribute('stroke', border ?? 'none');
+    borderPath.setAttribute('stroke-width', String(state.borderWidth));
   }
 
   lastRender = {

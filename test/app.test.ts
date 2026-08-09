@@ -76,10 +76,16 @@ describe('svg output', () => {
     expect(tileCount).toBeGreaterThan(0);
     expect(svg.startsWith('<svg xmlns="http://www.w3.org/2000/svg"')).toBe(true);
     expect(svg).toContain('viewBox="0 0 800 600"');
-    expect(svg.match(/<path /g)).toHaveLength(def.kinds);
+    expect(svg.match(/data-kind=/g)).toHaveLength(def.kinds);
     expect(svg).toContain('<path data-kind="0"');
     expect(svg).toContain('<path data-kind="1"');
-    expect(svg).toContain('<rect width="800" height="600"');
+    expect(svg).toContain(`<path data-border="" fill="none" stroke="${options.border}"`);
+    expect(svg).toContain('stroke-linecap="round"');
+    expect([...svg.matchAll(/<path data-border=""[^>]+ d="([^"]+)"/g)]).not.toHaveLength(0);
+    for (const borderPath of svg.matchAll(/<path data-border=""[^>]+ d="([^"]+)"/g)) {
+      expect(borderPath[1]).not.toContain('Z');
+    }
+    expect(svg).toContain(`<rect width="800" height="600" fill="${mix(options.colour1, options.colour2, 0.5)}"`);
     expect(svg.trimEnd().endsWith('</svg>')).toBe(true);
     expect(svg).not.toContain('NaN');
   });

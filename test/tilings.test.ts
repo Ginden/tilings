@@ -281,4 +281,59 @@ describe('additional tiling constructions', () => {
     );
     expect(orientations.size).toBeGreaterThanOrEqual(15);
   });
+
+  it('keeps each Voderberg arm and placement phase continuous', () => {
+    const patch = generateVoderberg(8);
+    const pointKey = (point: { x: number; y: number }) =>
+      `${Math.round(point.x * 1_000)},${Math.round(point.y * 1_000)}`;
+    const longEdges = new Map<string, number[]>();
+    for (let face = 0; face < patch.length; face++) {
+      const points = patch[face]!.points;
+      for (let index = 0; index < points.length; index++) {
+        const a = points[index]!;
+        const b = points[(index + 1) % points.length]!;
+        if (Math.hypot(a.x - b.x, a.y - b.y) < 2) continue;
+        const left = pointKey(a);
+        const right = pointKey(b);
+        const key = left < right ? `${left}|${right}` : `${right}|${left}`;
+        const faces = longEdges.get(key) ?? [];
+        faces.push(face);
+        longEdges.set(key, faces);
+      }
+    }
+    const neighbours: number[][] = Array.from({ length: patch.length }, () => []);
+    for (const faces of longEdges.values()) {
+      if (faces.length !== 2) continue;
+      neighbours[faces[0]!]!.push(faces[1]!);
+      neighbours[faces[1]!]!.push(faces[0]!);
+    }
+    const endpoints = neighbours.flatMap((adjacent, index) => adjacent.length === 1 ? [index] : []);
+    expect(endpoints).toHaveLength(2);
+
+    const path: number[] = [];
+    let previous = -1;
+    let current = endpoints[0]!;
+    while (current !== -1) {
+      path.push(current);
+      const next = neighbours[current]!.find((face) => face !== previous) ?? -1;
+      previous = current;
+      current = next;
+    }
+    expect(path).toHaveLength(patch.length);
+    for (let order = 1; order < path.length; order++) {
+      expect(patch[path[order - 1]!]!.kind % 2).not.toBe(patch[path[order]!]!.kind % 2);
+    }
+
+    const armRuns: number[] = [];
+    let previousArm = -1;
+    for (const face of path) {
+      const arm = Math.floor(patch[face]!.kind / 2);
+      if (arm === previousArm) armRuns[armRuns.length - 1]!++;
+      else {
+        previousArm = arm;
+        armRuns.push(1);
+      }
+    }
+    expect(armRuns.slice(1, -1).every((length) => length >= 12)).toBe(true);
+  });
 });
