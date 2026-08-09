@@ -27,6 +27,11 @@ describe('static page shell', () => {
     expect(html).toContain('This app generates tilings in your browser');
   });
 
+  it('offers PNG download and clipboard actions', () => {
+    expect(html).toContain('id="download-png"');
+    expect(html).toContain('id="copy-png"');
+  });
+
   it('attributes the author without loading external resources', () => {
     expect(html).toContain('href="https://michalwadas.pl"');
     expect(html).toContain('href="https://github.com/Ginden/tilings"');

@@ -49,6 +49,13 @@ export function downloadSvg(svg: string, fileName: string): void {
   downloadBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), fileName);
 }
 
+export async function copyPngBlob(blob: Blob): Promise<void> {
+  if (!navigator.clipboard?.write || typeof ClipboardItem === 'undefined') {
+    throw new Error('Copying images is not supported by this browser');
+  }
+  await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+}
+
 /** Rasterise an SVG string to PNG at its natural size (optionally scaled). */
 export async function svgToPngBlob(svg: string, width: number, height: number, scale = 1): Promise<Blob> {
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }));

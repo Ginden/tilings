@@ -64,6 +64,7 @@ bookmarked.
 
 * **Download SVG** — the standalone SVG at the chosen pixel size.
 * **Download PNG** — the same image rasterised at the chosen pixel size.
+* **Copy image** — rasterise the image as PNG and copy it to the clipboard.
 
 Files are named after their settings, for example
 `penrose-p3_1920x1080_tile42_e8b53b-1b3a5c_border-101820.svg`.

@@ -12,7 +12,7 @@ import {
   wrappedRotationForKey,
 } from './state.js';
 import type { AppState } from './state.js';
-import { downloadBlob, downloadSvg, exportFileName, svgToPngBlob } from './export.js';
+import { copyPngBlob, downloadBlob, downloadSvg, exportFileName, svgToPngBlob } from './export.js';
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -54,6 +54,7 @@ const rotationValue = element<HTMLOutputElement>('rotation-value');
 const status = element<HTMLParagraphElement>('status');
 const downloadSvgButton = element<HTMLButtonElement>('download-svg');
 const downloadPngButton = element<HTMLButtonElement>('download-png');
+const copyPngButton = element<HTMLButtonElement>('copy-png');
 
 let state: AppState = location.hash.length > 1 ? decodeState(location.hash) : { ...DEFAULT_STATE };
 let lastRender: { options: RenderOptions } | null = null;
@@ -464,6 +465,23 @@ function bindControls(): void {
       })
       .finally(() => {
         downloadPngButton.disabled = false;
+      });
+  });
+
+  copyPngButton.addEventListener('click', () => {
+    const options = exportOptions();
+    copyPngButton.disabled = true;
+    status.textContent = 'Rendering PNG…';
+    void svgToPngBlob(exportSvg(), options.width, options.height)
+      .then(copyPngBlob)
+      .then(() => {
+        status.textContent = 'Image copied to clipboard';
+      })
+      .catch((error: unknown) => {
+        status.textContent = `Copy image failed: ${String(error)}`;
+      })
+      .finally(() => {
+        copyPngButton.disabled = false;
       });
   });
 
