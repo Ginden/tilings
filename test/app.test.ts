@@ -28,6 +28,12 @@ describe('colours', () => {
     const colours = kindColors('#000000', '#ffffff', 3);
     expect(colours).toEqual(['#000000', '#808080', '#ffffff']);
     expect(kindColors('#123456', '#654321', 1)).toEqual(['#123456']);
+    expect(kindColors('#123456', '#f2c14e', 4, 'paired')).toEqual([
+      '#123456',
+      '#5e758c',
+      '#f2c14e',
+      '#bd973d',
+    ]);
   });
 });
 

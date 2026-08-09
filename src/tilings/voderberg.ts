@@ -19,6 +19,12 @@ interface GraphEdge {
   readonly b: string;
 }
 
+interface PolygonFace {
+  readonly arm: 0 | 1;
+  readonly edgeKeys: readonly string[];
+  readonly points: readonly Vec[];
+}
+
 const AXIOM = String.raw`\84.1A\96@4.783386117M@I4.783386117/96A`;
 const RULES: Readonly<Record<string, string>> = {
   A: String.raw`X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12Z`,
@@ -132,7 +138,7 @@ function polygonize(segments: readonly Segment[]): Tile[] {
   }
 
   const used = new Set<string>();
-  const tiles: Tile[] = [];
+  const faces: PolygonFace[] = [];
   for (const edge of edges.values()) {
     for (const [startA, startB] of [[edge.a, edge.b], [edge.b, edge.a]] as const) {
       if (used.has(`${startA}>${startB}`)) continue;
@@ -168,10 +174,49 @@ function polygonize(segments: readonly Segment[]): Tile[] {
         SPIRAL_PHASE_PER_UNIT * Math.hypot(dx, dy) +
         Math.atan2(dy, dx) +
         SPIRAL_PHASE_OFFSET;
-      tiles.push({ kind: Math.sin(spiralPhase) > 0 ? 1 : 0, points: polygon });
+      const edgeKeys = face.map((left, index) => {
+        const right = face[(index + 1) % face.length]!;
+        return left < right ? `${left}|${right}` : `${right}|${left}`;
+      });
+      faces.push({
+        arm: Math.sin(spiralPhase) > 0 ? 1 : 0,
+        edgeKeys,
+        points: polygon,
+      });
     }
   }
-  return tiles;
+
+  const edgeFaces = new Map<string, number[]>();
+  faces.forEach((face, index) => {
+    for (const edgeKey of face.edgeKeys) {
+      const adjacent = edgeFaces.get(edgeKey) ?? [];
+      adjacent.push(index);
+      edgeFaces.set(edgeKey, adjacent);
+    }
+  });
+  const placements = Array<number>(faces.length).fill(-1);
+  for (let seed = 0; seed < faces.length; seed++) {
+    if (placements[seed] !== -1) continue;
+    placements[seed] = 0;
+    const queue = [seed];
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const index = queue[cursor]!;
+      const face = faces[index]!;
+      for (const edgeKey of face.edgeKeys) {
+        for (const adjacent of edgeFaces.get(edgeKey)!) {
+          if (adjacent === index || faces[adjacent]!.arm !== face.arm) continue;
+          if (placements[adjacent] === -1) {
+            placements[adjacent] = 1 - placements[index]!;
+            queue.push(adjacent);
+          }
+        }
+      }
+    }
+  }
+  return faces.map((face, index) => ({
+    kind: face.arm * 2 + placements[index]!,
+    points: face.points,
+  }));
 }
 
 function patch(iterations: number): readonly Tile[] {
@@ -195,8 +240,9 @@ export const voderberg: TilingDefinition = {
   family: 'nonperiodic',
   description:
     'The classic plane-covering Voderberg double spiral, generated as two recursively interlocking arms of congruent nonagons.',
-  kinds: 2,
-  kindLabels: ['clockwise arm', 'counter-clockwise arm'],
+  kinds: 4,
+  kindLabels: ['clockwise V', 'clockwise A', 'counter-clockwise V', 'counter-clockwise A'],
+  colourMode: 'paired',
   reference: 'https://en.wikipedia.org/wiki/Voderberg_tiling',
   unitTileArea: area(VODERBERG_OUTLINE),
   generate: generateVoderberg,

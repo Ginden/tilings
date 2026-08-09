@@ -48,7 +48,7 @@ function pathData(tiles: readonly Tile[]): string {
  */
 export function renderSvg(def: TilingDefinition, opts: RenderOptions): RenderResult {
   const scene = buildScene(def, opts);
-  const colours = kindColors(opts.colour1, opts.colour2, def.kinds);
+  const colours = kindColors(opts.colour1, opts.colour2, def.kinds, def.colourMode);
   const background = opts.border ?? mix(opts.colour1, opts.colour2, 0.5);
 
   const byKind = new Map<number, Tile[]>();

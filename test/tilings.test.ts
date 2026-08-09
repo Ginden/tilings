@@ -259,7 +259,7 @@ describe('additional tiling constructions', () => {
     const patch = generateVoderberg(8);
     expect(patch).toHaveLength(482);
     expect(patch.every((tile) => tile.points.length === 9)).toBe(true);
-    expect(new Set(patch.map((tile) => tile.kind))).toEqual(new Set([0, 1]));
+    expect(new Set(patch.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2, 3]));
     const signatures = patch.map((tile) =>
       tile.points
         .map((point, index) => {

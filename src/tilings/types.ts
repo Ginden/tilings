@@ -32,6 +32,8 @@ export interface TilingDefinition {
   /** Number of tile classes; class `i` gets colour `lerp(colour1, colour2, i/(kinds-1))`. */
   readonly kinds: number;
   readonly kindLabels: readonly string[];
+  /** Pair adjacent states around each selected endpoint colour instead of using one linear gradient. */
+  readonly colourMode?: 'gradient' | 'paired';
   /** Reference URL (usually Wikipedia). */
   readonly reference: string;
   /** Area of a typical tile when generated at natural scale, used to normalise tile sizes. */

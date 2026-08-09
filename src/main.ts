@@ -132,7 +132,7 @@ function syncControls(): void {
   tileSize.value = String(state.tileSize);
   tileSizeValue.textContent = `${state.tileSize} px`;
 
-  const colours = kindColors(state.colour1, state.colour2, def.kinds);
+  const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode);
   kindHint.textContent =
     def.kinds === 2
       ? `${def.kindLabels[0]} · ${def.kindLabels[1]}`
@@ -143,7 +143,12 @@ function syncControls(): void {
     const palette = PALETTES.find((p) => p.id === button.dataset['palette']);
     if (!palette) continue;
 
-    const swatches = kindColors(palette.colour1, palette.colour2, def.kinds).map((colour) => {
+    const swatches = kindColors(
+      palette.colour1,
+      palette.colour2,
+      def.kinds,
+      def.colourMode,
+    ).map((colour) => {
       const swatch = document.createElement('span');
       swatch.style.background = colour;
       return swatch;
@@ -197,7 +202,7 @@ function updateAppearance(): void {
   }
 
   const def = tilingById(state.tilingId);
-  const colours = kindColors(state.colour1, state.colour2, def.kinds);
+  const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode);
   const border = state.borderTransparent ? null : state.border;
   const background = border ?? mix(state.colour1, state.colour2, 0.5);
   svg.querySelector('rect')?.setAttribute('fill', background);

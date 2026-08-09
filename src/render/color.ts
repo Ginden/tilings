@@ -39,9 +39,19 @@ export function mix(a: string, b: string, t: number): string {
   });
 }
 
-/** Colours for `kinds` tile classes, interpolated between the two chosen colours. */
-export function kindColors(colour1: string, colour2: string, kinds: number): string[] {
+/** Colours for tile classes, normally interpolated between the two chosen colours. */
+export function kindColors(
+  colour1: string,
+  colour2: string,
+  kinds: number,
+  mode: 'gradient' | 'paired' = 'gradient',
+): string[] {
   if (kinds <= 1) return [colour1];
+  if (mode === 'paired' && kinds === 4) {
+    const companion = (colour: string): string =>
+      relativeLuminance(colour) < 0.35 ? mix(colour, '#ffffff', 0.32) : mix(colour, '#000000', 0.22);
+    return [colour1, companion(colour1), colour2, companion(colour2)];
+  }
   const out: string[] = [];
   for (let i = 0; i < kinds; i++) out.push(mix(colour1, colour2, i / (kinds - 1)));
   return out;
