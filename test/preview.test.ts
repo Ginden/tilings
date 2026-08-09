@@ -8,18 +8,32 @@ import { renderSvg } from '../src/render/svg.js';
  * Enabled with `PREVIEW_DIR=<dir> npm test`.
  */
 const dir = process.env['PREVIEW_DIR'];
+const requestedTiling = process.env['PREVIEW_TILING'];
+const previewWidth = Number(process.env['PREVIEW_WIDTH'] ?? 900);
+const previewHeight = Number(process.env['PREVIEW_HEIGHT'] ?? 600);
+const previewTileSize = Number(process.env['PREVIEW_TILE_SIZE'] ?? 34);
+const previewBorder =
+  process.env['PREVIEW_BORDER'] === 'none'
+    ? null
+    : (process.env['PREVIEW_BORDER'] ?? '#101820');
 
 describe.skipIf(!dir)('preview', () => {
   it('renders every tiling', () => {
     mkdirSync(dir!, { recursive: true });
-    for (const def of TILINGS) {
+    const definitions = requestedTiling
+      ? TILINGS.filter((definition) => definition.id === requestedTiling)
+      : TILINGS;
+    if (requestedTiling && definitions.length === 0) {
+      throw new Error(`Unknown tiling id: ${requestedTiling}`);
+    }
+    for (const def of definitions) {
       const { svg, tileCount } = renderSvg(def, {
-        width: 900,
-        height: 600,
-        tileSize: 34,
+        width: previewWidth,
+        height: previewHeight,
+        tileSize: previewTileSize,
         colour1: '#f2c14e',
         colour2: '#1b3a5c',
-        border: '#101820',
+        border: previewBorder,
         borderWidth: 1,
       });
       writeFileSync(`${dir}/${def.id}.svg`, svg);

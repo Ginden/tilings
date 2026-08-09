@@ -9,6 +9,7 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
+    "preview:geometry": "bash scripts/render-geometry-preview.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },

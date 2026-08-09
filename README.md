@@ -32,7 +32,7 @@ rasterisation for display, and no runtime dependencies.
 | Pinwheel (Conway–Radin) | 1–2–√5 right triangle | rep-5 substitution; tiles appear in infinitely many orientations |
 | Chair (L-tromino) | L-tromino | rep-4 substitution, grown outwards from a central supertile |
 | Sphinx hexiamond | pentagonal hexiamond + mirror image | exact rep-4 affine dissection |
-| Voderberg spiral | congruent interlocking nonagons | 30 radial sectors plus a one-leg Goldberg shift forming two genuine spiral arms |
+| Voderberg spiral | congruent interlocking nonagons | finite classic double spiral grown in successive beak-to-butt layers |
 
 Tilings with more than two tile classes (including P1 and A1's six prototiles,
 the Tübingen handed states, the Socolar–Taylor hierarchy phases, and the hat's

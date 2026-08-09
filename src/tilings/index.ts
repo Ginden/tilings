@@ -17,8 +17,8 @@ import {
   socolarTaylor,
   sphinx,
   tubingenTriangle,
-  voderberg,
 } from './additional.js';
+import { voderberg } from './voderberg.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,

@@ -32,6 +32,8 @@ export interface TilingDefinition {
   /** Number of tile classes; class `i` gets colour `lerp(colour1, colour2, i/(kinds-1))`. */
   readonly kinds: number;
   readonly kindLabels: readonly string[];
+  /** Fit the complete generated patch in the viewport instead of cropping it as an infinite cover. */
+  readonly viewportMode?: 'cover' | 'fit-patch';
   /** Reference URL (usually Wikipedia). */
   readonly reference: string;
   /** Area of a typical tile when generated at natural scale, used to normalise tile sizes. */
