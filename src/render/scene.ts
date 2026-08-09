@@ -21,7 +21,7 @@ export interface Scene {
  */
 export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
   const tileSize = Math.max(2, opts.tileSize);
-  let scale = tileSize / Math.sqrt(def.unitTileArea);
+  const scale = tileSize / Math.sqrt(def.unitTileArea);
   const diagonal = Math.hypot(opts.width, opts.height) / 2;
   const radius = (diagonal * 1.1 + tileSize * 2) / scale;
 
@@ -29,32 +29,8 @@ export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
   const angle = ((opts.rotation ?? 0) * Math.PI) / 180;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);
-  let cx = opts.width / 2;
-  let cy = opts.height / 2;
-
-  if (def.viewportMode === 'fit-patch') {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    for (const tile of raw) {
-      for (const point of tile.points) {
-        const x = point.x * cos - point.y * sin;
-        const y = point.x * sin + point.y * cos;
-        if (x < minX) minX = x;
-        if (y < minY) minY = y;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
-      }
-    }
-    const padding = Math.max(8, tileSize / 2);
-    scale = Math.min(
-      (opts.width - 2 * padding) / (maxX - minX),
-      (opts.height - 2 * padding) / (maxY - minY),
-    );
-    cx = opts.width / 2 - ((minX + maxX) / 2) * scale;
-    cy = opts.height / 2 - ((minY + maxY) / 2) * scale;
-  }
+  const cx = opts.width / 2;
+  const cy = opts.height / 2;
 
   const tiles: Tile[] = [];
   for (const tile of raw) {

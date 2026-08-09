@@ -116,7 +116,7 @@ describe('tiling registry', () => {
         expect(mean).toBeLessThan(def.unitTileArea * 1.7);
       });
 
-      it.skipIf(def.viewportMode === 'fit-patch')('covers the requested disc exactly once', () => {
+      it('covers the requested disc exactly once', () => {
         const counts = coverCounts(tiles, radius * 0.7, 220);
         const gaps = counts.filter((c) => c === 0).length;
         const overlaps = counts.filter((c) => c > 1).length;
@@ -257,7 +257,7 @@ describe('additional tiling constructions', () => {
   it('builds the classic Voderberg double spiral from congruent nonagons', () => {
     expect(VODERBERG_OUTLINE).toHaveLength(9);
     const patch = generateVoderberg(8);
-    expect(patch).toHaveLength(77);
+    expect(patch).toHaveLength(482);
     expect(patch.every((tile) => tile.points.length === 9)).toBe(true);
     expect(new Set(patch.map((tile) => tile.kind))).toEqual(new Set([0, 1]));
     const signatures = patch.map((tile) =>
@@ -270,7 +270,7 @@ describe('additional tiling constructions', () => {
     );
     for (const signature of signatures.slice(1)) {
       for (let index = 0; index < signatures[0]!.length; index++) {
-        expect(signature[index]).toBeCloseTo(signatures[0]![index]!, 10);
+        expect(signature[index]).toBeCloseTo(signatures[0]![index]!, 6);
       }
     }
     const orientations = new Set(

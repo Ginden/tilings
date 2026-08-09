@@ -44,5 +44,14 @@ OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
+## Voderberg turtle grammar
+
+The numerical turtle grammar used to construct the Voderberg boundary graph
+is credited to Herb Savage and was distributed with Fractint's
+[`tiling.l`](https://github.com/LegalizeAdulthood/fractint/blob/master/fractint/lsystem/tiling.l),
+where it is described as being based on Martin Gardner's published
+construction. `src/tilings/voderberg.ts` independently expands that grammar,
+polygonises its planar boundary graph, and emits the bounded nonagonal faces.
+
 Every other tiling in this repository is generated from geometry derived in
 `src/tilings/`, with no third-party code.

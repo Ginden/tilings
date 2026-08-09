@@ -2,226 +2,191 @@ import { area } from '../geometry.js';
 import type { Vec } from '../geometry.js';
 import type { Tile, TilingDefinition } from './types.js';
 
-type MacroKind = '1' | '2';
-type MacroOp = readonly [MacroKind, string, string, string, string, string];
+interface TurtleState {
+  x: number;
+  y: number;
+  angle: number;
+  step: number;
+}
 
-interface MacroTemplate {
+interface Segment {
   readonly a: Vec;
   readonly b: Vec;
-  readonly polygon: readonly Vec[];
-  readonly anchors: readonly [Vec, Vec, Vec];
 }
+
+interface GraphEdge {
+  readonly a: string;
+  readonly b: string;
+}
+
+const AXIOM = String.raw`\84.1A\96@4.783386117M@I4.783386117/96A`;
+const RULES: Readonly<Record<string, string>> = {
+  A: String.raw`X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12X\12Z`,
+  X: String.raw`[D\78D\46.37236@3.393427D@I3.393427/46.37236D\114[\168X\24Y]D\78D\46.37236@3.393427D@I3.393427/46.37236D/78D]`,
+  Y: String.raw`[D\78D\46.37236@3.393427D@I3.393427/46.37236D/78D\168[\192Y]D\78D\46.37236@3.393427D@I3.393427/46.37236D]`,
+  Z: String.raw`[D\78D\46.37236@3.393427D@I3.393427/46.37236D\114D\78D\46.37236@3.393427D@I3.393427/46.37236D/78D]`,
+};
+const DEG = Math.PI / 180;
+const POINT_PRECISION = 10_000;
+const SPIRAL_PHASE_PER_UNIT = 0.275;
+const SPIRAL_PHASE_OFFSET = 1.22;
+const cache = new Map<number, readonly Tile[]>();
 
 /**
- * Two congruent, opposite-handed placements of the classic nonagon. These
- * normalized construction tools and the recurrence below reproduce the
- * beak-to-butt layers described by Adams, Lopez, Mann, and Tran (2020).
+ * Turtle grammar by Herb Savage, based on Gardner's published Voderberg
+ * construction. It is expanded into a boundary graph and polygonised here;
+ * unlike a decorative stroke rendering, every bounded nine-edge face becomes
+ * a real tile used by clipping and export.
  *
- * The anchor recurrence was independently checked against Rousseau-Wallon's
- * public GeoGebra construction: https://www.geogebra.org/m/zhq3Ywhu
+ * @see https://github.com/LegalizeAdulthood/fractint/blob/master/fractint/lsystem/tiling.l
+ * @see https://doi.org/10.1080/0025570X.2020.1708685
  */
-const MACROS: Record<MacroKind, MacroTemplate> = {
-  '1': {
-    a: { x: 0.5883527071324377, y: 1.4124550363153074 },
-    b: { x: 0.5841864518964093, y: 1.7040929028372909 },
-    polygon: [
-      { x: 0.5883527071324377, y: 1.4124550363153074 },
-      { x: 0.2997536484189719, y: 1.3702580437460814 },
-      { x: -0.23690237903850636, y: 1.8762859034956458 },
-      { x: -0.525501437751972, y: 1.83408891092642 },
-      { x: -0.5213351825159473, y: 1.5424510444044364 },
-      { x: -0.6008409101762952, y: 1.8230732854000211 },
-      { x: -0.33299701124520936, y: 1.93852738310807 },
-      { x: 0.31634255296532277, y: 1.5886388051292417 },
-      { x: 0.5841864518964093, y: 1.7040929028372909 },
-    ],
-    anchors: [
-      { x: -0.5213351825159473, y: 1.5424510444044364 },
-      { x: -0.6008409101762952, y: 1.8230732854000211 },
-      { x: -0.525501437751972, y: 1.83408891092642 },
-    ],
-  },
-  '2': {
-    a: { x: -2.932844635115863, y: 2.8533647262119346 },
-    b: { x: -3.136117760854791, y: 2.644199625813919 },
-    polygon: [
-      { x: -3.136117760854791, y: 2.644199625813919 },
-      { x: -2.932844635115863, y: 2.8533647262119346 },
-      { x: -2.6989365040641453, y: 2.6791321543429616 },
-      { x: -2.6772791189825784, y: 1.941843307064907 },
-      { x: -2.443370987930857, y: 1.7676107351959305 },
-      { x: -2.6938536614263815, y: 1.618183719061896 },
-      { x: -2.8746968583113626, y: 1.8470193391314282 },
-      { x: -2.7047918904742874, y: 2.5647910218784222 },
-      { x: -2.8856350873592675, y: 2.7936266419479536 },
-    ],
-    anchors: [
-      { x: -2.6938536614263815, y: 1.618183719061896 },
-      { x: -2.443370987930857, y: 1.7676107351959305 },
-      { x: -2.8856350873592675, y: 2.7936266419479536 },
-    ],
-  },
-};
 
-const INNER_LAYER: readonly MacroOp[] = [
-  ['1', 'A', 'B', 'A_1', 'B_1', 'C_1'],
-  ['1', 'B', 'C', 'D_1', 'E_1', 'F_1'],
-  ['1', 'C', 'D', 'G_1', 'H_1', 'I_1'],
-  ['1', 'D', 'E', 'J_1', 'K_1', 'L_1'],
-  ['1', 'E', 'F', 'M_1', 'N_1', 'O_1'],
-  ['1', 'F', 'G', 'P_1', 'Q_1', 'R_1'],
-  ['1', 'G', 'H', 'S_1', 'T_1', 'U_1'],
-  ['1', 'H', 'I', 'V_1', 'W_1', 'Z_1'],
-  ['1', 'I', 'J', 'A_2', 'B_2', 'C_2'],
-  ['1', 'J', 'K', 'D_2', 'E_2', 'F_2'],
-  ['1', 'K', 'L', 'G_2', 'H_2', 'I_2'],
-  ['1', 'L', 'M', 'J_2', 'K_2', 'L_2'],
-  ['1', 'M', 'N', 'M_2', 'N_2', 'O_2'],
-  ['2', 'N', 'O', 'P_2', 'Q_2', 'R_2'],
-];
-
-const OUTER_LAYERS: readonly MacroOp[] = [
-  ['1', 'C_1', 'A_1', 'Q_3', 'R_3', 'S_3'],
-  ['1', 'A_1', 'N_2', 'T_3', 'U_3', 'V_3'],
-  ['1', 'N_2', 'T_2', 'W_3', 'Z_3', 'A_4'],
-  ['1', 'T_2', 'U_2', 'B_4', 'C_4', 'D_4'],
-  ['1', 'U_2', 'V', 'E_4', 'F_4', 'G_4'],
-  ['1', 'V', 'W_2', 'H_4', 'I_4', 'J_4'],
-  ['1', 'W_2', 'Z_2', 'K_4', 'L_4', 'M_4'],
-  ['1', 'Z_2', 'A_3', 'N_4', 'O_4', 'P_4'],
-  ['1', 'A_3', 'B_3', 'Q_4', 'R_4', 'S_4'],
-  ['1', 'B_3', 'C_3', 'T_4', 'U_4', 'V_4'],
-  ['1', 'C_3', 'D_3', 'W_4', 'Z_4', 'A_5'],
-  ['1', 'D_3', 'E_3', 'B_5', 'C_5', 'D_5'],
-  ['1', 'E_3', 'F_3', 'E_5', 'F_5', 'G_5'],
-  ['2', 'D', 'C', 'H_5', 'I_5', 'J_5'],
-  ['2', 'J_5', 'C', 'K_5', 'L_5', 'M_5'],
-  ['1', 'M_5', 'C', 'N_5', 'O_5', 'P_5'],
-  ['2', 'T_2', 'N_2', 'Q_5', 'R_5', 'S_5'],
-  ['1', 'R_2', 'O', 'T_5', 'U_5', 'V_5'],
-  ['2', 'U_2', 'T_2', 'W_5', 'Z_5', 'A_6'],
-  ['2', 'A_6', 'T_2', 'B_6', 'C_6', 'D_6'],
-  ['2', 'R_5', 'W_5', 'E_6', 'F_6', 'G_6'],
-  ['2', 'V', 'U_2', 'H_6', 'I_6', 'J_6'],
-  ['2', 'J_6', 'U_2', 'K_6', 'L_6', 'M_6'],
-  ['2', 'Z_5', 'H_6', 'N_6', 'O_6', 'P_6'],
-  ['2', 'W_2', 'V', 'Q_6', 'R_6', 'S_6'],
-  ['2', 'S_6', 'V', 'T_6', 'U_6', 'V_6'],
-  ['2', 'I_6', 'Q_6', 'W_6', 'Z_6', 'A_7'],
-  ['2', 'Z_2', 'W_2', 'B_7', 'C_7', 'D_7'],
-  ['2', 'D_7', 'W_2', 'E_7', 'F_7', 'G_7'],
-  ['2', 'R_6', 'B_7', 'H_7', 'I_7', 'J_7'],
-  ['2', 'A_3', 'Z_2', 'K_7', 'L_7', 'M_7'],
-  ['2', 'M_7', 'Z_2', 'N_7', 'O_7', 'P_7'],
-  ['2', 'C_7', 'K_7', 'Q_7', 'R_7', 'S_7'],
-  ['2', 'B_3', 'A_3', 'T_7', 'U_7', 'V_7'],
-  ['2', 'V_7', 'A_3', 'W_7', 'Z_7', 'A_8'],
-  ['2', 'L_7', 'T_7', 'B_8', 'C_8', 'D_8'],
-  ['2', 'E', 'D', 'E_8', 'F_8', 'G_8'],
-  ['2', 'G_8', 'D', 'H_8', 'I_8', 'J_8'],
-  ['2', 'I_5', 'E_8', 'K_8', 'L_8', 'M_8'],
-  ['2', 'F', 'E', 'N_8', 'O_8', 'P_8'],
-  ['2', 'P_8', 'E', 'Q_8', 'R_8', 'S_8'],
-  ['2', 'F_8', 'N_8', 'T_8', 'U_8', 'V_8'],
-  ['2', 'G', 'F', 'W_8', 'Z_8', 'A_9'],
-  ['2', 'A_9', 'F', 'B_9', 'C_9', 'D_9'],
-  ['2', 'O_8', 'W_8', 'E_9', 'F_9', 'G_9'],
-  ['2', 'H', 'G', 'H_9', 'I_9', 'J_9'],
-  ['2', 'J_9', 'G', 'K_9', 'L_9', 'M_9'],
-  ['2', 'Z_8', 'H_9', 'N_9', 'O_9', 'P_9'],
-  ['2', 'I', 'H', 'Q_9', 'R_9', 'S_9'],
-  ['2', 'S_9', 'H', 'T_9', 'U_9', 'V_9'],
-  ['2', 'I_9', 'Q_9', 'W_9', 'Z_9', 'A_{10}'],
-  ['2', 'J', 'I', 'B_{10}', 'C_{10}', 'D_{10}'],
-  ['2', 'D_{10}', 'I', 'E_{10}', 'F_{10}', 'G_{10}'],
-  ['2', 'R_9', 'B_{10}', 'H_{10}', 'I_{10}', 'J_{10}'],
-  ['2', 'K', 'J', 'K_{10}', 'L_{10}', 'M_{10}'],
-  ['2', 'M_{10}', 'J', 'N_{10}', 'O_{10}', 'P_{10}'],
-  ['2', 'C_{10}', 'K_{10}', 'Q_{10}', 'R_{10}', 'S_{10}'],
-  ['2', 'C_3', 'B_3', 'T_{10}', 'U_{10}', 'V_{10}'],
-  ['2', 'V_{10}', 'B_3', 'W_{10}', 'Z_{10}', 'A_{11}'],
-  ['2', 'U_7', 'T_{10}', 'B_{11}', 'C_{11}', 'D_{11}'],
-  ['2', 'D_3', 'C_3', 'E_{11}', 'F_{11}', 'G_{11}'],
-  ['2', 'G_{11}', 'C_3', 'H_{11}', 'I_{11}', 'J_{11}'],
-  ['2', 'U_{10}', 'E_{11}', 'K_{11}', 'L_{11}', 'M_{11}'],
-];
-
-function transformTemplate(template: MacroTemplate, a: Vec, b: Vec, point: Vec): Vec {
-  const sourceX = template.b.x - template.a.x;
-  const sourceY = template.b.y - template.a.y;
-  const targetX = b.x - a.x;
-  const targetY = b.y - a.y;
-  const denominator = sourceX * sourceX + sourceY * sourceY;
-  const real = (targetX * sourceX + targetY * sourceY) / denominator;
-  const imaginary = (targetY * sourceX - targetX * sourceY) / denominator;
-  const x = point.x - template.a.x;
-  const y = point.y - template.a.y;
-  return { x: a.x + real * x - imaginary * y, y: a.y + imaginary * x + real * y };
-}
-
-function regularPolygon(a: Vec, b: Vec, sides: number): Vec[] {
-  const points = [a, b];
-  const turn = (2 * Math.PI) / sides;
-  let dx = b.x - a.x;
-  let dy = b.y - a.y;
-  for (let index = 2; index < sides; index++) {
-    const nextDx = dx * Math.cos(turn) - dy * Math.sin(turn);
-    const nextDy = dx * Math.sin(turn) + dy * Math.cos(turn);
-    const previous = points[points.length - 1]!;
-    points.push({ x: previous.x + nextDx, y: previous.y + nextDy });
-    dx = nextDx;
-    dy = nextDy;
+function expand(iterations: number): string {
+  let commands = AXIOM;
+  for (let iteration = 0; iteration < iterations; iteration++) {
+    commands = [...commands].map((command) => RULES[command] ?? command).join('');
   }
-  return points;
+  return commands;
 }
 
-function applyOperations(
-  operations: readonly MacroOp[],
-  anchors: Map<string, Vec>,
-  tiles: Tile[],
-): void {
-  for (const [kind, aName, bName, firstName, secondName, thirdName] of operations) {
-    const a = anchors.get(aName)!;
-    const b = anchors.get(bName)!;
-    const template = MACROS[kind];
-    const points = template.polygon.map((point) => transformTemplate(template, a, b, point));
-    const outputs = template.anchors.map((point) => transformTemplate(template, a, b, point));
-    anchors.set(firstName, outputs[0]!);
-    anchors.set(secondName, outputs[1]!);
-    anchors.set(thirdName, outputs[2]!);
-    tiles.push({ kind: kind === '1' ? 0 : 1, points });
+function readNumber(commands: string, start: number): readonly [number, number] {
+  let end = start;
+  while (end < commands.length && /[0-9.]/.test(commands[end]!)) end++;
+  return [Number(commands.slice(start, end)), end];
+}
+
+function trace(iterations: number): Segment[] {
+  const commands = expand(iterations);
+  const state: TurtleState = { x: 0, y: 0, angle: 0, step: 1 };
+  const stack: TurtleState[] = [];
+  const segments: Segment[] = [];
+
+  for (let index = 0; index < commands.length; index++) {
+    const command = commands[index]!;
+    if (command === '[') {
+      stack.push({ ...state });
+    } else if (command === ']') {
+      Object.assign(state, stack.pop()!);
+    } else if (command === '\\' || command === '/') {
+      const [degrees, end] = readNumber(commands, index + 1);
+      state.angle += (command === '\\' ? degrees : -degrees) * DEG;
+      index = end - 1;
+    } else if (command === '@') {
+      const inverse = commands[index + 1] === 'I';
+      const [factor, end] = readNumber(commands, index + (inverse ? 2 : 1));
+      state.step = inverse ? state.step / factor : state.step * factor;
+      index = end - 1;
+    } else if (command === 'D' || command === 'M') {
+      const next = {
+        x: state.x + state.step * Math.cos(state.angle),
+        y: state.y + state.step * Math.sin(state.angle),
+      };
+      if (command === 'D') {
+        segments.push({ a: { x: state.x, y: state.y }, b: next });
+      }
+      state.x = next.x;
+      state.y = next.y;
+    }
   }
+  return segments;
 }
 
-export const VODERBERG_OUTLINE: readonly Vec[] = MACROS['1'].polygon;
+function pointKey(point: Vec): string {
+  return `${Math.round(point.x * POINT_PRECISION)},${Math.round(point.y * POINT_PRECISION)}`;
+}
 
-/** A finite, complete double-spiral patch built by the published layer recurrence. */
-export function generateVoderberg(_radius: number): Tile[] {
-  const anchors = new Map<string, Vec>();
-  const seed = regularPolygon(
-    { x: -1.5515173445039863, y: 1.3918248114979803 },
-    { x: -1.5473510892679578, y: 1.1001869449759967 },
-    24,
-  );
-  const seedNames = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-    'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Z',
-  ];
-  seedNames.forEach((name, index) => {
-    anchors.set(name, seed[index]!);
-  });
+function polygonize(segments: readonly Segment[]): Tile[] {
+  const points = new Map<string, Vec>();
+  const edges = new Map<string, GraphEdge>();
+  const neighbours = new Map<string, Set<string>>();
 
+  for (const segment of segments) {
+    const a = pointKey(segment.a);
+    const b = pointKey(segment.b);
+    if (a === b) continue;
+    if (!points.has(a)) points.set(a, segment.a);
+    if (!points.has(b)) points.set(b, segment.b);
+    const edgeKey = a < b ? `${a}|${b}` : `${b}|${a}`;
+    if (!edges.has(edgeKey)) {
+      edges.set(edgeKey, { a, b });
+      if (!neighbours.has(a)) neighbours.set(a, new Set());
+      if (!neighbours.has(b)) neighbours.set(b, new Set());
+      neighbours.get(a)!.add(b);
+      neighbours.get(b)!.add(a);
+    }
+  }
+
+  const sortedNeighbours = new Map<string, string[]>();
+  for (const [key, adjacent] of neighbours) {
+    const centre = points.get(key)!;
+    sortedNeighbours.set(
+      key,
+      [...adjacent].sort((left, right) => {
+        const a = points.get(left)!;
+        const b = points.get(right)!;
+        return Math.atan2(a.y - centre.y, a.x - centre.x) -
+          Math.atan2(b.y - centre.y, b.x - centre.x);
+      }),
+    );
+  }
+
+  const used = new Set<string>();
   const tiles: Tile[] = [];
-  applyOperations(INNER_LAYER, anchors, tiles);
+  for (const edge of edges.values()) {
+    for (const [startA, startB] of [[edge.a, edge.b], [edge.b, edge.a]] as const) {
+      if (used.has(`${startA}>${startB}`)) continue;
+      const face: string[] = [];
+      let a = startA;
+      let b = startB;
+      while (!used.has(`${a}>${b}`)) {
+        used.add(`${a}>${b}`);
+        face.push(a);
+        const adjacent = sortedNeighbours.get(b)!;
+        const reverse = adjacent.indexOf(a);
+        const next = adjacent[(reverse - 1 + adjacent.length) % adjacent.length]!;
+        a = b;
+        b = next;
+      }
+      if (a !== startA || b !== startB || face.length !== 9) continue;
+      const polygon = face.map((key) => points.get(key)!);
+      if (area(polygon) < 1e-6) continue;
 
-  const scaffold = regularPolygon(anchors.get('C_1')!, anchors.get('A_1')!, 24);
-  const scaffoldNames = [
-    'C_1', 'A_1', 'S_2', 'T_2', 'U_2', 'V_2', 'W_2', 'Z_2', 'A_3', 'B_3', 'C_3', 'D_3',
-    'E_3', 'F_3', 'G_3', 'H_3', 'I_3', 'J_3', 'K_3', 'L_3', 'M_3', 'N_3', 'O_3', 'P_3',
-  ];
-  scaffoldNames.forEach((name, index) => anchors.set(name, scaffold[index]!));
-  applyOperations(OUTER_LAYERS, anchors, tiles);
+      const centroid = polygon.reduce(
+        (sum, point) => ({ x: sum.x + point.x / 9, y: sum.y + point.y / 9 }),
+        { x: 0, y: 0 },
+      );
+      const centre = {
+        x: 4.783386117 / 2,
+        y: (4.783386117 * Math.sin(0.1 * DEG)) / 2,
+      };
+      const dx = centroid.x - centre.x;
+      const dy = centroid.y - centre.y;
+      // The two arms alternate every half-turn of the Archimedean phase.
+      // Its pitch is the grammar's 12-degree turn per construction layer.
+      const spiralPhase =
+        SPIRAL_PHASE_PER_UNIT * Math.hypot(dx, dy) +
+        Math.atan2(dy, dx) +
+        SPIRAL_PHASE_OFFSET;
+      tiles.push({ kind: Math.sin(spiralPhase) > 0 ? 1 : 0, points: polygon });
+    }
+  }
   return tiles;
+}
+
+function patch(iterations: number): readonly Tile[] {
+  const existing = cache.get(iterations);
+  if (existing) return existing;
+  const tiles = polygonize(trace(iterations));
+  cache.set(iterations, tiles);
+  return tiles;
+}
+
+export const VODERBERG_OUTLINE: readonly Vec[] = patch(3)[0]!.points;
+
+export function generateVoderberg(radius: number): Tile[] {
+  const iterations = Math.max(5, Math.min(22, Math.ceil(radius / 4) + 1));
+  return [...patch(iterations)];
 }
 
 export const voderberg: TilingDefinition = {
@@ -229,11 +194,10 @@ export const voderberg: TilingDefinition = {
   name: 'Voderberg spiral',
   family: 'nonperiodic',
   description:
-    'A finite patch of the classic Voderberg double spiral, grown from congruent nonagons by successive beak-to-butt layers.',
+    'The classic plane-covering Voderberg double spiral, generated as two recursively interlocking arms of congruent nonagons.',
   kinds: 2,
-  kindLabels: ['outward placement', 'inward placement'],
-  viewportMode: 'fit-patch',
-  reference: 'https://doi.org/10.1080/0025570X.2020.1708685',
+  kindLabels: ['clockwise arm', 'counter-clockwise arm'],
+  reference: 'https://en.wikipedia.org/wiki/Voderberg_tiling',
   unitTileArea: area(VODERBERG_OUTLINE),
   generate: generateVoderberg,
 };
