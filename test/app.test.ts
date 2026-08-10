@@ -229,7 +229,7 @@ describe('palettes', () => {
   });
 
   it('offers three-colour palettes only on the selected tilings', () => {
-    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(4);
+    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(6);
     expect(TILINGS.filter((tiling) => tiling.supportsThreeColours).map((tiling) => tiling.id).sort()).toEqual([
       'danzer-sevenfold',
       'hat',

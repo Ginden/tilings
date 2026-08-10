@@ -46,7 +46,7 @@ two-part gradient through the middle colour.
 * **Colour 1 / Colour 2** — the two base tile colours, as pickers or hex values,
   plus ten named preset palettes grouped into classic and studio collections.
 * **Third colour** — available on selected multi-class tilings, with four extra
-  three-colour palettes that appear only when they can be used.
+  six three-colour palettes that appear only when they can be used.
 * **Border** — colour, width, and a *transparent* switch that drops the stroke
   entirely (the background is then filled with a blend of the two colours so no
   seams show).

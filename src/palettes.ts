@@ -24,6 +24,8 @@ export const PALETTES: readonly PalettePreset[] = [
   { id: 'understory', name: 'Understory', collection: 'trios', colour1: '#334f38', colour2: '#c8a96a', colour3: '#b85c38', border: '#202a20' },
   { id: 'stained-glass', name: 'Stained glass', collection: 'trios', colour1: '#1d3557', colour2: '#e63946', colour3: '#f1c453', border: '#f4f1de' },
   { id: 'tidepool', name: 'Tidepool', collection: 'trios', colour1: '#073b4c', colour2: '#2a9d8f', colour3: '#e76f51', border: '#d9f0ee' },
+  { id: 'bisexual', name: 'Bisexual', collection: 'trios', colour1: '#d60270', colour2: '#9b4f96', colour3: '#0038a8', border: '#f5f3ff' },
+  { id: 'trans', name: 'Trans', collection: 'trios', colour1: '#5bcefa', colour2: '#f5a9b8', colour3: '#ffffff', border: '#9ca3af' },
 ];
 
 export const DEFAULT_PALETTE = PALETTES[0]!;
