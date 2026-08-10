@@ -36,9 +36,9 @@ rasterisation for display, and no runtime dependencies.
 | Jeandel–Rao 11 Wang tiles | eleven unit squares with four edge colours | coding the orbit of a point under the two unit translations of the torus ℝ²/⟨(φ,0),(1,φ+3)⟩ through Labbé's eleven-letter Markov partition; each square drawn as four triangles carrying its edge colours |
 
 Tilings with more than two tile classes shade their classes evenly between the
-chosen colours. Socolar, Heptagonal, the Hat monotile, and Shuriken can add a
-third stop, giving three-class tilings exact colours and larger class sets a
-two-part gradient through the middle colour.
+chosen colours. Socolar, Heptagonal, Decagonal, the Hat monotile, and Shuriken
+can add a third stop, giving three-class tilings exact colours and larger class
+sets a two-part gradient through the middle colour.
 
 ## Controls
 

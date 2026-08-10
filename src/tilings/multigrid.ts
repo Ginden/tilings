@@ -194,4 +194,5 @@ export const decagonal = makeMultigridTiling({
     'A ten-family multigrid: five rhomb shapes packed into a decagonal quasicrystal.',
   reference: 'https://en.wikipedia.org/wiki/Quasicrystal',
   kindLabels: ['18°', '36°', '54°', '72°', 'square'],
+  supportsThreeColours: true,
 });
