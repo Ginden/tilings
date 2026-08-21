@@ -17,6 +17,7 @@ export interface Tile {
 
 export type TilingFamily =
   | 'regular'
+  | 'uniform'
   | 'penrose'
   | 'quasicrystal'
   | 'monotile'

@@ -18,6 +18,14 @@ rasterisation for display, and no runtime dependencies.
 | Triangular | equilateral triangle | one rectangular translation cell, repeated as a CSS background |
 | Square | square | one chequerboard translation cell, repeated as a CSS background |
 | Hexagonal | regular hexagon | one honeycomb translation cell, repeated as a CSS background |
+| Trihexagonal (kagome) | triangle + hexagon | unit-edge lattice with vertex figure 3.6.3.6 |
+| Truncated square | square + octagon | square-lattice cell with vertex figure 4.8.8 |
+| Truncated hexagonal | triangle + dodecagon | unit-edge lattice with vertex figure 3.12.12 |
+| Rhombitrihexagonal | triangle + square + hexagon | unit-edge lattice with vertex figure 3.4.6.4 |
+| Elongated triangular | triangle + square | unit-edge lattice with vertex figure 3³.4² |
+| Truncated trihexagonal | square + hexagon + dodecagon | unit-edge lattice with vertex figure 4.6.12 |
+| Snub square | triangle + square | unit-edge lattice with vertex figure 3².4.3.4 |
+| Snub hexagonal (left/right) | triangle + hexagon | both mirror forms of the chiral unit-edge lattice with vertex figure 3⁴.6 |
 | Penrose P3 — rhombs | thick + thin rhomb | Robinson triangle deflation, half-tiles glued on their bases |
 | Penrose P2 — kite and dart | kite + dart | Robinson triangle deflation with the mirror axis tracked per half-tile |
 | Penrose P1 — pentagons | 3 matched pentagons + star + boat + diamond | six-prototile pentagonal L-system decomposition |
@@ -39,9 +47,10 @@ rasterisation for display, and no runtime dependencies.
 | Jeandel–Rao 11 Wang tiles | eleven unit squares with four edge colours | coding the orbit of a point under the two unit translations of the torus ℝ²/⟨(φ,0),(1,φ+3)⟩ through Labbé's eleven-letter Markov partition; each square drawn as four triangles carrying its edge colours |
 
 Tilings with more than two tile classes shade their classes evenly between the
-chosen colours. Socolar, Heptagonal, Decagonal, the Hat monotile, and Shuriken
-can add a third stop, giving three-class tilings exact colours and larger class
-sets a two-part gradient through the middle colour.
+chosen colours. Socolar, Heptagonal, Decagonal, the Hat monotile, Shuriken,
+Rhombitrihexagonal, and Truncated trihexagonal can add a third stop, giving
+three-class tilings exact colours and larger class sets a two-part gradient
+through the middle colour.
 
 ## Controls
 
@@ -131,4 +140,6 @@ The Sphinx rep-4 child maps follow the classical four-copy hexiamond
 dissection. Everything else is derived from the geometry described on Wikipedia's
 [Penrose tiling](https://en.wikipedia.org/wiki/Penrose_tiling) and
 [list of aperiodic sets of tiles](https://en.wikipedia.org/wiki/List_of_aperiodic_sets_of_tiles)
-pages.
+pages. The Archimedean translation cells use the integer-lattice construction
+from Soto Sánchez, Medeiros e Sá and de Figueiredo's
+[“Synthesizing Periodic Tilings of Regular Polygons”](https://doi.org/10.1109/SIBGRAPI.2018.00009).

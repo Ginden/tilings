@@ -146,8 +146,14 @@ describe('svg output', () => {
     for (const kind of [0, 1]) expect(svg).toContain(`<path data-kind="${kind}"`);
   });
 
-  it('renders regular tilings from a compact repeating cell', () => {
-    for (const id of ['triangular', 'square', 'hexagonal']) {
+  it('renders periodic tilings from a compact repeating cell', () => {
+    const periodicIds = [
+      'triangular', 'square', 'hexagonal',
+      'trihexagonal', 'truncated-square', 'truncated-hexagonal', 'rhombitrihexagonal',
+      'elongated-triangular', 'truncated-trihexagonal', 'snub-square',
+      'snub-hexagonal-left', 'snub-hexagonal-right',
+    ];
+    for (const id of periodicIds) {
       const def = tilingById(id);
       const result = renderSvg(def, { ...options, width: 3840, height: 2160, tileSize: 12 });
       expect(result.cssBackground).toBeDefined();
@@ -249,8 +255,10 @@ describe('palettes', () => {
       'decagonal',
       'hat',
       'heptagonal',
+      'rhombitrihexagonal',
       'shuriken-supertile-12',
       'socolar',
+      'truncated-trihexagonal',
     ]);
   });
 

@@ -59,6 +59,18 @@ import {
   subdivideWatanabeItoSoma,
 } from '../src/tilings/watanabe-ito-soma-eightfold.js';
 
+const ARCHIMEDEAN_VERTEX_FIGURES: Readonly<Record<string, readonly number[]>> = {
+  'elongated-triangular': [3, 3, 3, 4, 4],
+  rhombitrihexagonal: [3, 4, 6, 4],
+  'snub-hexagonal-left': [3, 3, 3, 3, 6],
+  'snub-hexagonal-right': [3, 3, 3, 3, 6],
+  'snub-square': [3, 3, 4, 3, 4],
+  trihexagonal: [3, 6, 3, 6],
+  'truncated-hexagonal': [3, 12, 12],
+  'truncated-square': [4, 8, 8],
+  'truncated-trihexagonal': [4, 6, 12],
+};
+
 function pointInPolygon(x: number, y: number, points: readonly { x: number; y: number }[]): boolean {
   let inside = false;
   for (let i = 0, j = points.length - 1; i < points.length; j = i++) {
@@ -113,6 +125,15 @@ describe('tiling registry', () => {
       'hexagonal',
       'square',
       'triangular',
+      'elongated-triangular',
+      'rhombitrihexagonal',
+      'snub-hexagonal-left',
+      'snub-hexagonal-right',
+      'snub-square',
+      'trihexagonal',
+      'truncated-hexagonal',
+      'truncated-square',
+      'truncated-trihexagonal',
       'penrose-p1',
       'penrose-p2',
       'penrose-p3',
@@ -168,6 +189,50 @@ describe('tiling registry', () => {
         const overlaps = counts.filter((c) => c > 1).length;
         expect({ gaps, overlaps }).toEqual({ gaps: 0, overlaps: 0 });
       });
+    });
+  }
+});
+
+describe('Archimedean tilings', () => {
+  function cyclicKey(values: readonly number[]): string {
+    const variants: string[] = [];
+    for (let offset = 0; offset < values.length; offset++) {
+      const rotated = values.slice(offset).concat(values.slice(0, offset));
+      variants.push(rotated.join('.'), [...rotated].reverse().join('.'));
+    }
+    return variants.sort()[0]!;
+  }
+
+  for (const [id, expectedFigure] of Object.entries(ARCHIMEDEAN_VERTEX_FIGURES)) {
+    it(`${id} uses unit regular polygons with vertex figure ${expectedFigure.join('.')}`, () => {
+      const tiles = TILINGS.find((tiling) => tiling.id === id)!.generate(9);
+      expect(new Set(tiles.map((tile) => tile.points.length))).toEqual(new Set(expectedFigure));
+
+      const vertices = new Map<string, { point: Vec; faces: Array<{ sides: number; centre: Vec }> }>();
+      for (const tile of tiles) {
+        const centre = centroid(tile.points);
+        for (let index = 0; index < tile.points.length; index++) {
+          const point = tile.points[index]!;
+          const next = tile.points[(index + 1) % tile.points.length]!;
+          expect(Math.hypot(next.x - point.x, next.y - point.y)).toBeCloseTo(1, 8);
+          const key = `${Math.round(point.x * 1e7)},${Math.round(point.y * 1e7)}`;
+          const vertex = vertices.get(key) ?? { point, faces: [] };
+          vertex.faces.push({ sides: tile.points.length, centre });
+          vertices.set(key, vertex);
+        }
+      }
+
+      const interior = [...vertices.values()].filter(({ point }) => Math.hypot(point.x, point.y) < 5);
+      expect(interior.length).toBeGreaterThan(20);
+      for (const vertex of interior) {
+        const figure = vertex.faces
+          .sort((a, b) =>
+            Math.atan2(a.centre.y - vertex.point.y, a.centre.x - vertex.point.x) -
+            Math.atan2(b.centre.y - vertex.point.y, b.centre.x - vertex.point.x),
+          )
+          .map((face) => face.sides);
+        expect(cyclicKey(figure)).toBe(cyclicKey(expectedFigure));
+      }
     });
   }
 });
