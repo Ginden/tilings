@@ -36,6 +36,16 @@ body {
   height: 100%;
 }
 
+.periodic-background {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 300vmax;
+  height: 300vmax;
+  transform-origin: center;
+  background-repeat: repeat;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;

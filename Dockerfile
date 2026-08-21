@@ -21,7 +21,7 @@ ARG OCI_REVISION
 ARG OCI_VERSION
 
 LABEL org.opencontainers.image.title="penrose-tilings" \
-  org.opencontainers.image.description="Interactive visualiser for Penrose and other aperiodic tilings, rendered as SVG" \
+  org.opencontainers.image.description="Interactive visualiser for periodic and aperiodic tessellations, rendered as SVG" \
   org.opencontainers.image.source="${OCI_SOURCE}" \
   org.opencontainers.image.url="${OCI_SOURCE}" \
   org.opencontainers.image.revision="${OCI_REVISION}" \

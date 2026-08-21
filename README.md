@@ -1,6 +1,6 @@
 # Penrose tilings
 
-An interactive visualiser for Penrose and other aperiodic tilings. Pick a tiling
+An interactive visualiser for periodic and aperiodic tessellations. Pick a tiling
 from the list, choose two colours and a border colour, set the canvas size and
 tile size, and the tiling fills the background as an SVG you can download as SVG
 or PNG.
@@ -15,6 +15,9 @@ rasterisation for display, and no runtime dependencies.
 
 | Tiling | Prototiles | How it is generated |
 | --- | --- | --- |
+| Triangular | equilateral triangle | one rectangular translation cell, repeated as a CSS background |
+| Square | square | one chequerboard translation cell, repeated as a CSS background |
+| Hexagonal | regular hexagon | one honeycomb translation cell, repeated as a CSS background |
 | Penrose P3 — rhombs | thick + thin rhomb | Robinson triangle deflation, half-tiles glued on their bases |
 | Penrose P2 — kite and dart | kite + dart | Robinson triangle deflation with the mirror axis tracked per half-tile |
 | Penrose P1 — pentagons | 3 matched pentagons + star + boat + diamond | six-prototile pentagonal L-system decomposition |
@@ -59,6 +62,10 @@ sets a two-part gradient through the middle colour.
 
 The full configuration lives in the URL hash, so any view can be shared or
 bookmarked.
+
+Periodic tilings use a small repeating SVG cell in the browser and an SVG
+`<pattern>` in downloads. Their output size is therefore independent of the
+canvas dimensions and they do not need the 30 000-tile patch limit.
 
 ## Exports
 

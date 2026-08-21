@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Interactive visualiser for Penrose and other aperiodic tilings, rendered as SVG",
+  "description": "Interactive visualiser for periodic and aperiodic tessellations, rendered as SVG",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

@@ -22,6 +22,12 @@ describe('static page shell', () => {
     }
   });
 
+  it('uses the general tessellations title', () => {
+    expect(html).toContain('<title>Tessellations — Penrose and friends</title>');
+    expect(html).toContain('<p class="panel-kicker">Tessellations</p>');
+    expect(html).not.toContain('<title>Aperiodic');
+  });
+
   it('has an explicit fallback for browsers without JavaScript', () => {
     expect(html).toContain('<noscript>');
     expect(html).toContain('This app generates tilings in your browser');

@@ -165,7 +165,7 @@ function currentOptions(): RenderOptions {
   return {
     width: Math.round(size.width),
     height: Math.round(size.height),
-    tileSize: Math.max(state.tileSize, budget),
+    tileSize: def.periodicCell ? state.tileSize : Math.max(state.tileSize, budget),
     rotation: state.rotation,
     colour1: state.colour1,
     colour2: state.colour2,
@@ -257,18 +257,36 @@ function render(): void {
       const def = tilingById(state.tilingId);
       const options = currentOptions();
       const started = performance.now();
-      const { svg, tileCount } = renderSvg(def, {
+      const result = renderSvg(def, {
         ...options,
         preserveAspectRatio: 'xMidYMid slice',
       });
-      stage.innerHTML = svg;
+      if (result.cssBackground) {
+        const layer = document.createElement('div');
+        layer.className = 'periodic-background';
+        layer.setAttribute('role', 'img');
+        layer.setAttribute('aria-label', def.name);
+        layer.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(result.cssBackground.svg)}")`;
+        const previewScale = Math.max(
+          stage.clientWidth / options.width,
+          stage.clientHeight / options.height,
+        );
+        layer.style.backgroundSize =
+          `${result.cssBackground.width * previewScale}px ` +
+          `${result.cssBackground.height * previewScale}px`;
+        layer.style.transform =
+          `translate(-50%, -50%) rotate(${result.cssBackground.rotation}deg)`;
+        stage.replaceChildren(layer);
+      } else {
+        stage.innerHTML = result.svg;
+      }
       lastRender = { options };
       const clamped =
         options.tileSize > state.tileSize
           ? ` · tile size raised to ${Math.round(options.tileSize)} px to stay under ${MAX_TILES.toLocaleString()} tiles`
           : '';
       status.textContent =
-        `${tileCount.toLocaleString()} tiles · ${options.width}×${options.height} px · ` +
+        `${result.tileCount.toLocaleString()} tiles · ${options.width}×${options.height} px · ` +
         `${Math.round(performance.now() - started)} ms${clamped}`;
     });
   });
@@ -276,6 +294,10 @@ function render(): void {
 
 /** Apply palette-only changes without regenerating or reparsing the tiling geometry. */
 function updateAppearance(): void {
+  if (tilingById(state.tilingId).periodicCell) {
+    render();
+    return;
+  }
   const svg = stage.querySelector<SVGSVGElement>('svg');
   if (!svg || !lastRender) {
     render();

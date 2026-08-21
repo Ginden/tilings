@@ -110,6 +110,9 @@ describe('tiling registry', () => {
 
   it('sorts tilings naturally within each UI family', () => {
     expect(TILINGS_FOR_UI.map((tiling) => tiling.id)).toEqual([
+      'hexagonal',
+      'square',
+      'triangular',
       'penrose-p1',
       'penrose-p2',
       'penrose-p3',

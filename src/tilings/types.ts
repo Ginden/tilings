@@ -16,6 +16,7 @@ export interface Tile {
 }
 
 export type TilingFamily =
+  | 'regular'
   | 'penrose'
   | 'quasicrystal'
   | 'monotile'
@@ -49,6 +50,17 @@ export interface TilingDefinition {
   readonly furtherReferences?: readonly TilingReference[];
   /** Area of a typical tile when generated at natural scale, used to normalise tile sizes. */
   readonly unitTileArea: number;
+  /**
+   * One rectangular translation cell for periodic tilings. The renderer can
+   * repeat this cell instead of expanding the whole viewport into polygons.
+   * Tiles may cross the cell boundary; SVG viewport clipping supplies the
+   * matching fragment from the neighbouring copy.
+   */
+  readonly periodicCell?: {
+    readonly width: number;
+    readonly height: number;
+    readonly tiles: readonly Tile[];
+  };
   /**
    * Generate a patch centred on the origin that covers the disc of the given
    * radius (in natural units).

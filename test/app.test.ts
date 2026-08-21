@@ -145,6 +145,20 @@ describe('svg output', () => {
     expect(svg.match(/data-kind=/g)).toHaveLength(2);
     for (const kind of [0, 1]) expect(svg).toContain(`<path data-kind="${kind}"`);
   });
+
+  it('renders regular tilings from a compact repeating cell', () => {
+    for (const id of ['triangular', 'square', 'hexagonal']) {
+      const def = tilingById(id);
+      const result = renderSvg(def, { ...options, width: 3840, height: 2160, tileSize: 12 });
+      expect(result.cssBackground).toBeDefined();
+      expect(result.cssBackground?.svg).toContain('<svg');
+      expect(result.svg).toContain('<pattern id="periodic-cell"');
+      expect(result.svg).toContain('fill="url(#periodic-cell)"');
+      expect(result.svg.length).toBeLessThan(20_000);
+      expect(result.tileCount).toBeGreaterThan(10_000);
+      for (const label of def.kindLabels) expect(result.svg).toContain(`<title>${label}</title>`);
+    }
+  });
 });
 
 describe('export file names', () => {

@@ -22,6 +22,7 @@ import { squiral } from './squiral.js';
 import { jeandelRao } from './jeandel-rao.js';
 import { danzerSevenfold } from './danzer-sevenfold.js';
 import { watanabeItoSomaEightfold } from './watanabe-ito-soma-eightfold.js';
+import { hexagonal, square, triangular } from './regular.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,
@@ -45,9 +46,13 @@ export const TILINGS: readonly TilingDefinition[] = [
   jeandelRao,
   danzerSevenfold,
   watanabeItoSomaEightfold,
+  triangular,
+  square,
+  hexagonal,
 ];
 
 export const FAMILY_LABELS: Record<TilingDefinition['family'], string> = {
+  regular: 'Regular periodic tilings',
   penrose: 'Penrose tilings',
   quasicrystal: 'Other quasicrystals',
   monotile: 'Aperiodic monotiles',
