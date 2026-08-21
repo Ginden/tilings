@@ -204,7 +204,8 @@ select optgroup {
   color: var(--text);
 }
 
-.row {
+.row,
+.color-row {
   display: grid;
   grid-template-columns: auto 2.6rem 1fr;
   align-items: center;
@@ -214,21 +215,32 @@ select optgroup {
 
 .colour-pair {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 2rem;
+  grid-template-columns: minmax(0, 1fr) 2.4rem;
   column-gap: 0.5rem;
   align-items: center;
 }
 
-.colour-pair .row {
+.colour-pair .row,
+.colour-pair .color-row {
   grid-column: 1;
 }
 
-.colour-pair .row:first-child {
+.colour-pair .row:first-child,
+.colour-pair .color-row:nth-child(1) {
   grid-row: 1;
 }
 
-.colour-pair .row:nth-child(2) {
+.colour-pair .row:nth-child(2),
+.colour-pair .color-row:nth-child(2) {
   grid-row: 2;
+}
+
+.color-row {
+  grid-template-columns: auto minmax(0, 1fr) 2.4rem;
+}
+
+.toggle-label {
+  font-size: 0.85rem;
 }
 
 .icon-button {
@@ -269,16 +281,6 @@ select optgroup {
   grid-template-columns: 1fr auto;
 }
 
-input[type='color'] {
-  width: 2.6rem;
-  height: 2rem;
-  padding: 0;
-  border: 1px solid var(--panel-border);
-  border-radius: 0.4rem;
-  background: none;
-  cursor: pointer;
-}
-
 input[type='range'] {
   width: 100%;
   accent-color: var(--accent);
@@ -289,6 +291,177 @@ output {
   color: var(--muted);
   text-align: right;
   font-variant-numeric: tabular-nums;
+}
+
+.tiling-select {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.select-trigger {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.42rem 0.55rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.select-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.select-trigger .react-aria-SelectValue {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-trigger svg {
+  width: 1.05rem;
+  height: 1.05rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.picker-popover {
+  width: var(--trigger-width, 20rem);
+  max-height: 18rem;
+  overflow-y: auto;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.6rem;
+  background: #222832;
+  box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.35);
+}
+
+.picker-listbox {
+  padding: 0.25rem;
+}
+
+.picker-listbox [role='group'] + [role='group'] {
+  margin-top: 0.25rem;
+  border-top: 1px solid var(--panel-border);
+}
+
+.picker-listbox h3 {
+  margin: 0;
+  padding: 0.45rem 0.55rem 0.25rem;
+  font-size: 0.68rem;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.picker-listbox [role='option'] {
+  padding: 0.42rem 0.55rem;
+  border-radius: 0.4rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.picker-listbox [role='option']:hover,
+.picker-listbox [role='option'][data-focused] {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.picker-listbox [role='option'][data-selected] {
+  background: rgba(232, 181, 59, 0.16);
+  color: #fff;
+}
+
+.picker-listbox [role='option'][data-selected]::after {
+  content: '✓';
+  float: right;
+  color: var(--accent);
+}
+
+.color-field {
+  display: block;
+  min-width: 0;
+}
+
+.hex-input {
+  width: 100%;
+  padding: 0.38rem 0.45rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--panel-border);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.swatch-button {
+  width: 2.4rem;
+  height: 2.15rem;
+  padding: 0.22rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.45rem;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+}
+
+.swatch-button[data-disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.swatch-button .react-aria-ColorSwatch {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.28rem;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.color-popover {
+  width: 14rem;
+  padding: 0.75rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 0.7rem;
+  background: #222832;
+  box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.35);
+}
+
+.color-popover .react-aria-ColorArea {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border-radius: 0.45rem;
+  margin-bottom: 0.7rem;
+}
+
+.color-popover .react-aria-ColorSlider {
+  display: grid;
+  gap: 0.25rem;
+  margin-top: 0.6rem;
+}
+
+.color-popover .react-aria-ColorSliderTrack {
+  position: relative;
+  height: 0.9rem;
+  border-radius: 999px;
+}
+
+.color-popover .react-aria-ColorThumb {
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
 }
 
 .palettes {

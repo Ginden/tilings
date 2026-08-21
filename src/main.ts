@@ -1,4 +1,4 @@
-import { FAMILY_LABELS, TILINGS_FOR_UI, tilingById } from './tilings/index.js';
+import { tilingById } from './tilings/index.js';
 import { renderSvg } from './render/svg.js';
 import type { RenderOptions } from './render/svg.js';
 import { kindColors, paletteBackground } from './render/color.js';
@@ -13,6 +13,11 @@ import {
 } from './state.js';
 import type { AppState } from './state.js';
 import { copyPngBlob, downloadBlob, downloadSvg, exportFileName, svgToPngBlob } from './export.js';
+import {
+  mountColorIsland,
+  renderColorIsland,
+  renderTilingPicker,
+} from './ui/islands.js';
 
 function element<T extends HTMLElement>(id: string): T {
   const found = document.getElementById(id);
@@ -23,23 +28,14 @@ function element<T extends HTMLElement>(id: string): T {
 const stage = element<HTMLElement>('stage');
 const panel = element<HTMLFormElement>('panel');
 const panelToggle = element<HTMLButtonElement>('panel-toggle');
-const tilingSelect = element<HTMLSelectElement>('tiling');
 const tilingName = element<HTMLHeadingElement>('tiling-name');
 const description = element<HTMLDivElement>('tiling-description');
 const referenceList = element<HTMLUListElement>('tiling-reference-list');
 const paletteBox = element<HTMLDivElement>('palettes');
-const colour1 = element<HTMLInputElement>('colour1');
-const colour1Hex = element<HTMLInputElement>('colour1-hex');
-const colour2 = element<HTMLInputElement>('colour2');
-const colour2Hex = element<HTMLInputElement>('colour2-hex');
 const swapColoursButton = element<HTMLButtonElement>('swap-colours');
 const colour3Controls = element<HTMLDivElement>('colour3-controls');
 const colour3Enabled = element<HTMLInputElement>('colour3-enabled');
-const colour3 = element<HTMLInputElement>('colour3');
-const colour3Hex = element<HTMLInputElement>('colour3-hex');
 const kindHint = element<HTMLParagraphElement>('kind-hint');
-const borderInput = element<HTMLInputElement>('border');
-const borderHex = element<HTMLInputElement>('border-hex');
 const borderTransparent = element<HTMLInputElement>('border-transparent');
 const borderWidth = element<HTMLInputElement>('border-width');
 const borderWidthValue = element<HTMLOutputElement>('border-width-value');
@@ -61,18 +57,6 @@ let lastRender: { options: RenderOptions } | null = null;
 const DEFAULT_THIRD_COLOUR = '#a05ad7';
 
 function populateSelects(): void {
-  for (const [family, label] of Object.entries(FAMILY_LABELS)) {
-    const group = document.createElement('optgroup');
-    group.label = label;
-    for (const def of TILINGS_FOR_UI.filter((t) => t.family === family)) {
-      const option = document.createElement('option');
-      option.value = def.id;
-      option.textContent = def.name;
-      group.append(option);
-    }
-    if (group.children.length > 0) tilingSelect.append(group);
-  }
-
   for (const preset of SIZE_PRESETS) {
     const option = document.createElement('option');
     option.value = preset.id;
@@ -116,6 +100,17 @@ function populateSelects(): void {
     group.append(presets);
     paletteBox.append(group);
   }
+}
+
+mountColorIsland('colour1');
+mountColorIsland('colour2');
+mountColorIsland('colour3');
+mountColorIsland('border');
+
+function selectTiling(tilingId: string): void {
+  state = { ...state, tilingId };
+  syncControls();
+  render();
 }
 
 /**
@@ -182,23 +177,15 @@ function currentOptions(): RenderOptions {
 
 function syncControls(): void {
   const def = tilingById(state.tilingId);
-  tilingSelect.value = def.id;
+  renderTilingPicker({ selectedId: def.id, onChange: selectTiling });
   syncTilingInfo(def);
 
-  colour1.value = state.colour1;
-  colour1Hex.value = state.colour1;
-  colour2.value = state.colour2;
-  colour2Hex.value = state.colour2;
+  renderColorIsland('colour1', 'Colour 1', state.colour1, false, applyColour1);
+  renderColorIsland('colour2', 'Colour 2', state.colour2, false, applyColour2);
   colour3Controls.hidden = !def.supportsThreeColours;
   colour3Enabled.checked = state.colour3 !== null;
-  colour3.value = state.colour3 ?? DEFAULT_THIRD_COLOUR;
-  colour3Hex.value = state.colour3 ?? DEFAULT_THIRD_COLOUR;
-  colour3.disabled = state.colour3 === null;
-  colour3Hex.disabled = state.colour3 === null;
-  borderInput.value = state.border;
-  borderHex.value = state.border;
-  borderInput.disabled = state.borderTransparent;
-  borderHex.disabled = state.borderTransparent;
+  renderColorIsland('colour3', 'Colour 3', state.colour3 ?? DEFAULT_THIRD_COLOUR, state.colour3 === null, applyColour3);
+  renderColorIsland('border', 'Border', state.border, state.borderTransparent, applyBorder);
   borderTransparent.checked = state.borderTransparent;
   borderWidth.value = String(state.borderWidth);
   borderWidth.disabled = state.borderTransparent;
@@ -336,57 +323,16 @@ function exportSvg(): string {
 }
 
 function bindControls(): void {
-  tilingSelect.addEventListener('change', () => {
-    state = { ...state, tilingId: tilingSelect.value };
-    syncControls();
-    render();
-  });
-
-  const bindColour = (
-    picker: HTMLInputElement,
-    hex: HTMLInputElement,
-    apply: (value: string) => void,
-  ): void => {
-    picker.addEventListener('input', () => {
-      apply(picker.value);
-      syncControls();
-      updateAppearance();
-    });
-    hex.addEventListener('change', () => {
-      const value = hex.value.trim().replace(/^#?/, '#');
-      if (!/^#[0-9a-f]{6}$/i.test(value)) {
-        syncControls();
-        return;
-      }
-      apply(value);
-      syncControls();
-      updateAppearance();
-    });
-  };
-
-  bindColour(colour1, colour1Hex, (value) => {
-    state = { ...state, colour1: value };
-  });
-  bindColour(colour2, colour2Hex, (value) => {
-    state = { ...state, colour2: value };
-  });
   swapColoursButton.addEventListener('click', () => {
     state = { ...state, colour1: state.colour2, colour2: state.colour1 };
     syncControls();
     updateAppearance();
   });
-  bindColour(colour3, colour3Hex, (value) => {
-    state = { ...state, colour3: value };
-  });
   colour3Enabled.addEventListener('change', () => {
-    state = { ...state, colour3: colour3Enabled.checked ? colour3.value : null };
+    state = { ...state, colour3: colour3Enabled.checked ? DEFAULT_THIRD_COLOUR : null };
     syncControls();
     updateAppearance();
   });
-  bindColour(borderInput, borderHex, (value) => {
-    state = { ...state, border: value };
-  });
-
   borderTransparent.addEventListener('change', () => {
     state = { ...state, borderTransparent: borderTransparent.checked };
     syncControls();
@@ -494,3 +440,29 @@ populateSelects();
 bindControls();
 syncControls();
 render();
+
+function applyColour1(value: string): void {
+  state = { ...state, colour1: value };
+  syncControls();
+  updateAppearance();
+}
+
+function applyColour2(value: string): void {
+  state = { ...state, colour2: value };
+  syncControls();
+  updateAppearance();
+}
+
+function applyColour3(value: string): void {
+  if (state.colour3 === null) return;
+  state = { ...state, colour3: value };
+  syncControls();
+  updateAppearance();
+}
+
+function applyBorder(value: string): void {
+  if (state.borderTransparent) return;
+  state = { ...state, border: value };
+  syncControls();
+  updateAppearance();
+}
