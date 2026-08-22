@@ -10,6 +10,7 @@ import {
   Input,
   Label,
   Popover,
+  SliderTrack,
 } from 'react-aria-components';
 
 interface ColorControlProps {
@@ -41,11 +42,15 @@ export function ColorPickerPanel({ value, onChange }: ColorPickerPanelProps) {
       </ColorArea>
       <ColorSlider colorSpace="hsb" channel="hue">
         <Label>Hue</Label>
-        <ColorThumb />
+        <SliderTrack>
+          <ColorThumb />
+        </SliderTrack>
       </ColorSlider>
       <ColorSlider colorSpace="rgb" channel="blue">
         <Label>Blue</Label>
-        <ColorThumb />
+        <SliderTrack>
+          <ColorThumb />
+        </SliderTrack>
       </ColorSlider>
     </ColorPicker>
   );

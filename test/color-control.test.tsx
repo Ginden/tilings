@@ -10,5 +10,6 @@ describe('colour picker', () => {
 
     expect(markup).toContain('react-aria-ColorArea');
     expect(markup.match(/react-aria-ColorSlider/g)).toHaveLength(2);
+    expect(markup.match(/react-aria-SliderTrack/g)).toHaveLength(2);
   });
 });
