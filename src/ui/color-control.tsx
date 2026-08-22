@@ -40,14 +40,7 @@ export function ColorPickerPanel({ value, onChange }: ColorPickerPanelProps) {
       <ColorArea colorSpace="hsb" xChannel="saturation" yChannel="brightness">
         <ColorThumb />
       </ColorArea>
-      <ColorSlider colorSpace="hsb" channel="hue">
-        <Label>Hue</Label>
-        <SliderTrack>
-          <ColorThumb />
-        </SliderTrack>
-      </ColorSlider>
-      <ColorSlider colorSpace="rgb" channel="blue">
-        <Label>Blue</Label>
+      <ColorSlider colorSpace="hsb" channel="hue" aria-label="Hue">
         <SliderTrack>
           <ColorThumb />
         </SliderTrack>
