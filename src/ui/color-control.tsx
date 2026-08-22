@@ -19,6 +19,11 @@ interface ColorControlProps {
   onChange: (value: string) => void;
 }
 
+interface ColorPickerPanelProps {
+  value: string;
+  onChange: (value: string) => void;
+}
+
 function toHex(value: string): string {
   if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
   if (!value.startsWith('#')) return '#000000';
@@ -26,6 +31,24 @@ function toHex(value: string): string {
     return '#000000';
   }
   return value.toLowerCase();
+}
+
+export function ColorPickerPanel({ value, onChange }: ColorPickerPanelProps) {
+  return (
+    <ColorPicker value={value} onChange={(color) => onChange(color.toString('hex'))}>
+      <ColorArea colorSpace="hsb" xChannel="saturation" yChannel="brightness">
+        <ColorThumb />
+      </ColorArea>
+      <ColorSlider colorSpace="hsb" channel="hue">
+        <Label>Hue</Label>
+        <ColorThumb />
+      </ColorSlider>
+      <ColorSlider colorSpace="rgb" channel="blue">
+        <Label>Blue</Label>
+        <ColorThumb />
+      </ColorSlider>
+    </ColorPicker>
+  );
 }
 
 export function ColorControl({ colourName, disabled = false, value, onChange }: ColorControlProps) {
@@ -47,6 +70,7 @@ export function ColorControl({ colourName, disabled = false, value, onChange }: 
 
       <DialogTrigger>
         <Button
+          type="button"
           aria-label={`Edit ${colourName}`}
           className="swatch-button"
           data-disabled={disabled ? '' : undefined}
@@ -55,19 +79,7 @@ export function ColorControl({ colourName, disabled = false, value, onChange }: 
           <ColorSwatch color={currentValue} />
         </Button>
         <Popover className="color-popover">
-          <ColorPicker value={currentValue} onChange={(color) => onChange(color.toString('hex'))}>
-            <ColorArea xChannel="saturation" yChannel="brightness">
-              <ColorThumb />
-            </ColorArea>
-            <ColorSlider channel="hue">
-              <Label>Hue</Label>
-              <ColorThumb />
-            </ColorSlider>
-            <ColorSlider channel="blue">
-              <Label>Blue</Label>
-              <ColorThumb />
-            </ColorSlider>
-          </ColorPicker>
+          <ColorPickerPanel value={currentValue} onChange={onChange} />
         </Popover>
       </DialogTrigger>
     </>
