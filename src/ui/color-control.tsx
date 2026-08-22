@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import {
   Button,
+  type Color,
   ColorArea,
   ColorField,
   ColorPicker,
@@ -10,6 +12,7 @@ import {
   Input,
   Label,
   Popover,
+  parseColor,
   SliderTrack,
 } from 'react-aria-components';
 
@@ -35,8 +38,25 @@ function toHex(value: string): string {
 }
 
 export function ColorPickerPanel({ value, onChange }: ColorPickerPanelProps) {
+  const [color, setColor] = useState<Color>(() => parseColor(value).toFormat('hsb'));
+
+  useEffect(() => {
+    setColor((currentColor) => (
+      currentColor.toString('hex').toLowerCase() === value.toLowerCase()
+        ? currentColor
+        : parseColor(value).toFormat('hsb')
+    ));
+  }, [value]);
+
   return (
-    <ColorPicker value={value} onChange={(color) => onChange(color.toString('hex'))}>
+    <ColorPicker
+      value={color}
+      onChange={(nextColor) => {
+        const nextHsbColor = nextColor.toFormat('hsb');
+        setColor(nextHsbColor);
+        onChange(nextHsbColor.toString('hex'));
+      }}
+    >
       <ColorArea colorSpace="hsb" xChannel="saturation" yChannel="brightness">
         <ColorThumb />
       </ColorArea>
