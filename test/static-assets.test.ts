@@ -38,6 +38,11 @@ describe('static page shell', () => {
     expect(html).toContain('id="copy-png"');
   });
 
+  it('offers swaps for both adjacent colour pairs', () => {
+    expect(html).toContain('aria-label="Swap colours 1 and 2"');
+    expect(html).toContain('aria-label="Swap colours 2 and 3"');
+  });
+
   it('attributes the author without loading external resources', () => {
     expect(html).toContain('href="https://michalwadas.pl"');
     expect(html).toContain('href="https://michalwadas.pl/privacy/"');

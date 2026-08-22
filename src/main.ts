@@ -9,6 +9,7 @@ import {
   decodeState,
   encodeState,
   resolveSize,
+  swapSecondAndThirdColours,
   wrappedRotationForKey,
 } from './state.js';
 import type { AppState } from './state.js';
@@ -33,6 +34,7 @@ const description = element<HTMLDivElement>('tiling-description');
 const referenceList = element<HTMLUListElement>('tiling-reference-list');
 const paletteBox = element<HTMLDivElement>('palettes');
 const swapColoursButton = element<HTMLButtonElement>('swap-colours');
+const swapColours2And3Button = element<HTMLButtonElement>('swap-colours-2-3');
 const colour3Controls = element<HTMLDivElement>('colour3-controls');
 const colour3Enabled = element<HTMLInputElement>('colour3-enabled');
 const kindHint = element<HTMLParagraphElement>('kind-hint');
@@ -184,6 +186,7 @@ function syncControls(): void {
   renderColorIsland('colour2', 'Colour 2', state.colour2, false, applyColour2);
   colour3Controls.hidden = !def.supportsThreeColours;
   colour3Enabled.checked = state.colour3 !== null;
+  swapColours2And3Button.hidden = state.colour3 === null;
   renderColorIsland('colour3', 'Colour 3', state.colour3 ?? DEFAULT_THIRD_COLOUR, state.colour3 === null, applyColour3);
   renderColorIsland('border', 'Border', state.border, state.borderTransparent, applyBorder);
   borderTransparent.checked = state.borderTransparent;
@@ -347,6 +350,11 @@ function exportSvg(): string {
 function bindControls(): void {
   swapColoursButton.addEventListener('click', () => {
     state = { ...state, colour1: state.colour2, colour2: state.colour1 };
+    syncControls();
+    updateAppearance();
+  });
+  swapColours2And3Button.addEventListener('click', () => {
+    state = swapSecondAndThirdColours(state);
     syncControls();
     updateAppearance();
   });

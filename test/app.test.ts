@@ -9,6 +9,7 @@ import {
   decodeState,
   encodeState,
   resolveSize,
+  swapSecondAndThirdColours,
   wrappedRotationForKey,
 } from '../src/state.js';
 import { PALETTES } from '../src/palettes.js';
@@ -202,6 +203,16 @@ describe('state', () => {
 
   it('falls back to defaults for unknown values', () => {
     expect(decodeState('#t=nope&c1=zzz&ts=-4&r=360')).toEqual(DEFAULT_STATE);
+  });
+
+  it('swaps the second and third colours only when the third colour is enabled', () => {
+    const withThirdColour = { ...DEFAULT_STATE, colour2: '#abcdef', colour3: '#fedcba' };
+    expect(swapSecondAndThirdColours(withThirdColour)).toEqual({
+      ...withThirdColour,
+      colour2: '#fedcba',
+      colour3: '#abcdef',
+    });
+    expect(swapSecondAndThirdColours(DEFAULT_STATE)).toBe(DEFAULT_STATE);
   });
 
   it('accepts both ends of the rotation range', () => {

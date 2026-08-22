@@ -52,6 +52,11 @@ export const DEFAULT_STATE: AppState = {
   rotation: 0,
 };
 
+export function swapSecondAndThirdColours(state: AppState): AppState {
+  if (state.colour3 === null) return state;
+  return { ...state, colour2: state.colour3, colour3: state.colour2 };
+}
+
 export function resolveSize(state: AppState, windowSize: { width: number; height: number }): {
   width: number;
   height: number;

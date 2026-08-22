@@ -57,8 +57,9 @@ through the middle colour.
 * **Type** — the tiling, grouped by family and sorted by name within each group.
 * **Colour 1 / Colour 2** — the two base tile colours, as pickers or hex values,
   plus ten named preset palettes grouped into classic and studio collections.
-* **Third colour** — available on selected multi-class tilings, with four extra
-  six three-colour palettes that appear only when they can be used.
+* **Third colour** — available on selected multi-class tilings, with six
+  three-colour palettes that appear only when they can be used and a control to
+  swap the second and third colours.
 * **Border** — colour, width, and a *transparent* switch that drops the stroke
   entirely (the background is then filled with a blend of the two colours so no
   seams show).

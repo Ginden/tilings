@@ -230,6 +230,17 @@ select optgroup {
   align-items: center;
 }
 
+.colour-third-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2.4rem;
+  column-gap: 0.5rem;
+  align-items: center;
+}
+
+.colour-third-row .color-row {
+  grid-column: 1;
+}
+
 .colour-pair .row,
 .colour-pair .color-row {
   grid-column: 1;
