@@ -9,6 +9,7 @@ import {
   decodeState,
   encodeState,
   resolveSize,
+  stickyRotation,
   swapSecondAndThirdColours,
   wrappedRotationForKey,
 } from './state.js';
@@ -437,7 +438,20 @@ function bindControls(): void {
     location.replace(`#${encodeState(state)}`);
     render();
   };
-  rotation.addEventListener('input', () => applyRotation(Number(rotation.value)));
+  let draggingRotation = false;
+  rotation.addEventListener('pointerdown', () => {
+    draggingRotation = true;
+  });
+  window.addEventListener('pointerup', () => {
+    draggingRotation = false;
+  });
+  rotation.addEventListener('pointercancel', () => {
+    draggingRotation = false;
+  });
+  rotation.addEventListener('input', () => {
+    const value = Number(rotation.value);
+    applyRotation(draggingRotation ? stickyRotation(value) : value);
+  });
   rotation.addEventListener('keydown', (event) => {
     const wrapped = wrappedRotationForKey(state.rotation, event.key);
     if (wrapped === null) return;

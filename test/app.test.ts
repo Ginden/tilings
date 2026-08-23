@@ -14,6 +14,7 @@ import {
   decodeState,
   encodeState,
   resolveSize,
+  stickyRotation,
   swapSecondAndThirdColours,
   wrappedRotationForKey,
 } from '../src/state.js';
@@ -293,6 +294,20 @@ describe('state', () => {
     expect(wrappedRotationForKey(359, 'ArrowRight')).toBe(0);
     expect(wrappedRotationForKey(1, 'ArrowLeft')).toBeNull();
     expect(wrappedRotationForKey(358, 'ArrowRight')).toBeNull();
+  });
+
+  it('makes common rotation angles sticky within two degrees', () => {
+    expect(stickyRotation(15)).toBe(15);
+    expect(stickyRotation(27)).toBe(27);
+    expect(stickyRotation(28)).toBe(30);
+    expect(stickyRotation(43)).toBe(45);
+    expect(stickyRotation(58)).toBe(60);
+    expect(stickyRotation(73)).toBe(73);
+    expect(stickyRotation(88)).toBe(90);
+    expect(stickyRotation(133)).toBe(135);
+    expect(stickyRotation(332)).toBe(330);
+    expect(stickyRotation(333)).toBe(333);
+    expect(stickyRotation(359)).toBe(359);
   });
 
   it('resolves sizes', () => {

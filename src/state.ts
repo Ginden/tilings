@@ -80,6 +80,16 @@ export function wrappedRotationForKey(rotation: number, key: string): number | n
   return null;
 }
 
+const ROTATION_STOPS = [
+  0, 30, 45, 60, 90, 120, 135, 150, 180, 210, 225, 240, 270, 300, 315, 330,
+] as const;
+
+/** Snap pointer-driven rotation to common-angle stops when it is within two degrees. */
+export function stickyRotation(rotation: number): number {
+  const nearbyStop = ROTATION_STOPS.find((stop) => Math.abs(rotation - stop) <= 2);
+  return nearbyStop ?? rotation;
+}
+
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
 }
