@@ -21,6 +21,7 @@ const previewBorder =
   process.env['PREVIEW_BORDER'] === 'none'
     ? null
     : (process.env['PREVIEW_BORDER'] ?? '#101820');
+const previewBorderWidth = Number(process.env['PREVIEW_BORDER_WIDTH'] ?? 1);
 
 describe.skipIf(!dir)('preview', () => {
   it('renders every tiling', () => {
@@ -42,7 +43,7 @@ describe.skipIf(!dir)('preview', () => {
         colour2: previewColour2,
         colour3: previewColour3,
         border: previewBorder,
-        borderWidth: 1,
+        borderWidth: previewBorderWidth,
       });
       writeFileSync(`${dir}/${def.id}.svg`, svg);
       console.log(`${def.id}: ${tileCount} tiles`);

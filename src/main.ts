@@ -1,5 +1,5 @@
 import { tilingById } from './tilings/index.js';
-import { renderSvg } from './render/svg.js';
+import { hierarchyStrokeWidth, renderSvg } from './render/svg.js';
 import type { RenderOptions } from './render/svg.js';
 import { kindColors, paletteBackground } from './render/color.js';
 import { PALETTES } from './palettes.js';
@@ -345,7 +345,7 @@ function updateAppearance(): void {
   for (const hierarchyPath of svg.querySelectorAll<SVGPathElement>('path[data-hierarchy-level]')) {
     const level = Number(hierarchyPath.dataset['hierarchyLevel']);
     hierarchyPath.setAttribute('stroke', border ?? 'none');
-    hierarchyPath.setAttribute('stroke-width', String(state.borderWidth * (level + 1)));
+    hierarchyPath.setAttribute('stroke-width', String(hierarchyStrokeWidth(state.borderWidth, level)));
   }
 
   lastRender = {

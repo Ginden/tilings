@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { kindColors, mix, paletteBackground, parseHex, toHex } from '../src/render/color.js';
-import { renderSvg } from '../src/render/svg.js';
+import { hierarchyStrokeWidth, renderSvg } from '../src/render/svg.js';
 import { buildScene } from '../src/render/scene.js';
 import {
   addPngMetadata,
@@ -138,6 +138,9 @@ describe('svg output', () => {
     expect(hierarchical).not.toContain('data-hierarchy-level="3"');
     expect(hierarchical).toContain('stroke-width="2"');
     expect(hierarchical).toContain('stroke-width="3"');
+    expect(hierarchical).toContain('stroke-linecap="butt" stroke-linejoin="miter"');
+    expect(hierarchical.match(/data-hierarchy-level="1"[^>]+d="([^"]+)"/)?.[1]).toContain('Z');
+    expect(hierarchyStrokeWidth(6, 3)).toBe(9);
   });
 
   it('names the tiling and honours preserveAspectRatio', () => {

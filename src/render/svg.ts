@@ -32,6 +32,11 @@ export interface RenderResult {
   };
 }
 
+/** Keep hierarchy lines legible without magnifying an already-wide tile border. */
+export function hierarchyStrokeWidth(borderWidth: number, level: number): number {
+  return borderWidth + level;
+}
+
 function fmt(v: number): string {
   return (Math.round(v * 100) / 100).toString();
 }
@@ -113,15 +118,13 @@ function tileBody(
 
 function hierarchyBody(levels: readonly (readonly Tile[])[], opts: Palette): string[] {
   if (opts.border === null) return [];
-  return levels.flatMap((tiles, index) => {
-    const edges = drawingPaths(tiles, true).edges;
-    if (!edges) return [];
+  return levels.map((tiles, index) => {
+    const paths = drawingPaths(tiles, false).byKind;
     const level = index + 1;
-    const strokeWidth = opts.borderWidth * (level + 1);
-    return edgePathChunks(edges).map((path) =>
-      `<path data-hierarchy-level="${level}" fill="none" stroke="${opts.border}" ` +
-      `stroke-width="${fmt(strokeWidth)}" stroke-linecap="round" stroke-linejoin="round" d="${path}"/>`,
-    );
+    const path = [...paths.values()].flat().join('');
+    return `<path data-hierarchy-level="${level}" fill="none" stroke="${opts.border}" ` +
+      `stroke-width="${fmt(hierarchyStrokeWidth(opts.borderWidth, level))}" ` +
+      `stroke-linecap="butt" stroke-linejoin="miter" stroke-miterlimit="3" d="${path}"/>`;
   });
 }
 
