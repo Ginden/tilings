@@ -136,11 +136,11 @@ describe('svg output', () => {
     expect(hierarchical).toContain('data-hierarchy-level="1"');
     expect(hierarchical).toContain('data-hierarchy-level="2"');
     expect(hierarchical).not.toContain('data-hierarchy-level="3"');
-    expect(hierarchical).toContain('stroke-width="2"');
-    expect(hierarchical).toContain('stroke-width="3"');
+    expect(hierarchical).toContain('stroke-width="2.5"');
+    expect(hierarchical).toContain('stroke-width="4"');
     expect(hierarchical).toContain('stroke-linecap="butt" stroke-linejoin="miter"');
     expect(hierarchical.match(/data-hierarchy-level="1"[^>]+d="([^"]+)"/)?.[1]).toContain('Z');
-    expect(hierarchyStrokeWidth(6, 3)).toBe(9);
+    expect(hierarchyStrokeWidth(6, 3)).toBe(10.5);
   });
 
   it('names the tiling and honours preserveAspectRatio', () => {
