@@ -140,7 +140,7 @@ describe('svg output', () => {
     expect(hierarchical).toContain('stroke-width="3"');
     expect(hierarchical).toContain('stroke-linecap="butt" stroke-linejoin="miter"');
     expect(hierarchical.match(/data-hierarchy-level="1"[^>]+d="([^"]+)"/)?.[1]).toContain('Z');
-    expect(hierarchyStrokeWidth(6, 3)).toBe(9);
+    expect(hierarchyStrokeWidth(6, 3)).toBe(24);
   });
 
   it('names the tiling and honours preserveAspectRatio', () => {

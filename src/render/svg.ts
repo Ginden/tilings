@@ -32,11 +32,9 @@ export interface RenderResult {
   };
 }
 
-/** Keep hierarchy lines legible without magnifying an already-wide tile border. */
 export function hierarchyStrokeWidth(borderWidth: number, level: number): number {
-  return borderWidth + level;
+  return borderWidth * (level + 1);
 }
-
 function fmt(v: number): string {
   return (Math.round(v * 100) / 100).toString();
 }
