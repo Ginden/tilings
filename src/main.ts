@@ -312,6 +312,10 @@ function updateAppearance(): void {
   const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode, activeColour3);
   const border = state.borderTransparent ? null : state.border;
   const background = paletteBackground(state.colour1, state.colour2, activeColour3);
+  if (border !== null && !svg.querySelector('path[data-border]')) {
+    render();
+    return;
+  }
   svg.querySelector('rect')?.setAttribute('fill', background);
 
   for (const path of svg.querySelectorAll<SVGPathElement>('path[data-kind]')) {

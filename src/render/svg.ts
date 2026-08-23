@@ -36,34 +36,38 @@ function fmt(v: number): string {
   return (Math.round(v * 100) / 100).toString();
 }
 
-function pathData(tiles: readonly Tile[]): string {
-  const parts: string[] = [];
-  for (const tile of tiles) {
-    for (const polygon of tile.parts ?? [tile.points]) {
-      const [first, ...rest] = polygon;
-      if (!first) continue;
-      let d = `M${fmt(first.x)} ${fmt(first.y)}`;
-      for (const p of rest) d += `L${fmt(p.x)} ${fmt(p.y)}`;
-      parts.push(`${d}Z`);
-    }
-  }
-  return parts.join('');
+interface DrawingPaths {
+  readonly byKind: ReadonlyMap<number, readonly string[]>;
+  readonly edges: ReadonlySet<string> | null;
 }
 
-function edgePathChunks(tiles: readonly Tile[], chunkSize = 1_024): string[] {
-  const edges = new Set<string>();
+/** Format each vertex once while assembling both fill paths and border edges. */
+function drawingPaths(tiles: readonly Tile[], includeBorders: boolean): DrawingPaths {
+  const byKind = new Map<number, string[]>();
+  const edges = includeBorders ? new Set<string>() : null;
   for (const tile of tiles) {
+    let paths = byKind.get(tile.kind);
+    if (!paths) {
+      paths = [];
+      byKind.set(tile.kind, paths);
+    }
     for (const polygon of tile.parts ?? [tile.points]) {
-      for (let index = 0; index < polygon.length; index++) {
-        const a = polygon[index]!;
-        const b = polygon[(index + 1) % polygon.length]!;
-        const left = `${fmt(a.x)} ${fmt(a.y)}`;
-        const right = `${fmt(b.x)} ${fmt(b.y)}`;
-        edges.add(left < right ? `M${left}L${right}` : `M${right}L${left}`);
+      if (polygon.length === 0) continue;
+      const points = polygon.map((point) => `${fmt(point.x)} ${fmt(point.y)}`);
+      paths.push(`M${points.join('L')}Z`);
+      if (edges) {
+        for (let index = 0; index < points.length; index++) {
+          const left = points[index]!;
+          const right = points[(index + 1) % points.length]!;
+          edges.add(left < right ? `M${left}L${right}` : `M${right}L${left}`);
+        }
       }
     }
   }
+  return { byKind, edges };
+}
 
+function edgePathChunks(edges: ReadonlySet<string>, chunkSize = 1_024): string[] {
   const chunks: string[] = [];
   let chunk: string[] = [];
   for (const edge of edges) {
@@ -83,29 +87,23 @@ function tileBody(
   colours: readonly string[],
   opts: Palette,
 ): string[] {
-  const byKind = new Map<number, Tile[]>();
-  for (const tile of tiles) {
-    const list = byKind.get(tile.kind);
-    if (list) list.push(tile);
-    else byKind.set(tile.kind, [tile]);
-  }
+  const paths = drawingPaths(tiles, opts.border !== null);
 
   const body: string[] = [];
-  for (const [kind, kindTiles] of [...byKind.entries()].sort((a, b) => a[0] - b[0])) {
+  for (const [kind, kindPaths] of [...paths.byKind.entries()].sort((a, b) => a[0] - b[0])) {
     const fill = colours[Math.min(kind, colours.length - 1)] ?? opts.colour1;
     body.push(
-      `<path data-kind="${kind}" fill="${fill}" stroke="none" d="${pathData(kindTiles)}"><title>${escapeXml(
+      `<path data-kind="${kind}" fill="${fill}" stroke="none" d="${kindPaths.join('')}"><title>${escapeXml(
         def.kindLabels[kind] ?? `class ${kind}`,
       )}</title></path>`,
     );
   }
-  const borderStroke =
-    opts.border === null
-      ? 'stroke="none"'
-      : `stroke="${opts.border}" stroke-width="${fmt(opts.borderWidth)}"`;
+  if (!paths.edges || opts.border === null) return body;
+
+  const borderStroke = `stroke="${opts.border}" stroke-width="${fmt(opts.borderWidth)}"`;
   // Draw deduplicated edges after every fill. Closed polygon strokes form
   // wedges at acute vertices, and per-class strokes can be painted over.
-  for (const edges of edgePathChunks(tiles)) {
+  for (const edges of edgePathChunks(paths.edges)) {
     body.push(
       `<path data-border="" fill="none" ${borderStroke} stroke-linecap="round" d="${edges}"/>`,
     );

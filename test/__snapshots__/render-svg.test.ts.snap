@@ -1,0 +1,24 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`SVG drawing snapshot > keeps batched fills and deduplicated borders stable 1`] = `
+{
+  "svg": "<svg xmlns="http://www.w3.org/2000/svg" width="4" height="2" viewBox="0 0 4 2" preserveAspectRatio="xMidYMid meet"><title>Two &amp; squares</title>
+<rect width="4" height="2" fill="#808080"/>
+<path data-kind="0" fill="#000000" stroke="none" d="M0 0L2 0L2 2L0 2Z"><title>left &lt;square&gt;</title></path>
+<path data-kind="1" fill="#ffffff" stroke="none" d="M2 0L4 0L4 2L2 2Z"><title>right square</title></path>
+<path data-border="" fill="none" stroke="#123456" stroke-width="0.75" stroke-linecap="round" d="M0 0L2 0M2 0L2 2M0 2L2 2M0 0L0 2M2 0L4 0M4 0L4 2M2 2L4 2"/>
+</svg>",
+  "tileCount": 2,
+}
+`;
+
+exports[`SVG drawing snapshot > omits all border geometry when the border is transparent 1`] = `
+{
+  "svg": "<svg xmlns="http://www.w3.org/2000/svg" width="4" height="2" viewBox="0 0 4 2" preserveAspectRatio="xMidYMid meet"><title>Two &amp; squares</title>
+<rect width="4" height="2" fill="#808080"/>
+<path data-kind="0" fill="#000000" stroke="none" d="M0 0L2 0L2 2L0 2Z"><title>left &lt;square&gt;</title></path>
+<path data-kind="1" fill="#ffffff" stroke="none" d="M2 0L4 0L4 2L2 2Z"><title>right square</title></path>
+</svg>",
+  "tileCount": 2,
+}
+`;

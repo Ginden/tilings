@@ -111,7 +111,7 @@ describe('svg output', () => {
 
   it('omits the stroke when the border is transparent', () => {
     const svg = renderSvg(tilingById('penrose-p2'), { ...options, border: null }).svg;
-    expect(svg).toContain('stroke="none"');
+    expect(svg).not.toContain('data-border');
     expect(svg).not.toContain('stroke-width');
   });
 
