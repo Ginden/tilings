@@ -7,10 +7,14 @@ export interface SceneOptions {
   readonly tileSize: number;
   /** Rotation of the patch, in degrees. */
   readonly rotation?: number;
+  /** Number of substitution-ancestry levels to outline. */
+  readonly substitutionHierarchy?: number;
 }
 
 export interface Scene {
   readonly tiles: readonly Tile[];
+  /** Supertile outlines, ordered from immediate parents outwards. */
+  readonly hierarchy: readonly (readonly Tile[])[];
   /** Tiles generated before clipping to the viewport. */
   readonly generated: number;
 }
@@ -32,25 +36,37 @@ export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
   const cx = opts.width / 2;
   const cy = opts.height / 2;
 
-  const tiles: Tile[] = [];
-  for (const tile of raw) {
-    let minX = Infinity;
-    let minY = Infinity;
-    let maxX = -Infinity;
-    let maxY = -Infinity;
-    const transformPoint = (p: { x: number; y: number }): { x: number; y: number } => {
-      const x = cx + (p.x * cos - p.y * sin) * scale;
-      const y = cy + (p.x * sin + p.y * cos) * scale;
-      if (x < minX) minX = x;
-      if (y < minY) minY = y;
-      if (x > maxX) maxX = x;
-      if (y > maxY) maxY = y;
-      return { x, y };
-    };
-    const points = tile.points.map(transformPoint);
-    const parts = tile.parts?.map((part) => part.map(transformPoint));
-    if (maxX < 0 || maxY < 0 || minX > opts.width || minY > opts.height) continue;
-    tiles.push({ kind: tile.kind, points, ...(parts ? { parts } : {}) });
-  }
-  return { tiles, generated: raw.length };
+  const transformTiles = (source: readonly Tile[]): Tile[] => {
+    const tiles: Tile[] = [];
+    for (const tile of source) {
+      let minX = Infinity;
+      let minY = Infinity;
+      let maxX = -Infinity;
+      let maxY = -Infinity;
+      const transformPoint = (p: { x: number; y: number }): { x: number; y: number } => {
+        const x = cx + (p.x * cos - p.y * sin) * scale;
+        const y = cy + (p.x * sin + p.y * cos) * scale;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+        return { x, y };
+      };
+      const points = tile.points.map(transformPoint);
+      const parts = tile.parts?.map((part) => part.map(transformPoint));
+      if (maxX < 0 || maxY < 0 || minX > opts.width || minY > opts.height) continue;
+      tiles.push({ kind: tile.kind, points, ...(parts ? { parts } : {}) });
+    }
+    return tiles;
+  };
+
+  const requestedLevels = Math.min(
+    Math.max(0, Math.floor(opts.substitutionHierarchy ?? 0)),
+    def.substitutionHierarchy?.maxLevels ?? 0,
+  );
+  const hierarchy = def.substitutionHierarchy
+    ? Array.from({ length: requestedLevels }, (_, index) =>
+        transformTiles(def.substitutionHierarchy!.generate(radius, index + 1)))
+    : [];
+  return { tiles: transformTiles(raw), hierarchy, generated: raw.length };
 }

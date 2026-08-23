@@ -60,12 +60,22 @@ export const pinwheel: TilingDefinition = {
   kindLabels: ['triangle', 'mirrored triangle'],
   reference: 'https://en.wikipedia.org/wiki/Pinwheel_tiling',
   unitTileArea: 1,
-  generate(radius): Tile[] {
-    const levels = Math.max(1, Math.ceil((2 * Math.log(2 * Math.max(radius, 1))) / Math.log(5)));
-    const s = Math.pow(5, levels / 2);
-    const tris = subdivideTriangles(seedRectangle(s), subdividePinwheel, levels, (triangle) =>
-      intersectsCenteredSquare([triangle.a, triangle.b, triangle.c], radius),
-    );
-    return tris.map((t) => ({ kind: t.kind, points: [t.a, t.b, t.c] }));
+  substitutionHierarchy: {
+    maxLevels: 3,
+    generate: generatePinwheelAtDepth,
   },
+  generate: (radius) => generatePinwheelAtDepth(radius, 0),
 };
+
+function generatePinwheelAtDepth(radius: number, levelsToSkip: number): Tile[] {
+  const levels = Math.max(1, Math.ceil((2 * Math.log(2 * Math.max(radius, 1))) / Math.log(5)));
+  const s = Math.pow(5, levels / 2);
+  const tris = subdivideTriangles(
+    seedRectangle(s),
+    subdividePinwheel,
+    Math.max(0, levels - levelsToSkip),
+    (triangle) =>
+      intersectsCenteredSquare([triangle.a, triangle.b, triangle.c], radius),
+  );
+  return tris.map((t) => ({ kind: t.kind, points: [t.a, t.b, t.c] }));
+}

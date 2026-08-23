@@ -47,6 +47,8 @@ const swapColours2And3Button = element<HTMLButtonElement>('swap-colours-2-3');
 const colour3Controls = element<HTMLDivElement>('colour3-controls');
 const colour3Enabled = element<HTMLInputElement>('colour3-enabled');
 const kindHint = element<HTMLParagraphElement>('kind-hint');
+const substitutionHierarchyControls = element<HTMLDivElement>('substitution-hierarchy-controls');
+const substitutionHierarchy = element<HTMLSelectElement>('substitution-hierarchy');
 const borderTransparent = element<HTMLInputElement>('border-transparent');
 const borderWidth = element<HTMLInputElement>('border-width');
 const borderWidthValue = element<HTMLOutputElement>('border-width-value');
@@ -183,6 +185,7 @@ function currentOptions(): RenderOptions {
     colour3: def.supportsThreeColours ? state.colour3 : null,
     border: state.borderTransparent ? null : state.border,
     borderWidth: state.borderWidth,
+    substitutionHierarchy: state.substitutionHierarchy,
   };
 }
 
@@ -202,6 +205,10 @@ function syncControls(): void {
   borderWidth.value = String(state.borderWidth);
   borderWidth.disabled = state.borderTransparent;
   borderWidthValue.textContent = state.borderWidth.toFixed(1);
+  substitutionHierarchyControls.hidden = !def.substitutionHierarchy;
+  substitutionHierarchy.value = String(
+    Math.min(state.substitutionHierarchy, def.substitutionHierarchy?.maxLevels ?? 0),
+  );
 
   sizeSelect.value = state.sizeId;
   customSize.hidden = state.sizeId !== 'custom';
@@ -335,6 +342,11 @@ function updateAppearance(): void {
     borderPath.setAttribute('stroke', border ?? 'none');
     borderPath.setAttribute('stroke-width', String(state.borderWidth));
   }
+  for (const hierarchyPath of svg.querySelectorAll<SVGPathElement>('path[data-hierarchy-level]')) {
+    const level = Number(hierarchyPath.dataset['hierarchyLevel']);
+    hierarchyPath.setAttribute('stroke', border ?? 'none');
+    hierarchyPath.setAttribute('stroke-width', String(state.borderWidth * (level + 1)));
+  }
 
   lastRender = {
     options: {
@@ -386,6 +398,12 @@ function bindControls(): void {
     state = { ...state, borderWidth: Number(borderWidth.value) };
     borderWidthValue.textContent = state.borderWidth.toFixed(1);
     updateAppearance();
+  });
+
+  substitutionHierarchy.addEventListener('change', () => {
+    state = { ...state, substitutionHierarchy: Number(substitutionHierarchy.value) };
+    syncControls();
+    render();
   });
 
   sizeSelect.addEventListener('change', () => {

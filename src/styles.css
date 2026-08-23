@@ -214,6 +214,15 @@ select optgroup {
   color: var(--text);
 }
 
+#substitution-hierarchy-controls {
+  margin-top: 0.65rem;
+}
+
+#substitution-hierarchy-controls label {
+  display: block;
+  margin-bottom: 0.3rem;
+}
+
 .row,
 .color-row {
   display: grid;

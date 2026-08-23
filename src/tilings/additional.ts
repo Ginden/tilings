@@ -132,7 +132,7 @@ export function subdivideSphinx(parent: Placed): Placed[] {
   });
 }
 
-export function generateSphinx(radius: number): Tile[] {
+function generateSphinxAtDepth(radius: number, levelsToSkip: number): Tile[] {
   // Around this interior anchor the prototile contains a disc of radius
   // sqrt(3)/4. Inflate to a supertile large enough to contain the request,
   // then deflate back to unit-edged Sphinxes.
@@ -143,10 +143,14 @@ export function generateSphinx(radius: number): Tile[] {
   const leaves = subdivideShapes(
     [{ kind: 0, transform: seedTransform }],
     subdivideSphinx,
-    levels,
+    Math.max(0, levels - levelsToSkip),
     (placed) => intersectsCenteredSquare(placedPolygon(placed, SPHINX_OUTLINE), radius),
   );
   return leaves.map((leaf) => ({ kind: leaf.kind, points: placedPolygon(leaf, SPHINX_OUTLINE) }));
+}
+
+export function generateSphinx(radius: number): Tile[] {
+  return generateSphinxAtDepth(radius, 0);
 }
 
 export const sphinx: TilingDefinition = {
@@ -159,6 +163,10 @@ export const sphinx: TilingDefinition = {
   kindLabels: ['left-handed sphinx', 'right-handed sphinx'],
   reference: 'https://en.wikipedia.org/wiki/Sphinx_tiling',
   unitTileArea: (3 * SQRT3) / 2,
+  substitutionHierarchy: {
+    maxLevels: 3,
+    generate: generateSphinxAtDepth,
+  },
   generate: generateSphinx,
 };
 

@@ -43,6 +43,9 @@ export function exportFileName(
       .join('-'),
     `border-${colourToken(opts.border)}`,
   ];
+  if ((opts.substitutionHierarchy ?? 0) > 0) {
+    parts.push(`hierarchy-${opts.substitutionHierarchy}`);
+  }
   return `${parts.join('_')}.${extension}`;
 }
 

@@ -29,6 +29,39 @@ export function subdivideChair(p: Placed): Placed[] {
   }));
 }
 
+function chairSeed(radius: number): { levels: number; seed: Placed } {
+  const levels = Math.max(1, Math.ceil(Math.log2(2 * Math.max(radius, 1))));
+  // Grow outwards by repeatedly making the current patch the central child of
+  // a supertile, which keeps the origin near the middle of the patch.
+  const central = CHILDREN[3]!.transform;
+  let seedTransform: Affine = IDENTITY;
+  for (let i = 0; i < levels; i++) {
+    seedTransform = mul(seedTransform, inv(central));
+  }
+  // The chair is L-shaped, so the largest disc it contains sits over the
+  // corner square rather than over the centre of the bounding box.
+  const anchor = apply(seedTransform, { x: 0.5, y: 0.5 });
+  const recentre = translation(-anchor.x, -anchor.y);
+  return { levels, seed: { kind: 0, transform: mul(recentre, seedTransform) } };
+}
+
+function generateChairAtDepth(radius: number, levelsToSkip: number): Tile[] {
+  const { levels, seed } = chairSeed(radius);
+  const placed = subdivideShapes(
+    [seed],
+    subdivideChair,
+    Math.max(0, levels - levelsToSkip),
+    (child) => intersectsCenteredSquare(
+      CHAIR_OUTLINE.map((point) => apply(child.transform, point)),
+      radius,
+    ),
+  );
+  return placed.map((p) => ({
+    kind: p.kind,
+    points: CHAIR_OUTLINE.map((v) => apply(p.transform, v)),
+  }));
+}
+
 export const chair: TilingDefinition = {
   id: 'chair',
   name: 'Chair (L-tromino)',
@@ -39,26 +72,9 @@ export const chair: TilingDefinition = {
   kindLabels: ['0°', '90°', '180°', '270°'],
   reference: 'https://en.wikipedia.org/wiki/List_of_aperiodic_sets_of_tiles',
   unitTileArea: 3,
-  generate(radius): Tile[] {
-    const levels = Math.max(1, Math.ceil(Math.log2(2 * Math.max(radius, 1))));
-    // Grow outwards by repeatedly making the current patch the central child of
-    // a supertile, which keeps the origin near the middle of the patch.
-    const central = CHILDREN[3]!.transform;
-    let seedTransform: Affine = IDENTITY;
-    for (let i = 0; i < levels; i++) {
-      seedTransform = mul(seedTransform, inv(central));
-    }
-    // The chair is L-shaped, so the largest disc it contains sits over the
-    // corner square rather than over the centre of the bounding box.
-    const anchor = apply(seedTransform, { x: 0.5, y: 0.5 });
-    const recentre = translation(-anchor.x, -anchor.y);
-    const seed: Placed = { kind: 0, transform: mul(recentre, seedTransform) };
-    const placed = subdivideShapes([seed], subdivideChair, levels, (child) =>
-      intersectsCenteredSquare(CHAIR_OUTLINE.map((point) => apply(child.transform, point)), radius),
-    );
-    return placed.map((p) => ({
-      kind: p.kind,
-      points: CHAIR_OUTLINE.map((v) => apply(p.transform, v)),
-    }));
+  substitutionHierarchy: {
+    maxLevels: 3,
+    generate: generateChairAtDepth,
   },
+  generate: (radius) => generateChairAtDepth(radius, 0),
 };

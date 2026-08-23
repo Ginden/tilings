@@ -62,6 +62,14 @@ describe('colours', () => {
 });
 
 describe('scene', () => {
+  it('offers substitution hierarchy geometry for every recursive rep-tile', () => {
+    expect(TILINGS.filter((tiling) => tiling.substitutionHierarchy).map((tiling) => tiling.id).sort()).toEqual([
+      'chair',
+      'pinwheel',
+      'sphinx',
+    ]);
+  });
+
   it('clips tiles to the viewport and keeps it covered', () => {
     const scene = buildScene(tilingById('penrose-p3'), options);
     expect(scene.tiles.length).toBeGreaterThan(100);
@@ -118,6 +126,18 @@ describe('svg output', () => {
     const svg = renderSvg(tilingById('penrose-p2'), { ...options, border: null }).svg;
     expect(svg).not.toContain('data-border');
     expect(svg).not.toContain('stroke-width');
+  });
+
+  it('draws cumulative chair supertile levels without changing the default output', () => {
+    const def = tilingById('chair');
+    const plain = renderSvg(def, options).svg;
+    const hierarchical = renderSvg(def, { ...options, substitutionHierarchy: 2 }).svg;
+    expect(plain).not.toContain('data-hierarchy-level');
+    expect(hierarchical).toContain('data-hierarchy-level="1"');
+    expect(hierarchical).toContain('data-hierarchy-level="2"');
+    expect(hierarchical).not.toContain('data-hierarchy-level="3"');
+    expect(hierarchical).toContain('stroke-width="2"');
+    expect(hierarchical).toContain('stroke-width="3"');
   });
 
   it('names the tiling and honours preserveAspectRatio', () => {
@@ -241,6 +261,7 @@ describe('state', () => {
       customHeight: 987,
       tileSize: 77,
       rotation: 237,
+      substitutionHierarchy: 2,
     };
     expect(decodeState(`#${encodeState(state)}`)).toEqual(state);
   });

@@ -111,6 +111,20 @@ function tileBody(
   return body;
 }
 
+function hierarchyBody(levels: readonly (readonly Tile[])[], opts: Palette): string[] {
+  if (opts.border === null) return [];
+  return levels.flatMap((tiles, index) => {
+    const edges = drawingPaths(tiles, true).edges;
+    if (!edges) return [];
+    const level = index + 1;
+    const strokeWidth = opts.borderWidth * (level + 1);
+    return edgePathChunks(edges).map((path) =>
+      `<path data-hierarchy-level="${level}" fill="none" stroke="${opts.border}" ` +
+      `stroke-width="${fmt(strokeWidth)}" stroke-linecap="round" stroke-linejoin="round" d="${path}"/>`,
+    );
+  });
+}
+
 function renderPeriodicSvg(
   def: TilingDefinition,
   opts: RenderOptions,
@@ -167,6 +181,7 @@ export function renderSvg(def: TilingDefinition, opts: RenderOptions): RenderRes
   const body: string[] = [
     `<rect width="${opts.width}" height="${opts.height}" fill="${background}"/>`,
     ...tileBody(def, scene.tiles, colours, opts),
+    ...hierarchyBody(scene.hierarchy, opts),
   ];
 
   const svg =

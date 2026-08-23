@@ -63,6 +63,14 @@ export interface TilingDefinition {
     readonly tiles: readonly Tile[];
   };
   /**
+   * Optional geometry for visualising the substitution ancestry. Level 1 is
+   * the parent of the rendered tiles, level 2 their grandparent, and so on.
+   */
+  readonly substitutionHierarchy?: {
+    readonly maxLevels: number;
+    generate(radius: number, level: number): Tile[];
+  };
+  /**
    * Generate a patch centred on the origin that covers the disc of the given
    * radius (in natural units).
    */

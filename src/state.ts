@@ -16,6 +16,8 @@ export interface AppState {
   tileSize: number;
   /** Clockwise rotation of the rendered patch, in whole degrees. */
   rotation: number;
+  /** Number of substitution-ancestry levels to outline; zero hides the overlay. */
+  substitutionHierarchy: number;
 }
 
 export interface SizePreset {
@@ -50,6 +52,7 @@ export const DEFAULT_STATE: AppState = {
   customHeight: 1000,
   tileSize: 42,
   rotation: 0,
+  substitutionHierarchy: 0,
 };
 
 export function swapSecondAndThirdColours(state: AppState): AppState {
@@ -98,6 +101,7 @@ export function encodeState(state: AppState): string {
     params.set('w', String(state.customWidth));
     params.set('h', String(state.customHeight));
   }
+  if (state.substitutionHierarchy > 0) params.set('sh', String(state.substitutionHierarchy));
   return params.toString();
 }
 
@@ -135,6 +139,11 @@ export function decodeState(hash: string): AppState {
   const rotation = Number(rotationParam);
   if (rotationParam !== null && Number.isInteger(rotation) && rotation >= 0 && rotation < 360) {
     state.rotation = rotation;
+  }
+
+  const hierarchy = Number(params.get('sh'));
+  if (Number.isInteger(hierarchy) && hierarchy >= 0 && hierarchy <= 3) {
+    state.substitutionHierarchy = hierarchy;
   }
 
   const size = params.get('s');
