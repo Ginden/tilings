@@ -13,7 +13,16 @@ import {
   wrappedRotationForKey,
 } from './state.js';
 import type { AppState } from './state.js';
-import { copyPngBlob, downloadBlob, downloadSvg, exportFileName, svgToPngBlob } from './export.js';
+import {
+  addPngMetadata,
+  addSvgMetadata,
+  copyPngBlob,
+  downloadBlob,
+  downloadSvg,
+  exportFileName,
+  exportMetadata,
+  svgToPngBlob,
+} from './export.js';
 import {
   mountColorIsland,
   renderColorIsland,
@@ -427,18 +436,23 @@ function bindControls(): void {
   downloadSvgButton.addEventListener('click', () => {
     const def = tilingById(state.tilingId);
     const options = exportOptions();
-    downloadSvg(exportSvg(), exportFileName(def, options, 'svg'));
+    const fileName = exportFileName(def, options, 'svg');
+    const metadata = exportMetadata(def, fileName, 'image/svg+xml');
+    downloadSvg(addSvgMetadata(exportSvg(), metadata), fileName);
   });
 
   downloadPngButton.addEventListener('click', () => {
     const def = tilingById(state.tilingId);
     const options = exportOptions();
+    const fileName = exportFileName(def, options, 'png');
+    const metadata = exportMetadata(def, fileName, 'image/png');
     downloadPngButton.disabled = true;
     status.textContent = 'Rendering PNG…';
     void svgToPngBlob(exportSvg(), options.width, options.height)
+      .then((blob) => addPngMetadata(blob, metadata))
       .then((blob) => {
-        downloadBlob(blob, exportFileName(def, options, 'png'));
-        status.textContent = `Saved ${exportFileName(def, options, 'png')}`;
+        downloadBlob(blob, fileName);
+        status.textContent = `Saved ${fileName}`;
       })
       .catch((error: unknown) => {
         status.textContent = `PNG export failed: ${String(error)}`;
@@ -449,10 +463,14 @@ function bindControls(): void {
   });
 
   copyPngButton.addEventListener('click', () => {
+    const def = tilingById(state.tilingId);
     const options = exportOptions();
+    const fileName = exportFileName(def, options, 'png');
+    const metadata = exportMetadata(def, fileName, 'image/png');
     copyPngButton.disabled = true;
     status.textContent = 'Rendering PNG…';
     void svgToPngBlob(exportSvg(), options.width, options.height)
+      .then((blob) => addPngMetadata(blob, metadata))
       .then(copyPngBlob)
       .then(() => {
         status.textContent = 'Image copied to clipboard';

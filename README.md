@@ -83,6 +83,10 @@ canvas dimensions and they do not need the 30 000-tile patch limit.
 * **Download PNG** — the same image rasterised at the chosen pixel size.
 * **Copy image** — rasterise the image as PNG and copy it to the clipboard.
 
+Downloaded SVGs contain RDF/Dublin Core metadata. PNG downloads and copied PNGs
+carry the same metadata as XMP in a standard `iTXt` chunk, including the tiling
+name and description, source reference, creation time, format, and file name.
+
 Files are named after their settings, for example
 `penrose-p3_1920x1080_tile42_e8b53b-1b3a5c_border-101820.svg`.
 

@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { kindColors, mix, paletteBackground, parseHex, toHex } from '../src/render/color.js';
 import { renderSvg } from '../src/render/svg.js';
 import { buildScene } from '../src/render/scene.js';
-import { exportFileName } from '../src/export.js';
+import {
+  addPngMetadata,
+  addSvgMetadata,
+  exportFileName,
+  exportMetadata,
+} from '../src/export.js';
 import {
   DEFAULT_STATE,
   SIZE_PRESETS,
@@ -179,6 +184,45 @@ describe('export file names', () => {
     expect(exportFileName(tilingById('hat'), { ...options, colour3: '#c084fc' }, 'svg')).toBe(
       'hat_800x600_tile40_e8b53b-1b3a5c-c084fc_border-101820.svg',
     );
+  });
+
+  it('adds Dublin Core metadata to SVG exports', () => {
+    const def = tilingById('penrose-p3');
+    const fileName = exportFileName(def, options, 'svg');
+    const metadata = exportMetadata(def, fileName, 'image/svg+xml', new Date('2026-08-23T12:00:00Z'));
+    const svg = addSvgMetadata(renderSvg(def, options).svg, metadata);
+
+    expect(svg).toContain('<metadata><rdf:RDF');
+    expect(svg).toContain('<dc:title><rdf:Alt>');
+    expect(svg).toContain(`<rdf:li xml:lang="x-default">${def.name}</rdf:li>`);
+    expect(svg).toContain('<dc:date><rdf:Seq><rdf:li>2026-08-23T12:00:00.000Z</rdf:li>');
+    expect(svg).toContain(`<dc:format>image/svg+xml</dc:format>`);
+    expect(svg).toContain(`<dc:identifier>${fileName}</dc:identifier>`);
+    expect(svg).toContain(`<dc:source>${def.reference.replaceAll('&', '&amp;')}</dc:source>`);
+  });
+
+  it('adds Dublin Core XMP to PNG exports', async () => {
+    const def = tilingById('hat');
+    const metadata = exportMetadata(
+      def,
+      'hat.png',
+      'image/png',
+      new Date('2026-08-23T12:00:00Z'),
+    );
+    // Signature + IHDR + IEND is sufficient for exercising chunk insertion.
+    const source = new Blob([new Uint8Array([
+      137, 80, 78, 71, 13, 10, 26, 10,
+      0, 0, 0, 13, 73, 72, 68, 82,
+      0, 0, 0, 1, 0, 0, 0, 1, 8, 6, 0, 0, 0, 31, 21, 196, 137,
+      0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96, 130,
+    ])], { type: 'image/png' });
+    const png = new Uint8Array(await (await addPngMetadata(source, metadata)).arrayBuffer());
+    const embedded = new TextDecoder().decode(png);
+
+    expect(embedded).toContain('iTXtXML:com.adobe.xmp');
+    expect(embedded).toContain('<dc:format>image/png</dc:format>');
+    expect(embedded).toContain('<rdf:li xml:lang="x-default">Hat monotile (einstein)</rdf:li>');
+    expect(embedded).toContain('<dc:identifier>hat.png</dc:identifier>');
   });
 });
 
