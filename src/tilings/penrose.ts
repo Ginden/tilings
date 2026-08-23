@@ -1,4 +1,4 @@
-import { PHI, lerp, sub } from '../geometry.js';
+import { PHI, intersectsCenteredSquare, lerp, sub } from '../geometry.js';
 import type { Vec } from '../geometry.js';
 import type { Tile, TilingDefinition } from './types.js';
 import { mergeHalfTiles, subdivideTriangles } from './substitution.js';
@@ -110,7 +110,12 @@ function buildTriangles(
   seed: (r: number) => Tri[] = sunSeed,
 ): Tri[] {
   const levels = levelsFor(radius);
-  return subdivideTriangles(seed(Math.pow(PHI, levels)), rule, levels);
+  // A two-edge margin keeps both halves of every boundary tile available for
+  // pairing while discarding supertile branches that cannot reach the patch.
+  const clipLimit = radius + 2;
+  return subdivideTriangles(seed(Math.pow(PHI, levels)), rule, levels, (triangle) =>
+    intersectsCenteredSquare([triangle.a, triangle.b, triangle.c], clipLimit),
+  );
 }
 
 export const penroseP3: TilingDefinition = {

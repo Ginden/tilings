@@ -85,7 +85,15 @@ describe('SVG drawing snapshot', () => {
 
   it('keeps substitution drawings stable', () => {
     const drawings = Object.fromEntries(
-      ['sphinx', 'pinwheel', 'chair', 'hat', 'watanabe-ito-soma-eightfold'].map((id) => {
+      [
+        'sphinx',
+        'pinwheel',
+        'chair',
+        'hat',
+        'watanabe-ito-soma-eightfold',
+        'penrose-p2',
+        'shuriken-supertile-12',
+      ].map((id) => {
         const result = renderSvg(tilingById(id), {
           width: 320,
           height: 180,

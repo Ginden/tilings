@@ -24,10 +24,20 @@ exports[`SVG drawing snapshot > keeps substitution drawings stable 1`] = `
     "svgSha256": "ba14ddec88cd4149a6fbbad8b4b9202697200d0ff2d54651fb570b2085562878",
     "tileCount": 461,
   },
+  "penrose-p2": {
+    "svgBytes": 49655,
+    "svgSha256": "5ec1f089fe43de7befccf4e01c7b03146b9be3bd6f739db0363b9223c23fbfc5",
+    "tileCount": 461,
+  },
   "pinwheel": {
     "svgBytes": 44551,
     "svgSha256": "1880da1194cb37a7b01ae5647e545738ca1b8079cd99bc651b938598a755d8e1",
     "tileCount": 484,
+  },
+  "shuriken-supertile-12": {
+    "svgBytes": 36811,
+    "svgSha256": "1c9051e511c170b92e68d6c4fb3aded0dc247b8ad60279b3482507c1f96134bf",
+    "tileCount": 437,
   },
   "sphinx": {
     "svgBytes": 71063,
