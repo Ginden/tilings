@@ -1,5 +1,7 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { renderSvg } from '../src/render/svg.js';
+import { tilingById } from '../src/tilings/index.js';
 import type { TilingDefinition } from '../src/tilings/types.js';
 
 const twoSquares: TilingDefinition = {
@@ -60,5 +62,50 @@ describe('SVG drawing snapshot', () => {
         borderWidth: 0.75,
       }),
     ).toMatchSnapshot();
+  });
+
+  it('keeps the Danzer drawing stable', () => {
+    const result = renderSvg(tilingById('danzer-sevenfold'), {
+      width: 320,
+      height: 180,
+      tileSize: 20,
+      rotation: 13,
+      colour1: '#000000',
+      colour2: '#ffffff',
+      colour3: '#ff0000',
+      border: '#123456',
+      borderWidth: 0.75,
+    });
+    expect({
+      tileCount: result.tileCount,
+      svgBytes: result.svg.length,
+      svgSha256: createHash('sha256').update(result.svg).digest('hex'),
+    }).toMatchSnapshot();
+  });
+
+  it('keeps substitution drawings stable', () => {
+    const drawings = Object.fromEntries(
+      ['sphinx', 'pinwheel', 'chair', 'hat', 'watanabe-ito-soma-eightfold'].map((id) => {
+        const result = renderSvg(tilingById(id), {
+          width: 320,
+          height: 180,
+          tileSize: 12,
+          rotation: 13,
+          colour1: '#000000',
+          colour2: '#ffffff',
+          border: '#123456',
+          borderWidth: 0.75,
+        });
+        return [
+          id,
+          {
+            tileCount: result.tileCount,
+            svgBytes: result.svg.length,
+            svgSha256: createHash('sha256').update(result.svg).digest('hex'),
+          },
+        ];
+      }),
+    );
+    expect(drawings).toMatchSnapshot();
   });
 });

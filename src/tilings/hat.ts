@@ -17,6 +17,7 @@ import {
   apply,
   area,
   centroid,
+  intersectsCenteredSquare,
   intersect,
   matchTwo,
   mul,
@@ -306,16 +307,20 @@ function constructMetatiles(patch: Meta): [Meta, Meta, Meta, Meta] {
   return [newH, newT, newP, newF];
 }
 
-function flatten(geom: Geom, transform: Affine, out: Tile[]): void {
+function flatten(geom: Geom, transform: Affine, out: Tile[], clipLimit: number): void {
+  const points = (geom.type === 'hat' ? HAT_OUTLINE : geom.shape).map((point) =>
+    apply(transform, point),
+  );
+  if (!intersectsCenteredSquare(points, clipLimit)) return;
   if (geom.type === 'hat') {
     out.push({
       kind: HAT_LABELS.indexOf(geom.label),
-      points: HAT_OUTLINE.map((v) => apply(transform, v)),
+      points,
     });
     return;
   }
   for (const child of geom.children) {
-    flatten(child.geom, mul(transform, child.transform), out);
+    flatten(child.geom, mul(transform, child.transform), out, clipLimit);
   }
 }
 
@@ -346,7 +351,7 @@ export function buildHatPatch(radius: number): Tile[] {
   }
   const out: Tile[] = [];
   const c = tiles[0].shape.length >= 3 ? centroid(tiles[0].shape) : { x: 0, y: 0 };
-  flatten(tiles[0], translation(-c.x, -c.y), out);
+  flatten(tiles[0], translation(-c.x, -c.y), out, radius);
   return out;
 }
 

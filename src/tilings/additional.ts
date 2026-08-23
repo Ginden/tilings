@@ -1,4 +1,4 @@
-import { PHI, area } from '../geometry.js';
+import { PHI, area, intersectsCenteredSquare } from '../geometry.js';
 import type { Affine, Vec } from '../geometry.js';
 import type { Tile, TilingDefinition } from './types.js';
 import { multigrid } from './multigrid.js';
@@ -140,7 +140,12 @@ export function generateSphinx(radius: number): Tile[] {
   const size = 2 ** levels;
   const anchor = { x: 0.5, y: 0 };
   const seedTransform: Affine = [size, 0, -size * anchor.x, 0, size, -size * anchor.y];
-  const leaves = subdivideShapes([{ kind: 0, transform: seedTransform }], subdivideSphinx, levels);
+  const leaves = subdivideShapes(
+    [{ kind: 0, transform: seedTransform }],
+    subdivideSphinx,
+    levels,
+    (placed) => intersectsCenteredSquare(placedPolygon(placed, SPHINX_OUTLINE), radius),
+  );
   return leaves.map((leaf) => ({ kind: leaf.kind, points: placedPolygon(leaf, SPHINX_OUTLINE) }));
 }
 

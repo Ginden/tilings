@@ -14,14 +14,22 @@ export interface Tri {
 }
 
 export type TriRule = (t: Tri) => Tri[];
+export type TriFilter = (t: Tri) => boolean;
 
 /** Apply a triangle substitution rule `levels` times. */
-export function subdivideTriangles(seed: readonly Tri[], rule: TriRule, levels: number): Tri[] {
+export function subdivideTriangles(
+  seed: readonly Tri[],
+  rule: TriRule,
+  levels: number,
+  keep?: TriFilter,
+): Tri[] {
   let current: Tri[] = [...seed];
   for (let i = 0; i < levels; i++) {
     const next: Tri[] = [];
     for (const t of current) {
-      for (const child of rule(t)) next.push(child);
+      for (const child of rule(t)) {
+        if (!keep || keep(child)) next.push(child);
+      }
     }
     current = next;
   }
@@ -35,17 +43,21 @@ export interface Placed {
 }
 
 export type PlacedRule = (p: Placed) => Placed[];
+export type PlacedFilter = (p: Placed) => boolean;
 
 export function subdivideShapes(
   seed: readonly Placed[],
   rule: PlacedRule,
   levels: number,
+  keep?: PlacedFilter,
 ): Placed[] {
   let current: Placed[] = [...seed];
   for (let i = 0; i < levels; i++) {
     const next: Placed[] = [];
     for (const s of current) {
-      for (const child of rule(s)) next.push(child);
+      for (const child of rule(s)) {
+        if (!keep || keep(child)) next.push(child);
+      }
     }
     current = next;
   }

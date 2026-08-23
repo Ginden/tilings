@@ -12,6 +12,44 @@ exports[`SVG drawing snapshot > keeps batched fills and deduplicated borders sta
 }
 `;
 
+exports[`SVG drawing snapshot > keeps substitution drawings stable 1`] = `
+{
+  "chair": {
+    "svgBytes": 90416,
+    "svgSha256": "395408a3af7f3ee1b69937dbcba336f955382c3250685ada2bdf99a8d39f4cab",
+    "tileCount": 457,
+  },
+  "hat": {
+    "svgBytes": 168068,
+    "svgSha256": "ba14ddec88cd4149a6fbbad8b4b9202697200d0ff2d54651fb570b2085562878",
+    "tileCount": 461,
+  },
+  "pinwheel": {
+    "svgBytes": 44551,
+    "svgSha256": "1880da1194cb37a7b01ae5647e545738ca1b8079cd99bc651b938598a755d8e1",
+    "tileCount": 484,
+  },
+  "sphinx": {
+    "svgBytes": 71063,
+    "svgSha256": "776a5c5cee7eedea0f99bb50f0d422d9657996fab6048d960d733ae64210c320",
+    "tileCount": 469,
+  },
+  "watanabe-ito-soma-eightfold": {
+    "svgBytes": 50600,
+    "svgSha256": "4899eb67ae9f7aae72a5e4fa58e87731f310eef53236e07591a62409a09f22d5",
+    "tileCount": 466,
+  },
+}
+`;
+
+exports[`SVG drawing snapshot > keeps the Danzer drawing stable 1`] = `
+{
+  "svgBytes": 17327,
+  "svgSha256": "a8fdb83b80880aaf1c9ea94d673480959d83b14d19e1c05a68dd4eb9c74dc4ba",
+  "tileCount": 194,
+}
+`;
+
 exports[`SVG drawing snapshot > omits all border geometry when the border is transparent 1`] = `
 {
   "svg": "<svg xmlns="http://www.w3.org/2000/svg" width="4" height="2" viewBox="0 0 4 2" preserveAspectRatio="xMidYMid meet"><title>Two &amp; squares</title>

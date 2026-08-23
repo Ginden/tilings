@@ -4,6 +4,10 @@ import type { Tile, TilingDefinition } from './types.js';
 const SQRT_2 = Math.SQRT2;
 const HALF_DIAGONAL = 1 / SQRT_2;
 const STEP = Math.PI / 4;
+const ROTATION_VECTORS = Array.from({ length: 8 }, (_, rotation) => {
+  const angle = rotation * STEP;
+  return { x: Math.cos(angle), y: Math.sin(angle) };
+});
 
 /** The non-unit inflation; its algebraic norm 2 accounts for the Q_2 factor. */
 export const WATANABE_ITO_SOMA_INFLATION = 2 + SQRT_2;
@@ -95,6 +99,10 @@ const RHOMB_CLUSTER: readonly Placement[] = [
   { kind: 1, x: -RHOMB_MID, y: HALF_INFLATION + HALF_DIAGONAL / 2, rotation: 0 },
 ];
 
+const MAX_CHILD_DISPLACEMENT = Math.max(
+  ...[...SQUARE_CLUSTER, ...RHOMB_CLUSTER].map((tile) => Math.hypot(tile.x, tile.y)),
+);
+
 function canonicalRotation(kind: WatanabeItoSomaKind, rotation: number): number {
   const period = kind === 0 ? 2 : 8;
   return ((rotation % period) + period) % period;
@@ -105,16 +113,18 @@ function coordinate(value: number): number {
 }
 
 function placementKey(tile: Placement): string {
-  return `${tile.kind}:${Math.round(tile.x * 1e8)}:${Math.round(tile.y * 1e8)}:${tile.rotation}`;
+  return `${tile.kind}:${tile.x}:${tile.y}:${tile.rotation}`;
+}
+
+function rotationVector(rotation: number): Vec {
+  return ROTATION_VECTORS[((rotation % 8) + 8) % 8]!;
 }
 
 /** Inflate a legal patch once and merge the pseudo-substitution's shared tiles. */
 export function subdivideWatanabeItoSoma(tiles: readonly Placement[]): Placement[] {
   const children = new Map<string, Placement>();
   for (const parent of tiles) {
-    const angle = parent.rotation * STEP;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
+    const { x: cos, y: sin } = rotationVector(parent.rotation);
     const cluster = parent.kind === 0 ? SQUARE_CLUSTER : RHOMB_CLUSTER;
     for (const child of cluster) {
       const tile: Placement = {
@@ -130,11 +140,8 @@ export function subdivideWatanabeItoSoma(tiles: readonly Placement[]): Placement
 }
 
 function polygon(tile: Placement): readonly [Vec, Vec, Vec, Vec] {
-  const angle = tile.rotation * STEP;
-  const uAngle = tile.kind === 0 ? angle : angle + Math.PI / 2;
-  const vAngle = tile.kind === 0 ? angle + Math.PI / 2 : angle + (3 * Math.PI) / 4;
-  const u = { x: Math.cos(uAngle), y: Math.sin(uAngle) };
-  const v = { x: Math.cos(vAngle), y: Math.sin(vAngle) };
+  const u = rotationVector(tile.rotation + (tile.kind === 0 ? 0 : 2));
+  const v = rotationVector(tile.rotation + (tile.kind === 0 ? 2 : 3));
   const point = (uSign: number, vSign: number): Vec => ({
     x: tile.x + (uSign * u.x + vSign * v.x) / 2,
     y: tile.y + (uSign * u.y + vSign * v.y) / 2,
@@ -155,12 +162,24 @@ export function generateWatanabeItoSomaEightfold(radius: number): WatanabeItoSom
   let patch: Placement[] = SQUARE_CLUSTER.filter(
     (tile): tile is Placement => tile.kind === 1,
   ).map((tile) => ({ ...tile }));
-  for (let level = 0; level < levels; level++) patch = subdivideWatanabeItoSoma(patch);
+  const finalLimit = radius + 1;
+  for (let level = 0; level < levels; level++) {
+    patch = subdivideWatanabeItoSoma(patch);
+    const remaining = levels - level - 1;
+    const remainingScale = WATANABE_ITO_SOMA_INFLATION ** remaining;
+    const remainingDisplacement =
+      (MAX_CHILD_DISPLACEMENT * (remainingScale - 1)) /
+      (WATANABE_ITO_SOMA_INFLATION - 1);
+    const currentLimit = (finalLimit + remainingDisplacement) / remainingScale;
+    patch = patch.filter(
+      (tile) => Math.abs(tile.x) <= currentLimit && Math.abs(tile.y) <= currentLimit,
+    );
+  }
 
   // Both prototiles have circumradius < 1. Keep the complete corona touching
   // the requested disc while avoiding tens of thousands of off-screen tiles.
   return patch
-    .filter((tile) => Math.hypot(tile.x, tile.y) <= radius + 1)
+    .filter((tile) => Math.hypot(tile.x, tile.y) <= finalLimit)
     .map((tile) => ({
       kind: tile.kind,
       rotation: tile.rotation,

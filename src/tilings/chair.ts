@@ -1,5 +1,5 @@
 import type { Affine, Vec } from '../geometry.js';
-import { IDENTITY, apply, inv, mul, translation } from '../geometry.js';
+import { IDENTITY, apply, intersectsCenteredSquare, inv, mul, translation } from '../geometry.js';
 import type { Tile, TilingDefinition } from './types.js';
 import { subdivideShapes } from './substitution.js';
 import type { Placed } from './substitution.js';
@@ -53,7 +53,9 @@ export const chair: TilingDefinition = {
     const anchor = apply(seedTransform, { x: 0.5, y: 0.5 });
     const recentre = translation(-anchor.x, -anchor.y);
     const seed: Placed = { kind: 0, transform: mul(recentre, seedTransform) };
-    const placed = subdivideShapes([seed], subdivideChair, levels);
+    const placed = subdivideShapes([seed], subdivideChair, levels, (child) =>
+      intersectsCenteredSquare(CHAIR_OUTLINE.map((point) => apply(child.transform, point)), radius),
+    );
     return placed.map((p) => ({
       kind: p.kind,
       points: CHAIR_OUTLINE.map((v) => apply(p.transform, v)),

@@ -150,4 +150,19 @@ export function bounds(points: readonly Vec[]): Bounds {
   return { minX, minY, maxX, maxY };
 }
 
+/** Whether a polygon's axis-aligned bounds overlap a square centred at the origin. */
+export function intersectsCenteredSquare(points: readonly Vec[], limit: number): boolean {
+  let left = true;
+  let above = true;
+  let right = true;
+  let below = true;
+  for (const point of points) {
+    left &&= point.x < -limit;
+    above &&= point.y < -limit;
+    right &&= point.x > limit;
+    below &&= point.y > limit;
+  }
+  return !(left || above || right || below);
+}
+
 export const PHI = (1 + Math.sqrt(5)) / 2;

@@ -2,7 +2,7 @@
 // Apache-2.0 plotz_rs implementation (2023) and substantially modified for
 // typed state tracking, disc coverage, rendering, and verification here.
 // See THIRD-PARTY-LICENSES.md and licenses/Apache-2.0.txt.
-import { area, lerp, signedArea } from '../geometry.js';
+import { area, intersectsCenteredSquare, lerp, signedArea } from '../geometry.js';
 import type { Vec } from '../geometry.js';
 import type { Tile, TilingDefinition } from './types.js';
 
@@ -251,16 +251,36 @@ function scaleAboutIncentre(tile: OrientedTriangle, factor: number): OrientedTri
 }
 
 /** Generate a genuine substitution patch whose parent contains the requested disc. */
-export function generateDanzerSevenfold(radius: number): DanzerTriangle[] {
+function generateDanzerPatch(radius: number): OrientedTriangle[] {
   const seed = canonicalAcuteTriangle();
   const inradius = (2 * area(seed.points)) / (A + 2 * C);
   const levels = Math.max(1, Math.ceil(Math.log((radius + C) / inradius) / Math.log(DANZER_INFLATION)));
   let tiles: OrientedTriangle[] = [scaleAboutIncentre(seed, DANZER_INFLATION ** levels)];
+  // Children never leave their parent triangle, so branches outside this
+  // generous drawing bound cannot contribute to the requested patch. Keeping
+  // two natural edge lengths of margin also preserves complete boundary stars.
+  const clipLimit = radius + 2 * C;
 
   for (let level = 0; level < levels; level++) {
-    tiles = tiles.flatMap(subdivideDanzer);
+    const next: OrientedTriangle[] = [];
+    for (const tile of tiles) {
+      for (const child of subdivideDanzer(tile)) {
+        if (intersectsCenteredSquare(child.points, clipLimit)) next.push(child);
+      }
+    }
+    tiles = next;
   }
-  return attachVertexStars(tiles);
+  return tiles;
+}
+
+/** Generate the complete arrow and vertex-star state used by geometry verification. */
+export function generateDanzerSevenfold(radius: number): DanzerTriangle[] {
+  return attachVertexStars(generateDanzerPatch(radius));
+}
+
+/** The production drawing needs only the shape class and triangle geometry. */
+function generateDanzerTiles(radius: number): Tile[] {
+  return generateDanzerPatch(radius).map((tile) => ({ kind: tile.shape, points: tile.points }));
 }
 
 const MEAN_PROTOTILE_AREA =
@@ -288,5 +308,5 @@ export const danzerSevenfold: TilingDefinition = {
     },
   ],
   unitTileArea: MEAN_PROTOTILE_AREA,
-  generate: generateDanzerSevenfold,
+  generate: generateDanzerTiles,
 };

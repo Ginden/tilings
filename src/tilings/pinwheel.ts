@@ -1,5 +1,5 @@
 import type { Vec } from '../geometry.js';
-import { sub } from '../geometry.js';
+import { intersectsCenteredSquare, sub } from '../geometry.js';
 import type { Tile, TilingDefinition } from './types.js';
 import { subdivideTriangles } from './substitution.js';
 import type { Tri } from './substitution.js';
@@ -63,7 +63,9 @@ export const pinwheel: TilingDefinition = {
   generate(radius): Tile[] {
     const levels = Math.max(1, Math.ceil((2 * Math.log(2 * Math.max(radius, 1))) / Math.log(5)));
     const s = Math.pow(5, levels / 2);
-    const tris = subdivideTriangles(seedRectangle(s), subdividePinwheel, levels);
+    const tris = subdivideTriangles(seedRectangle(s), subdividePinwheel, levels, (triangle) =>
+      intersectsCenteredSquare([triangle.a, triangle.b, triangle.c], radius),
+    );
     return tris.map((t) => ({ kind: t.kind, points: [t.a, t.b, t.c] }));
   },
 };
