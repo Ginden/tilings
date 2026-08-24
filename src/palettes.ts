@@ -16,7 +16,7 @@ export const PALETTES: readonly PalettePreset[] = [
   { id: 'islamic-tile', name: 'Islamic tile', collection: 'classics', colour1: '#1f7a8c', colour2: '#022b3a', border: '#bfdbf7' },
   { id: 'archive', name: 'Archive', collection: 'classics', colour1: '#70253a', colour2: '#f2eee5', border: '#13263a' },
   { id: 'ukiyo-e', name: 'Ukiyo-e', collection: 'studio', colour1: '#315a7d', colour2: '#d06c4b', border: '#f2e2cf' },
-  { id: 'verdigris', name: 'Verdigris', collection: 'studio', colour1: '#b85c38', colour2: '#2a9d8f', border: '#173f3a' },
+  { id: 'verdigris', name: 'Verdigris', collection: 'studio', colour1: '#0b6e69', colour2: '#b7ddd3', border: '#3d2b1f' },
   { id: 'lichen', name: 'Lichen', collection: 'studio', colour1: '#435b3b', colour2: '#c8a96a', border: '#202a20' },
   { id: 'night-bloom', name: 'Night bloom', collection: 'studio', colour1: '#312e81', colour2: '#c084fc', border: '#e0b96a' },
   { id: 'signal', name: 'Signal', collection: 'studio', colour1: '#ef476f', colour2: '#06d6a0', border: '#073b4c' },

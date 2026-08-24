@@ -234,9 +234,9 @@ select optgroup {
 
 .colour-pair {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 2.4rem;
+  grid-template-columns: minmax(0, 1fr) 2rem minmax(0, 1fr);
   column-gap: 0.5rem;
-  align-items: center;
+  align-items: end;
 }
 
 .colour-third-row {
@@ -252,17 +252,36 @@ select optgroup {
 
 .colour-pair .row,
 .colour-pair .color-row {
-  grid-column: 1;
+  min-width: 0;
 }
 
 .colour-pair .row:first-child,
 .colour-pair .color-row:nth-child(1) {
+  grid-column: 1;
   grid-row: 1;
 }
 
 .colour-pair .row:nth-child(2),
 .colour-pair .color-row:nth-child(2) {
-  grid-row: 2;
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.colour-pair .color-row {
+  grid-template-columns: minmax(0, 1fr) 2rem;
+  row-gap: 0.25rem;
+}
+
+.colour-pair .color-row > label {
+  grid-column: 1 / -1;
+}
+
+.colour-pair .color-row > .color-field {
+  grid-column: 1;
+}
+
+.colour-pair .color-row > .swatch-button {
+  grid-column: 2;
 }
 
 .color-row {
@@ -275,7 +294,7 @@ select optgroup {
 
 .icon-button {
   grid-column: 2;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   width: 2rem;
   height: 2rem;
   padding: 0;
@@ -507,6 +526,10 @@ output {
   border-radius: 0.45rem;
   background: rgba(255, 255, 255, 0.06);
   cursor: pointer;
+}
+
+.colour-pair .swatch-button {
+  width: 2rem;
 }
 
 .swatch-button[data-disabled] {
