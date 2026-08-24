@@ -13,7 +13,7 @@ export const PALETTES: readonly PalettePreset[] = [
   { id: 'penrose-classic', name: 'Penrose classic', collection: 'classics', colour1: '#e8b53b', colour2: '#1b3a5c', border: '#101820' },
   { id: 'blueprint', name: 'Blueprint', collection: 'classics', colour1: '#0d3b66', colour2: '#1b6ca8', border: '#cfe3f7' },
   { id: 'monochrome', name: 'Monochrome', collection: 'classics', colour1: '#f5f5f5', colour2: '#2e2e2e', border: '#111111' },
-  { id: 'islamic-tile', name: 'Islamic tile', collection: 'classics', colour1: '#1f7a8c', colour2: '#022b3a', border: '#bfdbf7' },
+  { id: 'islamic-tile', name: 'Islamic tile', collection: 'classics', colour1: '#1f7a8c', colour2: '#022b3a', border: '#091c24' },
   { id: 'archive', name: 'Archive', collection: 'classics', colour1: '#70253a', colour2: '#f2eee5', border: '#13263a' },
   { id: 'ukiyo-e', name: 'Ukiyo-e', collection: 'studio', colour1: '#315a7d', colour2: '#d06c4b', border: '#f2e2cf' },
   { id: 'verdigris', name: 'Verdigris', collection: 'studio', colour1: '#0b6e69', colour2: '#b7ddd3', border: '#3d2b1f' },
