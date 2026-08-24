@@ -58,6 +58,7 @@ import {
   generateWatanabeItoSomaEightfold,
   subdivideWatanabeItoSoma,
 } from '../src/tilings/watanabe-ito-soma-eightfold.js';
+import { generateTruchet } from '../src/tilings/truchet.js';
 import { generateVoronoi } from '../src/tilings/voronoi.js';
 
 const ARCHIMEDEAN_VERTEX_FIGURES: Readonly<Record<string, readonly number[]>> = {
@@ -168,6 +169,7 @@ describe('tiling registry', () => {
       'pinwheel',
       'sphinx',
       'voderberg',
+      'seeded-truchet',
       'seeded-voronoi',
       'danzer-sevenfold',
       'jeandel-rao',
@@ -210,6 +212,45 @@ describe('tiling registry', () => {
       });
     });
   }
+});
+
+describe('seeded Truchet mosaic', () => {
+  it('repeats exactly for one seed and changes for another', () => {
+    const first = generateTruchet(4, 20260824);
+    expect(generateTruchet(4, 20260824)).toEqual(first);
+    expect(generateTruchet(4, 20260825)).not.toEqual(first);
+  });
+
+  it('keeps central geometry and colours fixed as the requested patch grows', () => {
+    const centralTiles = (radius: number): Tile[] =>
+      generateTruchet(radius, 20260824).filter((tile) => {
+        const centre = centroid(tile.points);
+        return Math.abs(centre.x) < 3 && Math.abs(centre.y) < 3;
+      });
+    expect(centralTiles(9)).toEqual(centralTiles(4));
+  });
+
+  it('uses all four tile rotations and one triangle of each colour per square', () => {
+    const tiles = generateTruchet(8, 20260824);
+    const orientations = new Set<string>();
+
+    for (let index = 0; index < tiles.length; index += 2) {
+      const first = tiles[index]!;
+      const second = tiles[index + 1]!;
+      expect(new Set([first.kind, second.kind])).toEqual(new Set([0, 1]));
+
+      const shared = first.points.filter((point) =>
+        second.points.some((other) => point.x === other.x && point.y === other.y),
+      );
+      expect(shared).toHaveLength(2);
+      const diagonalDirection = Math.sign(
+        (shared[1]!.y - shared[0]!.y) / (shared[1]!.x - shared[0]!.x),
+      );
+      orientations.add(`${diagonalDirection}:${first.kind}`);
+    }
+
+    expect(orientations).toEqual(new Set(['-1:0', '-1:1', '1:0', '1:1']));
+  });
 });
 
 describe('seeded Voronoi mosaic', () => {

@@ -45,6 +45,7 @@ rasterisation for display, and no runtime dependencies.
 | Shuriken tiling (12-fold) | fourteen substitution states based on a dodecagon and seven triangular shapes/scales | Paz's primitive dense-orientation substitution with inflation √(5 + 2√3), reconstructed as verified affine placement data |
 | Squiral | one rep-9 spiral tile, in two chiralities | Baake and Grimm's scale-3 bijective 3×3 block substitution, run on the rosettes of four like-handed tiles and drawn with the spiral carrier |
 | Jeandel–Rao 11 Wang tiles | eleven unit squares with four edge colours | coding the orbit of a point under the two unit translations of the torus ℝ²/⟨(φ,0),(1,φ+3)⟩ through Labbé's eleven-letter Markov partition; each square drawn as four triangles carrying its edge colours |
+| Seeded Truchet mosaic | two contrasting right triangles | a coordinate hash independently chooses one of the four rotations of Truchet's diagonally bisected square tile |
 | Seeded Voronoi mosaic | convex polygons | a seeded hard-core random site process partitioned by perpendicular bisectors |
 
 Tilings with more than two tile classes shade their classes evenly between the
@@ -53,8 +54,10 @@ Rhombitrihexagonal, and Truncated trihexagonal can add a third stop, giving
 three-class tilings exact colours and larger class sets a two-part gradient
 through the middle colour.
 
-The Voronoi mosaic assigns one of four seeded shades to each site. The assignment
-stays fixed while zooming or resizing; neighbouring cells may share a shade.
+The Truchet mosaic hashes the seed and each square's coordinates to select a
+diagonal and colour orientation. The Voronoi mosaic assigns one of four seeded
+shades to each site. Both assignments stay fixed while zooming or resizing;
+Voronoi cells that share an edge receive different shades.
 
 ## Controls
 

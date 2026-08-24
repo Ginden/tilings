@@ -24,6 +24,7 @@ import { danzerSevenfold } from './danzer-sevenfold.js';
 import { watanabeItoSomaEightfold } from './watanabe-ito-soma-eightfold.js';
 import { hexagonal, square, triangular } from './regular.js';
 import { ARCHIMEDEAN_TILINGS } from './archimedean.js';
+import { seededTruchet } from './truchet.js';
 import { seededVoronoi } from './voronoi.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
@@ -48,6 +49,7 @@ export const TILINGS: readonly TilingDefinition[] = [
   jeandelRao,
   danzerSevenfold,
   watanabeItoSomaEightfold,
+  seededTruchet,
   seededVoronoi,
   triangular,
   square,
