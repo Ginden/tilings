@@ -26,6 +26,11 @@ interface Site {
   readonly point: Vec;
 }
 
+interface Cell {
+  readonly points: readonly Vec[];
+  readonly site: Site;
+}
+
 function candidateWins(seed: number, x: number, y: number): boolean {
   const priority = hash(seed, x, y, 0);
   for (let dy = -1; dy <= 1; dy++) {
@@ -109,17 +114,177 @@ function voronoiCell(origin: Site, sites: readonly Site[]): Vec[] {
   return polygon;
 }
 
+const EDGE_PRECISION = 1e8;
+
+function pointKey(point: Vec): string {
+  return `${Math.round(point.x * EDGE_PRECISION)},${Math.round(point.y * EDGE_PRECISION)}`;
+}
+
+function edgeKey(start: Vec, end: Vec): string {
+  const a = pointKey(start);
+  const b = pointKey(end);
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+/** Build the dual graph: two Voronoi cells are adjacent when they share a complete edge. */
+function cellAdjacency(cells: readonly Cell[]): number[][] {
+  const owners = new Map<string, number>();
+  const adjacency = cells.map(() => [] as number[]);
+
+  for (let cellIndex = 0; cellIndex < cells.length; cellIndex++) {
+    const points = cells[cellIndex]!.points;
+    for (let pointIndex = 0; pointIndex < points.length; pointIndex++) {
+      const key = edgeKey(points[pointIndex]!, points[(pointIndex + 1) % points.length]!);
+      const neighbour = owners.get(key);
+      if (neighbour === undefined) {
+        owners.set(key, cellIndex);
+      } else {
+        adjacency[cellIndex]!.push(neighbour);
+        adjacency[neighbour]!.push(cellIndex);
+      }
+    }
+  }
+  return adjacency;
+}
+
+function availableColours(
+  index: number,
+  adjacency: readonly (readonly number[])[],
+  colours: readonly number[],
+): number[] {
+  const used = new Set(adjacency[index]!.map((neighbour) => colours[neighbour]!).filter((colour) => colour >= 0));
+  return [0, 1, 2, 3].filter((colour) => !used.has(colour));
+}
+
+function neighbourhood(
+  index: number,
+  adjacency: readonly (readonly number[])[],
+  colours: readonly number[],
+  depth: number,
+): number[] {
+  const region = new Set([index]);
+  let frontier = [index];
+  for (let step = 0; step < depth; step++) {
+    const next: number[] = [];
+    for (const cell of frontier) {
+      for (const neighbour of adjacency[cell]!) {
+        if (colours[neighbour]! < 0 || region.has(neighbour)) continue;
+        region.add(neighbour);
+        next.push(neighbour);
+      }
+    }
+    frontier = next;
+  }
+  return [...region];
+}
+
+function recolourRegion(
+  region: readonly number[],
+  adjacency: readonly (readonly number[])[],
+  colours: number[],
+  populations: number[],
+): boolean {
+  const previous = region.map((index) => colours[index]!);
+  for (const index of region) {
+    const colour = colours[index]!;
+    if (colour >= 0) populations[colour]!--;
+    colours[index] = -1;
+  }
+
+  const search = (remaining: number): boolean => {
+    if (remaining === 0) return true;
+    let selected = -1;
+    let selectedAvailable: number[] = [];
+    for (const index of region) {
+      if (colours[index]! >= 0) continue;
+      const available = availableColours(index, adjacency, colours);
+      if (
+        selected < 0 ||
+        available.length < selectedAvailable.length ||
+        (available.length === selectedAvailable.length && adjacency[index]!.length > adjacency[selected]!.length)
+      ) {
+        selected = index;
+        selectedAvailable = available;
+      }
+    }
+    selectedAvailable.sort((left, right) =>
+      Number(left === 3) - Number(right === 3) || populations[left]! - populations[right]! || left - right,
+    );
+    for (const colour of selectedAvailable) {
+      colours[selected] = colour;
+      populations[colour]!++;
+      if (search(remaining - 1)) return true;
+      populations[colour]!--;
+      colours[selected] = -1;
+    }
+    return false;
+  };
+
+  if (search(region.length)) return true;
+  for (let offset = 0; offset < region.length; offset++) {
+    const colour = previous[offset]!;
+    colours[region[offset]!] = colour;
+    if (colour >= 0) populations[colour]!++;
+  }
+  return false;
+}
+
+/**
+ * Colour from the centre outwards so an enlarged patch does not recolour its interior.
+ * The first three colours are balanced; the fourth is reserved for vertices whose
+ * already-coloured neighbours use all three.
+ */
+function colourCells(cells: readonly Cell[], seed: number): number[] {
+  const adjacency = cellAdjacency(cells);
+  const colours = Array(cells.length).fill(-1) as number[];
+  const populations = [0, 0, 0, 0];
+  const order = cells
+    .map((_, index) => index)
+    .sort((left, right) => {
+      const a = cells[left]!.site;
+      const b = cells[right]!.site;
+      const radiusDifference = a.point.x ** 2 + a.point.y ** 2 - b.point.x ** 2 - b.point.y ** 2;
+      return radiusDifference || hash(seed, a.gridX, a.gridY, 4) - hash(seed, b.gridX, b.gridY, 4);
+    });
+
+  for (const index of order) {
+    const available = availableColours(index, adjacency, colours);
+
+    if (available.length === 0) {
+      let repaired = false;
+      for (const depth of [1, 2, 3]) {
+        if (recolourRegion(neighbourhood(index, adjacency, colours, depth), adjacency, colours, populations)) {
+          repaired = true;
+          break;
+        }
+      }
+      if (!repaired) {
+        const coloured = order.filter((cell) => colours[cell]! >= 0);
+        recolourRegion([index, ...coloured], adjacency, colours, populations);
+      }
+      continue;
+    }
+
+    const preferred = available.filter((colour) => colour < 3);
+    const candidates = preferred.length > 0 ? preferred : available;
+    const colour = candidates.reduce((best, candidate) =>
+      populations[candidate]! < populations[best]! ? candidate : best,
+    );
+    colours[index] = colour;
+    populations[colour]!++;
+  }
+  return colours;
+}
+
 export function generateVoronoi(radius: number, seed = currentDaySeed()): Tile[] {
   const integerSeed = seed >>> 0;
   const outputExtent = Math.ceil(radius) + OUTPUT_MARGIN;
   const allSites = generateSites(integerSeed, outputExtent + SITE_MARGIN);
   const outputSites = allSites.filter((site) =>
     Math.abs(site.point.x) <= outputExtent && Math.abs(site.point.y) <= outputExtent);
-  const cells = outputSites.map((site) => voronoiCell(site, allSites));
-  return cells.map((points, index) => {
-    const site = outputSites[index]!;
-    return { kind: hash(integerSeed, site.gridX, site.gridY, 4) & 3, points };
-  });
+  const cells = outputSites.map((site) => ({ site, points: voronoiCell(site, allSites) }));
+  const colours = colourCells(cells, integerSeed);
+  return cells.map((cell, index) => ({ kind: colours[index]!, points: cell.points }));
 }
 
 export const seededVoronoi: TilingDefinition = {
@@ -127,9 +292,9 @@ export const seededVoronoi: TilingDefinition = {
   name: 'Seeded Voronoi mosaic',
   family: 'algorithmic',
   description:
-    'A deterministic stained-glass mosaic. Seeded random candidates compete locally to form a hard-core site process, then perpendicular bisectors carve the plane into irregular convex Voronoi cells. Each site receives one of four stable seeded shades.',
+    'A deterministic stained-glass mosaic. Seeded random candidates compete locally to form a hard-core site process, then perpendicular bisectors carve the plane into irregular convex Voronoi cells. The cell-adjacency map is coloured with three shades where possible and a fourth only where needed.',
   kinds: 4,
-  kindLabels: ['Seeded shade 1', 'Seeded shade 2', 'Seeded shade 3', 'Seeded shade 4'],
+  kindLabels: ['Map colour 1', 'Map colour 2', 'Map colour 3', 'Map colour 4'],
   supportsThreeColours: true,
   reference: 'https://en.wikipedia.org/wiki/Voronoi_diagram',
   referenceLabel: 'Voronoi diagram — Wikipedia',

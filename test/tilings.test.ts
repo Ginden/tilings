@@ -110,6 +110,23 @@ function coverCounts(tiles: readonly Tile[], radius: number, samples: number): n
   return counts;
 }
 
+function sharedBorderPairs(tiles: readonly Tile[]): [Tile, Tile][] {
+  const edgeOwners = new Map<string, Tile>();
+  const pairs: [Tile, Tile][] = [];
+  const pointKey = (point: Vec): string => `${Math.round(point.x * 1e8)},${Math.round(point.y * 1e8)}`;
+  for (const tile of tiles) {
+    for (let index = 0; index < tile.points.length; index++) {
+      const a = pointKey(tile.points[index]!);
+      const b = pointKey(tile.points[(index + 1) % tile.points.length]!);
+      const key = a < b ? `${a}|${b}` : `${b}|${a}`;
+      const owner = edgeOwners.get(key);
+      if (owner) pairs.push([owner, tile]);
+      else edgeOwners.set(key, tile);
+    }
+  }
+  return pairs;
+}
+
 describe('tiling registry', () => {
   it('has unique ids and consistent metadata', () => {
     const ids = new Set(TILINGS.map((t) => t.id));
@@ -233,8 +250,18 @@ describe('seeded Voronoi mosaic', () => {
     expect(new Set(central.map((tile) => tile.points.length)).size).toBeGreaterThan(3);
   });
 
-  it('uses all four seeded shades', () => {
-    expect(new Set(generateVoronoi(9, 20260824).map((tile) => tile.kind))).toEqual(new Set([0, 1, 2, 3]));
+  it('reserves the fourth map colour for constrained cells', () => {
+    const tiles = generateVoronoi(9, 20260824);
+    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2, 3]));
+    expect(tiles.filter((tile) => tile.kind === 3).length).toBeLessThan(tiles.length / 4);
+  });
+
+  it('gives cells sharing a border different colours', () => {
+    for (const seed of [0, 1, 20260824, 0xffffffff]) {
+      const pairs = sharedBorderPairs(generateVoronoi(14, seed));
+      expect(pairs.length).toBeGreaterThan(500);
+      expect(pairs.filter(([left, right]) => left.kind === right.kind)).toEqual([]);
+    }
   });
 });
 
