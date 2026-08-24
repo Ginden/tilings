@@ -45,13 +45,16 @@ rasterisation for display, and no runtime dependencies.
 | Shuriken tiling (12-fold) | fourteen substitution states based on a dodecagon and seven triangular shapes/scales | Paz's primitive dense-orientation substitution with inflation √(5 + 2√3), reconstructed as verified affine placement data |
 | Squiral | one rep-9 spiral tile, in two chiralities | Baake and Grimm's scale-3 bijective 3×3 block substitution, run on the rosettes of four like-handed tiles and drawn with the spiral carrier |
 | Jeandel–Rao 11 Wang tiles | eleven unit squares with four edge colours | coding the orbit of a point under the two unit translations of the torus ℝ²/⟨(φ,0),(1,φ+3)⟩ through Labbé's eleven-letter Markov partition; each square drawn as four triangles carrying its edge colours |
-| Seeded Voronoi mosaic | convex polygons | one seed-hashed site per grid cell, partitioned by perpendicular bisectors into a deterministic Voronoi diagram |
+| Seeded Voronoi mosaic | convex polygons | a seed-jittered triangular site grid, partitioned by perpendicular bisectors into a deterministic Voronoi diagram |
 
 Tilings with more than two tile classes shade their classes evenly between the
 chosen colours. Socolar, Heptagonal, Decagonal, the Hat monotile, Shuriken,
 Rhombitrihexagonal, and Truncated trihexagonal can add a third stop, giving
 three-class tilings exact colours and larger class sets a two-part gradient
 through the middle colour.
+
+The Voronoi mosaic uses four map colours: cells that share an edge always have
+different colour classes, and the assignment stays fixed while zooming or resizing.
 
 ## Controls
 

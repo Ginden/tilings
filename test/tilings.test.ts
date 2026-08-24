@@ -84,6 +84,14 @@ function pointInPolygon(x: number, y: number, points: readonly { x: number; y: n
   return inside;
 }
 
+function polygonEdgeKey(a: Vec, b: Vec): string {
+  const pointKey = (point: Vec): string =>
+    `${Math.round(point.x * 1e7)},${Math.round(point.y * 1e7)}`;
+  const first = pointKey(a);
+  const second = pointKey(b);
+  return first < second ? `${first}|${second}` : `${second}|${first}`;
+}
+
 /** Deterministic pseudo random numbers, so failures are reproducible. */
 function makeRandom(seed: number): () => number {
   let state = seed >>> 0;
@@ -202,9 +210,39 @@ describe('seeded Voronoi mosaic', () => {
     expect(generateVoronoi(4, 20260825)[0]!.points).not.toEqual(first[0]!.points);
   });
 
+  it('keeps central geometry and colours fixed as the requested patch grows', () => {
+    const centralTiles = (radius: number): Tile[] =>
+      generateVoronoi(radius, 20260824)
+        .filter((tile) => {
+          const centre = centroid(tile.points);
+          return Math.hypot(centre.x, centre.y) < 3;
+        })
+        .sort((left, right) => {
+          const a = centroid(left.points);
+          const b = centroid(right.points);
+          return a.y - b.y || a.x - b.x;
+        });
+    expect(centralTiles(9)).toEqual(centralTiles(4));
+  });
+
   it('remains gap-free across different seeds', () => {
     for (const seed of [0, 1, 20260824, 0xffffffff]) {
       expect(coverCounts(generateVoronoi(9, seed), 6, 150)).toEqual(Array(150).fill(1));
+    }
+  });
+
+  it('gives every pair of edge-adjacent cells different map colours', () => {
+    const seeds = [...Array.from({ length: 256 }, (_, seed) => seed), 20260824, 0xffffffff];
+    for (const seed of seeds) {
+      const edges = new Map<string, number>();
+      for (const tile of generateVoronoi(7, seed)) {
+        for (let index = 0; index < tile.points.length; index++) {
+          const key = polygonEdgeKey(tile.points[index]!, tile.points[(index + 1) % tile.points.length]!);
+          const neighbourKind = edges.get(key);
+          if (neighbourKind === undefined) edges.set(key, tile.kind);
+          else expect(tile.kind, `seed ${seed}, edge ${key}`).not.toBe(neighbourKind);
+        }
+      }
     }
   });
 });

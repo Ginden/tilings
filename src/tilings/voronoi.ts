@@ -4,6 +4,8 @@ import type { Tile, TilingDefinition } from './types.js';
 
 const NEIGHBOUR_RANGE = 2;
 const CELL_EXTENT = 2.5;
+const ROW_HEIGHT = Math.sqrt(3) / 2;
+const SITE_JITTER = 0.34;
 
 function hash(seed: number, x: number, y: number, channel: number): number {
   let value = seed >>> 0;
@@ -15,11 +17,10 @@ function hash(seed: number, x: number, y: number, channel: number): number {
   return (value ^ (value >>> 16)) >>> 0;
 }
 
-function site(seed: number, x: number, y: number): Vec {
-  return {
-    x: x + 0.08 + (hash(seed, x, y, 0) / 0x100000000) * 0.84,
-    y: y + 0.08 + (hash(seed, x, y, 1) / 0x100000000) * 0.84,
-  };
+function site(seed: number, x: number, y: number, cos: number, sin: number): Vec {
+  const siteX = x + y / 2 + (hash(seed, x, y, 0) / 0x100000000 - 0.5) * SITE_JITTER;
+  const siteY = y * ROW_HEIGHT + (hash(seed, x, y, 1) / 0x100000000 - 0.5) * SITE_JITTER;
+  return { x: siteX * cos - siteY * sin, y: siteX * sin + siteY * cos };
 }
 
 /** Keep the half-plane containing `origin`, bounded by its bisector with `other`. */
@@ -46,8 +47,8 @@ function clipToBisector(polygon: readonly Vec[], origin: Vec, other: Vec): Vec[]
   return clipped;
 }
 
-function voronoiCell(seed: number, gridX: number, gridY: number): Vec[] {
-  const origin = site(seed, gridX, gridY);
+function voronoiCell(seed: number, gridX: number, gridY: number, cos: number, sin: number): Vec[] {
+  const origin = site(seed, gridX, gridY, cos, sin);
   let polygon: Vec[] = [
     { x: origin.x - CELL_EXTENT, y: origin.y - CELL_EXTENT },
     { x: origin.x + CELL_EXTENT, y: origin.y - CELL_EXTENT },
@@ -58,7 +59,7 @@ function voronoiCell(seed: number, gridX: number, gridY: number): Vec[] {
   for (let y = gridY - NEIGHBOUR_RANGE; y <= gridY + NEIGHBOUR_RANGE; y++) {
     for (let x = gridX - NEIGHBOUR_RANGE; x <= gridX + NEIGHBOUR_RANGE; x++) {
       if (x === gridX && y === gridY) continue;
-      polygon = clipToBisector(polygon, origin, site(seed, x, y));
+      polygon = clipToBisector(polygon, origin, site(seed, x, y, cos, sin));
     }
   }
   return polygon;
@@ -66,12 +67,19 @@ function voronoiCell(seed: number, gridX: number, gridY: number): Vec[] {
 
 export function generateVoronoi(radius: number, seed = currentDaySeed()): Tile[] {
   const integerSeed = seed >>> 0;
-  const limit = Math.ceil(radius) + 2;
+  const extent = Math.ceil(radius) + 2;
+  const rowLimit = Math.ceil(extent / ROW_HEIGHT);
+  const angle = (hash(integerSeed, 0, 0, 3) / 0x100000000) * 2 * Math.PI;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
   const tiles: Tile[] = [];
-  for (let y = -limit; y <= limit; y++) {
-    for (let x = -limit; x <= limit; x++) {
-      const points = voronoiCell(integerSeed, x, y);
-      const kind = Math.min(4, Math.max(0, points.length - 4));
+  for (let y = -rowLimit; y <= rowLimit; y++) {
+    const minX = Math.floor(-extent - y / 2);
+    const maxX = Math.ceil(extent - y / 2);
+    for (let x = minX; x <= maxX; x++) {
+      const points = voronoiCell(integerSeed, x, y, cos, sin);
+      const rowFlip = hash(integerSeed, 0, y, 2) & 1;
+      const kind = (((x & 1) ^ rowFlip) << 1) | (y & 1);
       tiles.push({ kind, points });
     }
   }
@@ -83,12 +91,12 @@ export const seededVoronoi: TilingDefinition = {
   name: 'Seeded Voronoi mosaic',
   family: 'algorithmic',
   description:
-    'A deterministic stained-glass mosaic. A seeded hash places one site inside every square of an infinite grid, then perpendicular bisectors between nearby sites carve the plane into convex Voronoi cells. Colours reveal how many sides each cell has.',
-  kinds: 5,
-  kindLabels: ['4 or fewer sides', '5 sides', '6 sides', '7 sides', '8 or more sides'],
+    'A deterministic stained-glass mosaic. A seeded hash jitters the sites of an infinite triangular grid, then perpendicular bisectors between nearby sites carve the plane into convex Voronoi cells. Four map colours distinguish cells that share an edge.',
+  kinds: 4,
+  kindLabels: ['Map colour 1', 'Map colour 2', 'Map colour 3', 'Map colour 4'],
   supportsThreeColours: true,
   reference: 'https://en.wikipedia.org/wiki/Voronoi_diagram',
   referenceLabel: 'Voronoi diagram — Wikipedia',
-  unitTileArea: 1,
+  unitTileArea: ROW_HEIGHT,
   generate: generateVoronoi,
 };
