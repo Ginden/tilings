@@ -57,7 +57,12 @@ export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
       const points = tile.points.map(transformPoint);
       const parts = tile.parts?.map((part) => part.map(transformPoint));
       if (maxX < 0 || maxY < 0 || minX > opts.width || minY > opts.height) continue;
-      tiles.push({ kind: tile.kind, points, ...(parts ? { parts } : {}) });
+      tiles.push({
+        kind: tile.kind,
+        points,
+        ...(parts ? { parts } : {}),
+        ...(tile.drawBorder === undefined ? {} : { drawBorder: tile.drawBorder }),
+      });
     }
     return tiles;
   };

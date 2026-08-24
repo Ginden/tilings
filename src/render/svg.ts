@@ -58,7 +58,7 @@ function drawingPaths(tiles: readonly Tile[], includeBorders: boolean): DrawingP
       if (polygon.length === 0) continue;
       const points = polygon.map((point) => `${fmt(point.x)} ${fmt(point.y)}`);
       paths.push(`M${points.join('L')}Z`);
-      if (edges) {
+      if (edges && tile.drawBorder !== false) {
         for (let index = 0; index < points.length; index++) {
           const left = points[index]!;
           const right = points[(index + 1) % points.length]!;
@@ -139,6 +139,10 @@ function renderPeriodicSvg(
   const scaledTiles = cell.tiles.map((tile) => ({
     kind: tile.kind,
     points: tile.points.map((point) => ({ x: point.x * scale, y: point.y * scale })),
+    ...(tile.parts
+      ? { parts: tile.parts.map((part) => part.map((point) => ({ x: point.x * scale, y: point.y * scale }))) }
+      : {}),
+    ...(tile.drawBorder === undefined ? {} : { drawBorder: tile.drawBorder }),
   }));
   const body = tileBody(def, scaledTiles, colours, opts);
   const cellSvg =
@@ -174,7 +178,9 @@ function renderPeriodicSvg(
 export function renderSvg(def: TilingDefinition, opts: RenderOptions): RenderResult {
   const colour3 = def.supportsThreeColours ? (opts.colour3 ?? null) : null;
   const colours = kindColors(opts.colour1, opts.colour2, def.kinds, def.colourMode, colour3);
-  const background = paletteBackground(opts.colour1, opts.colour2, colour3);
+  const background = def.backgroundKind === undefined
+    ? paletteBackground(opts.colour1, opts.colour2, colour3)
+    : colours[def.backgroundKind] ?? opts.colour1;
   if (def.periodicCell) return renderPeriodicSvg(def, opts, colours, background);
 
   const scene = buildScene(def, opts);

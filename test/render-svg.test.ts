@@ -64,6 +64,22 @@ describe('SVG drawing snapshot', () => {
     ).toMatchSnapshot();
   });
 
+  it('renders Truchet ribbons over a tile-colour background without cell borders', () => {
+    const result = renderSvg(tilingById('seeded-truchet'), {
+      width: 80,
+      height: 60,
+      tileSize: 20,
+      seed: 20260824,
+      colour1: '#000000',
+      colour2: '#ffffff',
+      border: '#123456',
+      borderWidth: 0.75,
+    });
+    expect(result.svg).toContain('<rect width="80" height="60" fill="#000000"/>');
+    expect(result.svg).toContain('<path data-kind="1" fill="#ffffff"');
+    expect(result.svg).not.toContain('data-border');
+  });
+
   it('keeps the Danzer drawing stable', () => {
     const result = renderSvg(tilingById('danzer-sevenfold'), {
       width: 320,

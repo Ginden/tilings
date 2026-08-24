@@ -136,6 +136,10 @@ describe('tiling registry', () => {
       expect(def.kindLabels.length).toBe(def.kinds);
       expect(def.unitTileArea).toBeGreaterThan(0);
       expect(def.reference).toMatch(/^https:\/\//);
+      if (def.backgroundKind !== undefined) {
+        expect(def.backgroundKind).toBeGreaterThanOrEqual(0);
+        expect(def.backgroundKind).toBeLessThan(def.kinds);
+      }
     }
   });
 
@@ -230,26 +234,29 @@ describe('seeded Truchet mosaic', () => {
     expect(centralTiles(9)).toEqual(centralTiles(4));
   });
 
-  it('uses all four tile rotations and one triangle of each colour per square', () => {
+  it('uses both quarter-circle orientations and joins every arc at cell edges', () => {
     const tiles = generateTruchet(8, 20260824);
     const orientations = new Set<string>();
 
-    for (let index = 0; index < tiles.length; index += 2) {
-      const first = tiles[index]!;
-      const second = tiles[index + 1]!;
-      expect(new Set([first.kind, second.kind])).toEqual(new Set([0, 1]));
+    for (const tile of tiles) {
+      expect(tile.kind).toBe(1);
+      expect(tile.drawBorder).toBe(false);
+      expect(tile.parts).toHaveLength(2);
 
-      const shared = first.points.filter((point) =>
-        second.points.some((other) => point.x === other.x && point.y === other.y),
-      );
-      expect(shared).toHaveLength(2);
-      const diagonalDirection = Math.sign(
-        (shared[1]!.y - shared[0]!.y) / (shared[1]!.x - shared[0]!.x),
-      );
-      orientations.add(`${diagonalDirection}:${first.kind}`);
+      const centre = centroid(tile.points);
+      const upperArc = tile.parts!.map(centroid).sort((a, b) => a.y - b.y)[0]!;
+      orientations.add(upperArc.x < centre.x ? 'north-west' : 'north-east');
+
+      for (const part of tile.parts!) {
+        const edgePoints = part.filter((point) =>
+          tile.points.some((corner) =>
+            Math.abs(point.x - corner.x) < 1e-10 || Math.abs(point.y - corner.y) < 1e-10),
+        );
+        expect(edgePoints).toHaveLength(4);
+      }
     }
 
-    expect(orientations).toEqual(new Set(['-1:0', '-1:1', '1:0', '1:1']));
+    expect(orientations).toEqual(new Set(['north-west', 'north-east']));
   });
 });
 

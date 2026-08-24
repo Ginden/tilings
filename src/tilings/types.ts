@@ -7,6 +7,8 @@ import type { Vec } from '../geometry.js';
  */
 export interface Tile {
   readonly kind: number;
+  /** Omit border geometry for decorative parts that should join seamlessly. */
+  readonly drawBorder?: boolean;
   /**
    * Optional disconnected visible components. `points` remains the carrier
    * used for coverage and clipping; the renderer draws these polygons instead.
@@ -42,6 +44,8 @@ export interface TilingDefinition {
   readonly kindLabels: readonly string[];
   /** Offer a third colour stop for tilings whose class structure benefits from one. */
   readonly supportsThreeColours?: boolean;
+  /** Use one tile-class colour behind sparse decorative geometry. */
+  readonly backgroundKind?: number;
   /** Pair adjacent states around each selected endpoint colour instead of using one linear gradient. */
   readonly colourMode?: 'gradient' | 'paired';
   /** Reference URL (usually Wikipedia). */
