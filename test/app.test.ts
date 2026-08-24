@@ -368,6 +368,15 @@ describe('palettes', () => {
     });
   });
 
+  it('keeps Ultraviolet vivid when a tiling uses a third colour', () => {
+    expect(PALETTES.find((palette) => palette.id === 'ultraviolet')).toMatchObject({
+      collection: 'studio',
+      colour1: '#4c1d95',
+      colour2: '#bef264',
+      colour3: '#22d3ee',
+    });
+  });
+
   it('are unique and use valid colours', () => {
     expect(PALETTES.filter((palette) => palette.collection === 'studio')).toHaveLength(6);
     expect(new Set(PALETTES.map((p) => p.id)).size).toBe(PALETTES.length);

@@ -17,7 +17,7 @@ export const PALETTES: readonly PalettePreset[] = [
   { id: 'archive', name: 'Archive', collection: 'classics', colour1: '#70253a', colour2: '#f2eee5', border: '#13263a' },
   { id: 'bauhaus', name: 'Bauhaus', collection: 'classics', colour1: '#d1493f', colour2: '#f2c14e', border: '#1f2933' },
   { id: 'ukiyo-e', name: 'Ukiyo-e', collection: 'studio', colour1: '#315a7d', colour2: '#d06c4b', border: '#f2e2cf' },
-  { id: 'ultraviolet', name: 'Ultraviolet', collection: 'studio', colour1: '#4c1d95', colour2: '#bef264', border: '#1f1433' },
+  { id: 'ultraviolet', name: 'Ultraviolet', collection: 'studio', colour1: '#4c1d95', colour2: '#bef264', colour3: '#22d3ee', border: '#1f1433' },
   { id: 'lichen', name: 'Lichen', collection: 'studio', colour1: '#435b3b', colour2: '#c8a96a', border: '#202a20' },
   { id: 'signal', name: 'Signal', collection: 'studio', colour1: '#ef476f', colour2: '#06d6a0', border: '#073b4c' },
   { id: 'ember', name: 'Ember', collection: 'studio', colour1: '#2b2d42', colour2: '#f77f00', border: '#f4e3c1' },
