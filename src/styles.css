@@ -241,13 +241,13 @@ select optgroup {
 
 .colour-third-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 2.4rem;
+  grid-template-columns: minmax(0, 1fr) 2rem minmax(0, 1fr);
   column-gap: 0.5rem;
-  align-items: center;
+  align-items: end;
 }
 
 .colour-third-row .color-row {
-  grid-column: 1;
+  grid-column: 3;
 }
 
 .colour-pair .row,
@@ -267,20 +267,24 @@ select optgroup {
   grid-row: 1;
 }
 
-.colour-pair .color-row {
+.colour-pair .color-row,
+.colour-third-row .color-row {
   grid-template-columns: minmax(0, 1fr) 2rem;
   row-gap: 0.25rem;
 }
 
-.colour-pair .color-row > label {
+.colour-pair .color-row > label,
+.colour-third-row .color-row > label {
   grid-column: 1 / -1;
 }
 
-.colour-pair .color-row > .color-field {
+.colour-pair .color-row > .color-field,
+.colour-third-row .color-row > .color-field {
   grid-column: 1;
 }
 
-.colour-pair .color-row > .swatch-button {
+.colour-pair .color-row > .swatch-button,
+.colour-third-row .color-row > .swatch-button {
   grid-column: 2;
 }
 
@@ -528,7 +532,8 @@ output {
   cursor: pointer;
 }
 
-.colour-pair .swatch-button {
+.colour-pair .swatch-button,
+.colour-third-row .swatch-button {
   width: 2rem;
 }
 

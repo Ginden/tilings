@@ -339,12 +339,13 @@ describe('palettes', () => {
       'monochrome',
       'islamic-tile',
       'archive',
+      'bauhaus',
     ]);
   });
 
   it('offers three-colour palettes only on the selected tilings', () => {
     expect(PALETTES.filter((palette) => palette.collection === 'trios').map((palette) => palette.id)).toContain('night-bloom');
-    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(7);
+    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(6);
     expect(TILINGS.filter((tiling) => tiling.supportsThreeColours).map((tiling) => tiling.id).sort()).toEqual([
       'danzer-sevenfold',
       'decagonal',
@@ -357,13 +358,25 @@ describe('palettes', () => {
     ]);
   });
 
+  it('offers the Trans palette broadly with a white border and all three flag colours', () => {
+    expect(PALETTES.find((palette) => palette.id === 'trans')).toMatchObject({
+      collection: 'studio',
+      colour1: '#5bcefa',
+      colour2: '#f5a9b8',
+      colour3: '#ffffff',
+      border: '#ffffff',
+    });
+  });
+
   it('are unique and use valid colours', () => {
+    expect(PALETTES.filter((palette) => palette.collection === 'studio')).toHaveLength(6);
     expect(new Set(PALETTES.map((p) => p.id)).size).toBe(PALETTES.length);
     for (const palette of PALETTES) {
       expect(['classics', 'studio', 'trios']).toContain(palette.collection);
       expect(palette.colour1).toMatch(/^#[0-9a-f]{6}$/);
       expect(palette.colour2).toMatch(/^#[0-9a-f]{6}$/);
-      if (palette.collection === 'trios') expect(palette.colour3).toMatch(/^#[0-9a-f]{6}$/);
+      if (palette.collection === 'trios') expect(palette.colour3).toBeDefined();
+      if (palette.colour3 !== undefined) expect(palette.colour3).toMatch(/^#[0-9a-f]{6}$/);
       if (palette.border !== null) expect(palette.border).toMatch(/^#[0-9a-f]{6}$/);
     }
   });
