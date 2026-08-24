@@ -21,6 +21,7 @@ import {
 import { currentDaySeed } from '../src/seed.js';
 import { PALETTES } from '../src/palettes.js';
 import { TILINGS, tilingById } from '../src/tilings/index.js';
+import { runRenderJob } from '../src/render/worker-job.js';
 
 const options = {
   width: 800,
@@ -104,6 +105,15 @@ describe('scene', () => {
 });
 
 describe('svg output', () => {
+  it('renders the same SVG through a serialisable worker job', () => {
+    const expected = renderSvg(tilingById('seeded-voronoi'), { ...options, seed: 20260824 });
+    expect(runRenderJob({
+      id: 42,
+      tilingId: 'seeded-voronoi',
+      options: { ...options, seed: 20260824 },
+    })).toEqual({ id: 42, result: expected });
+  });
+
   it('renders one path per tile class plus a background', () => {
     const def = tilingById('penrose-p3');
     const { svg, tileCount } = renderSvg(def, options);

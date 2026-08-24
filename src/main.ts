@@ -1,6 +1,7 @@
 import { tilingById } from './tilings/index.js';
 import { hierarchyStrokeWidth, renderSvg } from './render/svg.js';
-import type { RenderOptions } from './render/svg.js';
+import type { RenderOptions, RenderResult } from './render/svg.js';
+import type { RenderRequest, RenderResponse } from './render/worker-protocol.js';
 import { kindColors, paletteBackground } from './render/color.js';
 import { PALETTES } from './palettes.js';
 import {
@@ -271,48 +272,102 @@ function syncControls(): void {
 }
 
 let pending = 0;
+let renderWorker: Worker | null = null;
+let renderRequestId = 0;
+let rendering = false;
+
+function setRendering(value: boolean): void {
+  rendering = value;
+  downloadSvgButton.disabled = value;
+  downloadPngButton.disabled = value;
+  copyPngButton.disabled = value;
+}
+
+function stopPendingRender(): void {
+  if (pending) cancelAnimationFrame(pending);
+  pending = 0;
+  renderWorker?.terminate();
+  renderWorker = null;
+}
+
+function showRenderResult(
+  def: ReturnType<typeof tilingById>,
+  options: RenderOptions,
+  result: RenderResult,
+  started: number,
+): void {
+  if (result.cssBackground) {
+    const layer = document.createElement('div');
+    layer.className = 'periodic-background';
+    layer.setAttribute('role', 'img');
+    layer.setAttribute('aria-label', def.name);
+    layer.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(result.cssBackground.svg)}")`;
+    const previewScale = Math.max(
+      stage.clientWidth / options.width,
+      stage.clientHeight / options.height,
+    );
+    layer.style.backgroundSize =
+      `${result.cssBackground.width * previewScale}px ` +
+      `${result.cssBackground.height * previewScale}px`;
+    layer.style.transform =
+      `translate(-50%, -50%) rotate(${result.cssBackground.rotation}deg)`;
+    stage.replaceChildren(layer);
+  } else {
+    stage.innerHTML = result.svg;
+  }
+  lastRender = { options };
+  if (!def.periodicCell) updateAppearance();
+  const clamped =
+    options.tileSize > state.tileSize
+      ? ` · tile size raised to ${Math.round(options.tileSize)} px to stay under ${MAX_TILES.toLocaleString()} tiles`
+      : '';
+  status.textContent =
+    `${result.tileCount.toLocaleString()} tiles · ${options.width}×${options.height} px · ` +
+    `${Math.round(performance.now() - started)} ms${clamped}`;
+}
 
 function render(): void {
-  if (pending) cancelAnimationFrame(pending);
+  stopPendingRender();
+  const requestId = ++renderRequestId;
+  setRendering(true);
   status.textContent = 'Generating…';
   pending = requestAnimationFrame(() => {
-    // A second frame, so the message above is painted before the work starts.
     pending = requestAnimationFrame(() => {
       pending = 0;
       const def = tilingById(state.tilingId);
       const options = currentOptions();
       const started = performance.now();
-      const result = renderSvg(def, {
-        ...options,
-        preserveAspectRatio: 'xMidYMid slice',
+      const worker = new Worker(new URL('./render/worker.ts', import.meta.url), { type: 'module' });
+      renderWorker = worker;
+      worker.addEventListener('message', (event: MessageEvent<RenderResponse>) => {
+        if (worker !== renderWorker || event.data.id !== renderRequestId) return;
+        worker.terminate();
+        renderWorker = null;
+        if ('error' in event.data) {
+          rendering = false;
+          status.textContent = `Generation failed: ${event.data.error}`;
+          return;
+        }
+        const latestOptions = currentOptions();
+        if (!def.periodicCell && options.border === null && latestOptions.border !== null) {
+          render();
+          return;
+        }
+        showRenderResult(def, options, event.data.result, started);
+        setRendering(false);
       });
-      if (result.cssBackground) {
-        const layer = document.createElement('div');
-        layer.className = 'periodic-background';
-        layer.setAttribute('role', 'img');
-        layer.setAttribute('aria-label', def.name);
-        layer.style.backgroundImage = `url("data:image/svg+xml,${encodeURIComponent(result.cssBackground.svg)}")`;
-        const previewScale = Math.max(
-          stage.clientWidth / options.width,
-          stage.clientHeight / options.height,
-        );
-        layer.style.backgroundSize =
-          `${result.cssBackground.width * previewScale}px ` +
-          `${result.cssBackground.height * previewScale}px`;
-        layer.style.transform =
-          `translate(-50%, -50%) rotate(${result.cssBackground.rotation}deg)`;
-        stage.replaceChildren(layer);
-      } else {
-        stage.innerHTML = result.svg;
-      }
-      lastRender = { options };
-      const clamped =
-        options.tileSize > state.tileSize
-          ? ` · tile size raised to ${Math.round(options.tileSize)} px to stay under ${MAX_TILES.toLocaleString()} tiles`
-          : '';
-      status.textContent =
-        `${result.tileCount.toLocaleString()} tiles · ${options.width}×${options.height} px · ` +
-        `${Math.round(performance.now() - started)} ms${clamped}`;
+      worker.addEventListener('error', (event) => {
+        if (worker !== renderWorker) return;
+        renderWorker = null;
+        rendering = false;
+        status.textContent = `Generation failed: ${event.message}`;
+      });
+      const request: RenderRequest = {
+        id: requestId,
+        tilingId: def.id,
+        options: { ...options, preserveAspectRatio: 'xMidYMid slice' },
+      };
+      worker.postMessage(request);
     });
   });
 }
@@ -506,7 +561,7 @@ function bindControls(): void {
         status.textContent = `PNG export failed: ${String(error)}`;
       })
       .finally(() => {
-        downloadPngButton.disabled = false;
+        downloadPngButton.disabled = rendering;
       });
   });
 
@@ -527,7 +582,7 @@ function bindControls(): void {
         status.textContent = `Copy image failed: ${String(error)}`;
       })
       .finally(() => {
-        copyPngButton.disabled = false;
+        copyPngButton.disabled = rendering;
       });
   });
 
