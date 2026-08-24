@@ -46,6 +46,7 @@ export function exportFileName(
   if ((opts.substitutionHierarchy ?? 0) > 0) {
     parts.push(`hierarchy-${opts.substitutionHierarchy}`);
   }
+  if (def.family === 'algorithmic') parts.push(`seed-${opts.seed ?? 0}`);
   return `${parts.join('_')}.${extension}`;
 }
 

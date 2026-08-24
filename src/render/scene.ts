@@ -9,6 +9,8 @@ export interface SceneOptions {
   readonly rotation?: number;
   /** Number of substitution-ancestry levels to outline. */
   readonly substitutionHierarchy?: number;
+  /** Seed used by algorithmic tilings. */
+  readonly seed?: number;
 }
 
 export interface Scene {
@@ -29,7 +31,7 @@ export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
   const diagonal = Math.hypot(opts.width, opts.height) / 2;
   const radius = (diagonal * 1.1 + tileSize * 2) / scale;
 
-  const raw = def.generate(radius);
+  const raw = def.generate(radius, opts.seed);
   const angle = ((opts.rotation ?? 0) * Math.PI) / 180;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);

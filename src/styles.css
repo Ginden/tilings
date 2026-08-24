@@ -214,11 +214,13 @@ select optgroup {
   color: var(--text);
 }
 
-#substitution-hierarchy-controls {
+#substitution-hierarchy-controls,
+#algorithmic-controls {
   margin-top: 0.65rem;
 }
 
-#substitution-hierarchy-controls label {
+#substitution-hierarchy-controls label,
+#algorithmic-controls label {
   display: block;
   margin-bottom: 0.3rem;
 }

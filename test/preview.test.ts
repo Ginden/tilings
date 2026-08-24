@@ -14,6 +14,7 @@ const previewHeight = Number(process.env['PREVIEW_HEIGHT'] ?? 600);
 const previewTileSize = Number(process.env['PREVIEW_TILE_SIZE'] ?? 34);
 const previewRotation = Number(process.env['PREVIEW_ROTATION'] ?? 0);
 const previewHierarchy = Number(process.env['PREVIEW_HIERARCHY'] ?? 0);
+const previewSeed = Number(process.env['PREVIEW_SEED'] ?? 20260824);
 const previewColour1 = process.env['PREVIEW_COLOUR_1'] ?? '#f2c14e';
 const previewColour2 = process.env['PREVIEW_COLOUR_2'] ?? '#1b3a5c';
 const previewColour3 = process.env['PREVIEW_COLOUR_3'] ?? null;
@@ -39,6 +40,7 @@ describe.skipIf(!dir)('preview', () => {
         tileSize: previewTileSize,
         rotation: previewRotation,
         substitutionHierarchy: previewHierarchy,
+        seed: previewSeed,
         colour1: previewColour1,
         colour2: previewColour2,
         colour3: previewColour3,

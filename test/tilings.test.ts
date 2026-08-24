@@ -58,6 +58,7 @@ import {
   generateWatanabeItoSomaEightfold,
   subdivideWatanabeItoSoma,
 } from '../src/tilings/watanabe-ito-soma-eightfold.js';
+import { generateVoronoi } from '../src/tilings/voronoi.js';
 
 const ARCHIMEDEAN_VERTEX_FIGURES: Readonly<Record<string, readonly number[]>> = {
   'elongated-triangular': [3, 3, 3, 4, 4],
@@ -150,6 +151,7 @@ describe('tiling registry', () => {
       'pinwheel',
       'sphinx',
       'voderberg',
+      'seeded-voronoi',
       'danzer-sevenfold',
       'jeandel-rao',
       'shuriken-supertile-12',
@@ -191,6 +193,20 @@ describe('tiling registry', () => {
       });
     });
   }
+});
+
+describe('seeded Voronoi mosaic', () => {
+  it('repeats exactly for one seed and changes for another', () => {
+    const first = generateVoronoi(4, 20260824);
+    expect(generateVoronoi(4, 20260824)).toEqual(first);
+    expect(generateVoronoi(4, 20260825)[0]!.points).not.toEqual(first[0]!.points);
+  });
+
+  it('remains gap-free across different seeds', () => {
+    for (const seed of [0, 1, 20260824, 0xffffffff]) {
+      expect(coverCounts(generateVoronoi(9, seed), 6, 150)).toEqual(Array(150).fill(1));
+    }
+  });
 });
 
 describe('Archimedean tilings', () => {

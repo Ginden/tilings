@@ -1,4 +1,5 @@
 import { DEFAULT_PALETTE } from './palettes.js';
+import { currentDaySeed } from './seed.js';
 import { TILINGS } from './tilings/index.js';
 
 export interface AppState {
@@ -18,6 +19,8 @@ export interface AppState {
   rotation: number;
   /** Number of substitution-ancestry levels to outline; zero hides the overlay. */
   substitutionHierarchy: number;
+  /** Unsigned integer seed used by algorithmic tilings. */
+  randomSeed: number;
 }
 
 export interface SizePreset {
@@ -53,6 +56,7 @@ export const DEFAULT_STATE: AppState = {
   tileSize: 42,
   rotation: 0,
   substitutionHierarchy: 0,
+  randomSeed: currentDaySeed(),
 };
 
 export function swapSecondAndThirdColours(state: AppState): AppState {
@@ -112,6 +116,9 @@ export function encodeState(state: AppState): string {
     params.set('h', String(state.customHeight));
   }
   if (state.substitutionHierarchy > 0) params.set('sh', String(state.substitutionHierarchy));
+  if (TILINGS.find((tiling) => tiling.id === state.tilingId)?.family === 'algorithmic') {
+    params.set('seed', String(state.randomSeed));
+  }
   return params.toString();
 }
 
@@ -154,6 +161,12 @@ export function decodeState(hash: string): AppState {
   const hierarchy = Number(params.get('sh'));
   if (Number.isInteger(hierarchy) && hierarchy >= 0 && hierarchy <= 3) {
     state.substitutionHierarchy = hierarchy;
+  }
+
+  const seedParam = params.get('seed');
+  const seed = Number(seedParam);
+  if (seedParam !== null && Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff) {
+    state.randomSeed = seed;
   }
 
   const size = params.get('s');

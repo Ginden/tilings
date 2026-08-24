@@ -23,6 +23,7 @@ export type TilingFamily =
   | 'monotile'
   | 'reptile'
   | 'nonperiodic'
+  | 'algorithmic'
   | 'experimental';
 
 export interface TilingReference {
@@ -74,5 +75,5 @@ export interface TilingDefinition {
    * Generate a patch centred on the origin that covers the disc of the given
    * radius (in natural units).
    */
-  generate(radius: number): Tile[];
+  generate(radius: number, seed?: number): Tile[];
 }

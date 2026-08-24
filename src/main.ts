@@ -50,6 +50,8 @@ const colour3Enabled = element<HTMLInputElement>('colour3-enabled');
 const kindHint = element<HTMLParagraphElement>('kind-hint');
 const substitutionHierarchyControls = element<HTMLDivElement>('substitution-hierarchy-controls');
 const substitutionHierarchy = element<HTMLSelectElement>('substitution-hierarchy');
+const algorithmicControls = element<HTMLDivElement>('algorithmic-controls');
+const randomSeed = element<HTMLInputElement>('random-seed');
 const borderTransparent = element<HTMLInputElement>('border-transparent');
 const borderWidth = element<HTMLInputElement>('border-width');
 const borderWidthValue = element<HTMLOutputElement>('border-width-value');
@@ -187,6 +189,7 @@ function currentOptions(): RenderOptions {
     border: state.borderTransparent ? null : state.border,
     borderWidth: state.borderWidth,
     substitutionHierarchy: state.substitutionHierarchy,
+    seed: state.randomSeed,
   };
 }
 
@@ -207,6 +210,8 @@ function syncControls(): void {
   borderWidth.disabled = state.borderTransparent;
   borderWidthValue.textContent = state.borderWidth.toFixed(1);
   substitutionHierarchyControls.hidden = !def.substitutionHierarchy;
+  algorithmicControls.hidden = def.family !== 'algorithmic';
+  randomSeed.value = String(state.randomSeed);
   substitutionHierarchy.value = String(
     Math.min(state.substitutionHierarchy, def.substitutionHierarchy?.maxLevels ?? 0),
   );
@@ -403,6 +408,17 @@ function bindControls(): void {
 
   substitutionHierarchy.addEventListener('change', () => {
     state = { ...state, substitutionHierarchy: Number(substitutionHierarchy.value) };
+    syncControls();
+    render();
+  });
+
+  randomSeed.addEventListener('change', () => {
+    const value = Number(randomSeed.value);
+    if (!Number.isInteger(value) || value < 0 || value > 0xffffffff) {
+      randomSeed.value = String(state.randomSeed);
+      return;
+    }
+    state = { ...state, randomSeed: value };
     syncControls();
     render();
   });

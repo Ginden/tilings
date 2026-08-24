@@ -18,6 +18,7 @@ import {
   swapSecondAndThirdColours,
   wrappedRotationForKey,
 } from '../src/state.js';
+import { currentDaySeed } from '../src/seed.js';
 import { PALETTES } from '../src/palettes.js';
 import { TILINGS, tilingById } from '../src/tilings/index.js';
 
@@ -208,6 +209,9 @@ describe('export file names', () => {
     expect(exportFileName(tilingById('hat'), { ...options, colour3: '#c084fc' }, 'svg')).toBe(
       'hat_800x600_tile40_e8b53b-1b3a5c-c084fc_border-101820.svg',
     );
+    expect(exportFileName(tilingById('seeded-voronoi'), { ...options, seed: 20260824 }, 'svg')).toBe(
+      'seeded-voronoi_800x600_tile40_e8b53b-1b3a5c_border-101820_seed-20260824.svg',
+    );
   });
 
   it('adds Dublin Core metadata to SVG exports', () => {
@@ -251,6 +255,10 @@ describe('export file names', () => {
 });
 
 describe('state', () => {
+  it('uses the local calendar day as the default algorithmic seed', () => {
+    expect(currentDaySeed(new Date(2026, 7, 24, 23, 59))).toBe(20260824);
+  });
+
   it('round trips through the URL hash', () => {
     const state = {
       ...DEFAULT_STATE,
@@ -272,6 +280,12 @@ describe('state', () => {
 
   it('falls back to defaults for unknown values', () => {
     expect(decodeState('#t=nope&c1=zzz&ts=-4&r=360')).toEqual(DEFAULT_STATE);
+  });
+
+  it('round trips a valid algorithmic seed and ignores invalid seeds', () => {
+    const state = { ...DEFAULT_STATE, tilingId: 'seeded-voronoi', randomSeed: 123456789 };
+    expect(decodeState(`#${encodeState(state)}`)).toEqual(state);
+    expect(decodeState('#t=seeded-voronoi&seed=-1').randomSeed).toBe(DEFAULT_STATE.randomSeed);
   });
 
   it('swaps the second and third colours only when the third colour is enabled', () => {
@@ -352,6 +366,7 @@ describe('palettes', () => {
       'hat',
       'heptagonal',
       'rhombitrihexagonal',
+      'seeded-voronoi',
       'shuriken-supertile-12',
       'socolar',
       'truncated-trihexagonal',
