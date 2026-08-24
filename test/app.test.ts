@@ -343,7 +343,8 @@ describe('palettes', () => {
   });
 
   it('offers three-colour palettes only on the selected tilings', () => {
-    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(6);
+    expect(PALETTES.filter((palette) => palette.collection === 'trios').map((palette) => palette.id)).toContain('night-bloom');
+    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(7);
     expect(TILINGS.filter((tiling) => tiling.supportsThreeColours).map((tiling) => tiling.id).sort()).toEqual([
       'danzer-sevenfold',
       'decagonal',
