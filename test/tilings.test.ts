@@ -58,7 +58,7 @@ import {
   generateWatanabeItoSomaEightfold,
   subdivideWatanabeItoSoma,
 } from '../src/tilings/watanabe-ito-soma-eightfold.js';
-import { generateTruchet } from '../src/tilings/truchet.js';
+import { TRUCHET_MAX_FILL_TILES, generateTruchet } from '../src/tilings/truchet.js';
 import { generateVoronoi } from '../src/tilings/voronoi.js';
 
 const ARCHIMEDEAN_VERTEX_FIGURES: Readonly<Record<string, readonly number[]>> = {
@@ -239,24 +239,34 @@ describe('seeded Truchet mosaic', () => {
     const orientations = new Set<string>();
 
     for (const tile of tiles) {
-      expect(tile.kind).toBe(1);
-      expect(tile.parts).toHaveLength(2);
-      expect(tile.borderParts).toHaveLength(4);
+      expect(tile.kind).toBe(0);
+      expect(tile.parts).toEqual([]);
+      expect(tile.borderParts).toHaveLength(2);
 
       const centre = centroid(tile.points);
-      const upperArc = tile.parts!.map(centroid).sort((a, b) => a.y - b.y)[0]!;
+      const upperArc = tile.borderParts!.map(centroid).sort((a, b) => a.y - b.y)[0]!;
       orientations.add(upperArc.x < centre.x ? 'north-west' : 'north-east');
 
-      for (const part of tile.parts!) {
-        const edgePoints = part.filter((point) =>
+      for (const line of tile.borderParts!) {
+        const edgePoints = line.filter((point) =>
           tile.points.some((corner) =>
             Math.abs(point.x - corner.x) < 1e-10 || Math.abs(point.y - corner.y) < 1e-10),
         );
-        expect(edgePoints).toHaveLength(4);
+        expect(edgePoints).toHaveLength(2);
       }
     }
 
     expect(orientations).toEqual(new Set(['north-west', 'north-east']));
+  });
+
+  it('fills closed loops crossing no more than sixteen tiles', () => {
+    const overlays = generateTruchet(12, 20260824).flatMap((tile) => tile.overlays ?? []);
+    expect(overlays.length).toBeGreaterThan(10);
+    for (const overlay of overlays) {
+      expect(overlay.kind).toBe(1);
+      expect(overlay.points.length).toBeLessThanOrEqual(TRUCHET_MAX_FILL_TILES * 8);
+      expect(area(overlay.points)).toBeGreaterThan(0);
+    }
   });
 });
 

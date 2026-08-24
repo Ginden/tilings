@@ -12,6 +12,11 @@ export interface Tile {
    * used for coverage and clipping; the renderer draws these polygons instead.
    */
   readonly parts?: readonly (readonly Vec[])[];
+  /** Additional filled polygons, independently assigned to tile classes. */
+  readonly overlays?: readonly {
+    readonly kind: number;
+    readonly points: readonly Vec[];
+  }[];
   /** Optional open polylines to use instead of the visible polygons' closed borders. */
   readonly borderParts?: readonly (readonly Vec[])[];
   readonly points: readonly Vec[];

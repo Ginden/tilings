@@ -56,12 +56,17 @@ export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
       };
       const points = tile.points.map(transformPoint);
       const parts = tile.parts?.map((part) => part.map(transformPoint));
+      const overlays = tile.overlays?.map((overlay) => ({
+        kind: overlay.kind,
+        points: overlay.points.map(transformPoint),
+      }));
       const borderParts = tile.borderParts?.map((part) => part.map(transformPoint));
       if (maxX < 0 || maxY < 0 || minX > opts.width || minY > opts.height) continue;
       tiles.push({
         kind: tile.kind,
         points,
         ...(parts ? { parts } : {}),
+        ...(overlays ? { overlays } : {}),
         ...(borderParts ? { borderParts } : {}),
       });
     }

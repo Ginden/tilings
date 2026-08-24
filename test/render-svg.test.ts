@@ -64,7 +64,7 @@ describe('SVG drawing snapshot', () => {
     ).toMatchSnapshot();
   });
 
-  it('outlines Truchet ribbon sides without changing its tile-colour background', () => {
+  it('uses the border for Truchet lines and colour 2 only for small closed loops', () => {
     const options = {
       width: 80,
       height: 60,

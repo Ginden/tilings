@@ -67,6 +67,15 @@ function drawingPaths(tiles: readonly Tile[], includeBorders: boolean): DrawingP
         }
       }
     }
+    for (const overlay of tile.overlays ?? []) {
+      let overlayPaths = byKind.get(overlay.kind);
+      if (!overlayPaths) {
+        overlayPaths = [];
+        byKind.set(overlay.kind, overlayPaths);
+      }
+      const points = overlay.points.map((point) => `${fmt(point.x)} ${fmt(point.y)}`);
+      if (points.length > 0) overlayPaths.push(`M${points.join('L')}Z`);
+    }
     if (edges && tile.borderParts) {
       for (const polyline of tile.borderParts) {
         const points = polyline.map((point) => `${fmt(point.x)} ${fmt(point.y)}`);
@@ -150,6 +159,14 @@ function renderPeriodicSvg(
     points: tile.points.map((point) => ({ x: point.x * scale, y: point.y * scale })),
     ...(tile.parts
       ? { parts: tile.parts.map((part) => part.map((point) => ({ x: point.x * scale, y: point.y * scale }))) }
+      : {}),
+    ...(tile.overlays
+      ? {
+          overlays: tile.overlays.map((overlay) => ({
+            kind: overlay.kind,
+            points: overlay.points.map((point) => ({ x: point.x * scale, y: point.y * scale })),
+          })),
+        }
       : {}),
     ...(tile.borderParts
       ? {
