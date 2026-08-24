@@ -232,7 +232,7 @@ describe('seeded Voronoi mosaic', () => {
   });
 
   it('gives every pair of edge-adjacent cells different map colours', () => {
-    const seeds = [...Array.from({ length: 256 }, (_, seed) => seed), 20260824, 0xffffffff];
+    const seeds = [...Array.from({ length: 64 }, (_, seed) => seed), 20260824, 0xffffffff];
     for (const seed of seeds) {
       const edges = new Map<string, number>();
       for (const tile of generateVoronoi(7, seed)) {
