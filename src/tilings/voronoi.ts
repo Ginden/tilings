@@ -9,6 +9,7 @@ const OUTPUT_MARGIN = 4;
 const SITE_MARGIN = 8;
 const CELL_EXTENT = 4;
 const NEIGHBOUR_DISTANCE = CELL_EXTENT * 2 * Math.SQRT2;
+const NEIGHBOUR_DISTANCE_SQUARED = NEIGHBOUR_DISTANCE ** 2;
 
 function hash(seed: number, x: number, y: number, channel: number): number {
   let value = seed >>> 0;
@@ -30,6 +31,8 @@ interface Cell {
   readonly points: readonly Vec[];
   readonly site: Site;
 }
+
+type SiteBuckets = ReadonlyMap<string, readonly Site[]>;
 
 function candidateWins(seed: number, x: number, y: number): boolean {
   const priority = hash(seed, x, y, 0);
@@ -73,6 +76,55 @@ function generateSites(seed: number, extent: number): Site[] {
   return sites;
 }
 
+function bucketKey(x: number, y: number): string {
+  return `${x},${y}`;
+}
+
+function bucketCoordinate(value: number): number {
+  return Math.floor(value / NEIGHBOUR_DISTANCE);
+}
+
+function bucketSites(sites: readonly Site[]): SiteBuckets {
+  const buckets = new Map<string, Site[]>();
+  for (const site of sites) {
+    const key = bucketKey(bucketCoordinate(site.point.x), bucketCoordinate(site.point.y));
+    const bucket = buckets.get(key);
+    if (bucket) bucket.push(site);
+    else buckets.set(key, [site]);
+  }
+  return buckets;
+}
+
+function neighbouringSites(origin: Site, buckets: SiteBuckets): Site[] {
+  const centre = origin.point;
+  const bucketX = bucketCoordinate(centre.x);
+  const bucketY = bucketCoordinate(centre.y);
+  const neighbours: Site[] = [];
+
+  // A bucket is exactly as wide as the maximum relevant distance, so the
+  // origin's bucket and its eight neighbours contain every possible clipper.
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      const bucket = buckets.get(bucketKey(bucketX + dx, bucketY + dy));
+      if (!bucket) continue;
+      for (const other of bucket) {
+        if (other === origin) continue;
+        const distanceX = other.point.x - centre.x;
+        const distanceY = other.point.y - centre.y;
+        if (distanceX * distanceX + distanceY * distanceY <= NEIGHBOUR_DISTANCE_SQUARED) {
+          neighbours.push(other);
+        }
+      }
+    }
+  }
+
+  // Match generateSites' former global scan order. Besides keeping output
+  // byte-stable, this prevents floating-point clipping order from depending
+  // on the requested patch size.
+  neighbours.sort((left, right) => left.gridY - right.gridY || left.gridX - right.gridX);
+  return neighbours;
+}
+
 /** Keep the half-plane containing `origin`, bounded by its bisector with `other`. */
 function clipToBisector(polygon: readonly Vec[], origin: Vec, other: Vec): Vec[] {
   const nx = other.x - origin.x;
@@ -97,7 +149,7 @@ function clipToBisector(polygon: readonly Vec[], origin: Vec, other: Vec): Vec[]
   return clipped;
 }
 
-function voronoiCell(origin: Site, sites: readonly Site[]): Vec[] {
+function voronoiCell(origin: Site, buckets: SiteBuckets): Vec[] {
   const centre = origin.point;
   let polygon: Vec[] = [
     { x: centre.x - CELL_EXTENT, y: centre.y - CELL_EXTENT },
@@ -106,9 +158,7 @@ function voronoiCell(origin: Site, sites: readonly Site[]): Vec[] {
     { x: centre.x - CELL_EXTENT, y: centre.y + CELL_EXTENT },
   ];
 
-  for (const other of sites) {
-    if (other === origin) continue;
-    if (Math.hypot(other.point.x - centre.x, other.point.y - centre.y) > NEIGHBOUR_DISTANCE) continue;
+  for (const other of neighbouringSites(origin, buckets)) {
     polygon = clipToBisector(polygon, centre, other.point);
   }
   return polygon;
@@ -280,9 +330,10 @@ export function generateVoronoi(radius: number, seed = currentDaySeed()): Tile[]
   const integerSeed = seed >>> 0;
   const outputExtent = Math.ceil(radius) + OUTPUT_MARGIN;
   const allSites = generateSites(integerSeed, outputExtent + SITE_MARGIN);
+  const buckets = bucketSites(allSites);
   const outputSites = allSites.filter((site) =>
     Math.abs(site.point.x) <= outputExtent && Math.abs(site.point.y) <= outputExtent);
-  const cells = outputSites.map((site) => ({ site, points: voronoiCell(site, allSites) }));
+  const cells = outputSites.map((site) => ({ site, points: voronoiCell(site, buckets) }));
   const colours = colourCells(cells, integerSeed);
   return cells.map((cell, index) => ({ kind: colours[index]!, points: cell.points }));
 }

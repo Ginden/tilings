@@ -263,6 +263,11 @@ describe('seeded Voronoi mosaic', () => {
       expect(pairs.filter(([left, right]) => left.kind === right.kind)).toEqual([]);
     }
   });
+
+  it('generates the patch needed for a 4K viewport within the test timeout', () => {
+    const tiles = generateVoronoi(55, 20260824);
+    expect(tiles.length).toBeGreaterThan(10_000);
+  });
 });
 
 describe('Archimedean tilings', () => {
