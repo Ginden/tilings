@@ -43,6 +43,13 @@ describe('static page shell', () => {
     expect(html).toContain('aria-label="Swap colours 2 and 3"');
   });
 
+  it('shows the hierarchy of sticky rotation stops', () => {
+    expect(html.match(/rotation-mark--major/g)).toHaveLength(4);
+    expect(html.match(/rotation-mark--medium/g)).toHaveLength(4);
+    expect(html.match(/rotation-mark--minor/g)).toHaveLength(8);
+    expect(html).toContain('class="rotation-marks" aria-hidden="true"');
+  });
+
   it('attributes the author without loading external resources', () => {
     expect(html).toContain('href="https://michalwadas.pl"');
     expect(html).toContain('href="https://michalwadas.pl/privacy/"');

@@ -117,8 +117,10 @@
 
       <fieldset>
         <legend>Canvas</legend>
-        <label for="size">Screen size</label>
-        <select id="size"></select>
+        <div class="inline-field">
+          <label for="size">Screen size</label>
+          <select id="size"></select>
+        </div>
         <div class="row" id="custom-size" hidden>
           <label for="custom-width">Width</label>
           <input type="number" id="custom-width" min="64" max="16384" step="1" />
@@ -134,7 +136,27 @@
 
         <div class="row">
           <label for="rotation">Rotation</label>
-          <input type="range" id="rotation" min="0" max="359" step="1" value="0" />
+          <div class="rotation-control">
+            <input type="range" id="rotation" min="0" max="359" step="1" value="0" />
+            <div class="rotation-marks" aria-hidden="true">
+              <span class="rotation-mark rotation-mark--major" style="--rotation-position: 0%"></span>
+              <span class="rotation-mark rotation-mark--minor" style="--rotation-position: 8.36%"></span>
+              <span class="rotation-mark rotation-mark--medium" style="--rotation-position: 12.53%"></span>
+              <span class="rotation-mark rotation-mark--minor" style="--rotation-position: 16.71%"></span>
+              <span class="rotation-mark rotation-mark--major" style="--rotation-position: 25.07%"></span>
+              <span class="rotation-mark rotation-mark--minor" style="--rotation-position: 33.43%"></span>
+              <span class="rotation-mark rotation-mark--medium" style="--rotation-position: 37.6%"></span>
+              <span class="rotation-mark rotation-mark--minor" style="--rotation-position: 41.78%"></span>
+              <span class="rotation-mark rotation-mark--major" style="--rotation-position: 50.14%"></span>
+              <span class="rotation-mark rotation-mark--minor" style="--rotation-position: 58.5%"></span>
+              <span class="rotation-mark rotation-mark--medium" style="--rotation-position: 62.67%"></span>
+              <span class="rotation-mark rotation-mark--minor" style="--rotation-position: 66.85%"></span>
+              <span class="rotation-mark rotation-mark--major" style="--rotation-position: 75.21%"></span>
+              <span class="rotation-mark rotation-mark--minor" style="--rotation-position: 83.57%"></span>
+              <span class="rotation-mark rotation-mark--medium" style="--rotation-position: 87.74%"></span>
+              <span class="rotation-mark rotation-mark--minor" style="--rotation-position: 91.92%"></span>
+            </div>
+          </div>
           <output id="rotation-value">0°</output>
         </div>
       </fieldset>

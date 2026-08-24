@@ -300,7 +300,24 @@ select optgroup {
 }
 
 .row:has(input[type='range']) {
-  grid-template-columns: auto 1fr 3.6rem;
+  grid-template-columns: 1fr auto;
+  row-gap: 0.25rem;
+}
+
+.row:has(input[type='range']) > label {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.row:has(input[type='range']) > input[type='range'],
+.row:has(input[type='range']) > .rotation-control {
+  grid-column: 1 / -1;
+  grid-row: 2;
+}
+
+.row:has(input[type='range']) > output {
+  grid-column: 2;
+  grid-row: 1;
 }
 
 .row:has(#custom-height) {
@@ -314,6 +331,54 @@ select optgroup {
 input[type='range'] {
   width: 100%;
   accent-color: var(--accent);
+}
+
+.inline-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rotation-control {
+  position: relative;
+  min-width: 0;
+  padding-bottom: 0.35rem;
+}
+
+#rotation {
+  display: block;
+  margin: 0;
+}
+
+.rotation-marks {
+  position: absolute;
+  right: 0.5rem;
+  bottom: 0;
+  left: 0.5rem;
+  height: 0.3rem;
+  pointer-events: none;
+}
+
+.rotation-mark {
+  position: absolute;
+  bottom: 0;
+  left: var(--rotation-position);
+  width: 1px;
+  height: 0.1rem;
+  background: var(--muted);
+  opacity: 0.35;
+  transform: translateX(-50%);
+}
+
+.rotation-mark--medium {
+  height: 0.2rem;
+  opacity: 0.55;
+}
+
+.rotation-mark--major {
+  height: 0.3rem;
+  opacity: 0.8;
 }
 
 output {
