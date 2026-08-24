@@ -5,7 +5,7 @@ import type { Tile, TilingDefinition } from './types.js';
 const NEIGHBOUR_RANGE = 2;
 const CELL_EXTENT = 2.5;
 const ROW_HEIGHT = Math.sqrt(3) / 2;
-const SITE_JITTER = 0.26;
+const SITE_JITTER = 0.5;
 
 function hash(seed: number, x: number, y: number, channel: number): number {
   let value = seed >>> 0;
@@ -103,8 +103,7 @@ export function generateVoronoi(radius: number, seed = currentDaySeed()): Tile[]
     const maxX = Math.ceil(extent - y / 2);
     for (let x = minX; x <= maxX; x++) {
       const points = voronoiCell(integerSeed, x, y, transform);
-      const rowFlip = hash(integerSeed, 0, y, 2) & 1;
-      const kind = (((x & 1) ^ rowFlip) << 1) | (y & 1);
+      const kind = ((x & 1) << 1) | (y & 1);
       tiles.push({ kind, points });
     }
   }
@@ -116,7 +115,7 @@ export const seededVoronoi: TilingDefinition = {
   name: 'Seeded Voronoi mosaic',
   family: 'algorithmic',
   description:
-    'A deterministic stained-glass mosaic. A seeded hash jitters and smoothly warps the sites of an infinite triangular grid, then perpendicular bisectors between nearby sites carve the plane into convex Voronoi cells. Four map colours distinguish cells that share an edge.',
+    'A deterministic stained-glass mosaic. A seeded hash strongly scatters and smoothly warps a triangular site scaffold, then perpendicular bisectors between nearby sites carve the plane into irregular convex Voronoi cells. Four map colours distinguish cells that share an edge.',
   kinds: 4,
   kindLabels: ['Map colour 1', 'Map colour 2', 'Map colour 3', 'Map colour 4'],
   supportsThreeColours: true,

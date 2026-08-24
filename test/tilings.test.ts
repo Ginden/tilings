@@ -231,6 +231,20 @@ describe('seeded Voronoi mosaic', () => {
     }
   });
 
+  it('keeps the cell edges visibly irregular', () => {
+    const central = generateVoronoi(9, 20260824).filter((tile) => {
+      const centre = centroid(tile.points);
+      return Math.hypot(centre.x, centre.y) < 6;
+    });
+    const lengths = central.flatMap((tile) => tile.points.map((point, index) => {
+      const next = tile.points[(index + 1) % tile.points.length]!;
+      return Math.hypot(next.x - point.x, next.y - point.y);
+    }));
+    const mean = lengths.reduce((sum, length) => sum + length, 0) / lengths.length;
+    const variance = lengths.reduce((sum, length) => sum + (length - mean) ** 2, 0) / lengths.length;
+    expect(Math.sqrt(variance) / mean).toBeGreaterThan(0.3);
+  });
+
   it('gives every pair of edge-adjacent cells different map colours', () => {
     const seeds = [...Array.from({ length: 64 }, (_, seed) => seed), 20260824, 0xffffffff];
     for (const seed of seeds) {
