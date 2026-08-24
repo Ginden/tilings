@@ -2,10 +2,13 @@ import type { Vec } from '../geometry.js';
 import { currentDaySeed } from '../seed.js';
 import type { Tile, TilingDefinition } from './types.js';
 
-const NEIGHBOUR_RANGE = 2;
-const CELL_EXTENT = 2.5;
 const ROW_HEIGHT = Math.sqrt(3) / 2;
-const SITE_JITTER = 0.5;
+const CANDIDATE_SPACING = Math.sqrt(ROW_HEIGHT / 9);
+const CANDIDATE_JITTER = 0.9;
+const OUTPUT_MARGIN = 4;
+const SITE_MARGIN = 8;
+const CELL_EXTENT = 4;
+const NEIGHBOUR_DISTANCE = CELL_EXTENT * 2 * Math.SQRT2;
 
 function hash(seed: number, x: number, y: number, channel: number): number {
   let value = seed >>> 0;
@@ -17,37 +20,52 @@ function hash(seed: number, x: number, y: number, channel: number): number {
   return (value ^ (value >>> 16)) >>> 0;
 }
 
-interface SiteTransform {
-  readonly cos: number;
-  readonly sin: number;
-  readonly phases: readonly number[];
+interface Site {
+  readonly gridX: number;
+  readonly gridY: number;
+  readonly point: Vec;
 }
 
-function siteTransform(seed: number): SiteTransform {
+function candidateWins(seed: number, x: number, y: number): boolean {
+  const priority = hash(seed, x, y, 0);
+  for (let dy = -1; dy <= 1; dy++) {
+    for (let dx = -1; dx <= 1; dx++) {
+      if (dx === 0 && dy === 0) continue;
+      const otherPriority = hash(seed, x + dx, y + dy, 0);
+      if (otherPriority < priority) return false;
+      if (otherPriority === priority && (dy < 0 || (dy === 0 && dx < 0))) return false;
+    }
+  }
+  return true;
+}
+
+function candidateSite(seed: number, x: number, y: number, cos: number, sin: number): Site {
+  const jitterX = (hash(seed, x, y, 1) / 0x100000000 - 0.5) * CANDIDATE_JITTER;
+  const jitterY = (hash(seed, x, y, 2) / 0x100000000 - 0.5) * CANDIDATE_JITTER;
+  const baseX = (x + jitterX) * CANDIDATE_SPACING;
+  const baseY = (y + jitterY) * CANDIDATE_SPACING;
+  return {
+    gridX: x,
+    gridY: y,
+    point: {
+      x: baseX * cos - baseY * sin,
+      y: baseX * sin + baseY * cos,
+    },
+  };
+}
+
+function generateSites(seed: number, extent: number): Site[] {
   const angle = (hash(seed, 0, 0, 3) / 0x100000000) * 2 * Math.PI;
-  return {
-    cos: Math.cos(angle),
-    sin: Math.sin(angle),
-    phases: [4, 5, 6, 7].map((channel) =>
-      (hash(seed, 0, 0, channel) / 0x100000000) * 2 * Math.PI),
-  };
-}
-
-function site(seed: number, x: number, y: number, transform: SiteTransform): Vec {
-  const baseX = x + y / 2 + (hash(seed, x, y, 0) / 0x100000000 - 0.5) * SITE_JITTER;
-  const baseY = y * ROW_HEIGHT + (hash(seed, x, y, 1) / 0x100000000 - 0.5) * SITE_JITTER;
-  const warpedX =
-    baseX +
-    0.4 * Math.sin(0.18 * baseX + transform.phases[0]!) +
-    0.3 * Math.sin(0.15 * baseY + transform.phases[1]!);
-  const warpedY =
-    baseY +
-    0.35 * Math.sin(0.17 * baseY + transform.phases[2]!) +
-    0.28 * Math.sin(0.14 * baseX + transform.phases[3]!);
-  return {
-    x: warpedX * transform.cos - warpedY * transform.sin,
-    y: warpedX * transform.sin + warpedY * transform.cos,
-  };
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
+  const limit = Math.ceil((extent * Math.SQRT2) / CANDIDATE_SPACING) + 2;
+  const sites: Site[] = [];
+  for (let y = -limit; y <= limit; y++) {
+    for (let x = -limit; x <= limit; x++) {
+      if (candidateWins(seed, x, y)) sites.push(candidateSite(seed, x, y, cos, sin));
+    }
+  }
+  return sites;
 }
 
 /** Keep the half-plane containing `origin`, bounded by its bisector with `other`. */
@@ -74,40 +92,34 @@ function clipToBisector(polygon: readonly Vec[], origin: Vec, other: Vec): Vec[]
   return clipped;
 }
 
-function voronoiCell(seed: number, gridX: number, gridY: number, transform: SiteTransform): Vec[] {
-  const origin = site(seed, gridX, gridY, transform);
+function voronoiCell(origin: Site, sites: readonly Site[]): Vec[] {
+  const centre = origin.point;
   let polygon: Vec[] = [
-    { x: origin.x - CELL_EXTENT, y: origin.y - CELL_EXTENT },
-    { x: origin.x + CELL_EXTENT, y: origin.y - CELL_EXTENT },
-    { x: origin.x + CELL_EXTENT, y: origin.y + CELL_EXTENT },
-    { x: origin.x - CELL_EXTENT, y: origin.y + CELL_EXTENT },
+    { x: centre.x - CELL_EXTENT, y: centre.y - CELL_EXTENT },
+    { x: centre.x + CELL_EXTENT, y: centre.y - CELL_EXTENT },
+    { x: centre.x + CELL_EXTENT, y: centre.y + CELL_EXTENT },
+    { x: centre.x - CELL_EXTENT, y: centre.y + CELL_EXTENT },
   ];
 
-  for (let y = gridY - NEIGHBOUR_RANGE; y <= gridY + NEIGHBOUR_RANGE; y++) {
-    for (let x = gridX - NEIGHBOUR_RANGE; x <= gridX + NEIGHBOUR_RANGE; x++) {
-      if (x === gridX && y === gridY) continue;
-      polygon = clipToBisector(polygon, origin, site(seed, x, y, transform));
-    }
+  for (const other of sites) {
+    if (other === origin) continue;
+    if (Math.hypot(other.point.x - centre.x, other.point.y - centre.y) > NEIGHBOUR_DISTANCE) continue;
+    polygon = clipToBisector(polygon, centre, other.point);
   }
   return polygon;
 }
 
 export function generateVoronoi(radius: number, seed = currentDaySeed()): Tile[] {
   const integerSeed = seed >>> 0;
-  const extent = Math.ceil(radius) + 4;
-  const rowLimit = Math.ceil(extent / ROW_HEIGHT);
-  const transform = siteTransform(integerSeed);
-  const tiles: Tile[] = [];
-  for (let y = -rowLimit; y <= rowLimit; y++) {
-    const minX = Math.floor(-extent - y / 2);
-    const maxX = Math.ceil(extent - y / 2);
-    for (let x = minX; x <= maxX; x++) {
-      const points = voronoiCell(integerSeed, x, y, transform);
-      const kind = ((x & 1) << 1) | (y & 1);
-      tiles.push({ kind, points });
-    }
-  }
-  return tiles;
+  const outputExtent = Math.ceil(radius) + OUTPUT_MARGIN;
+  const allSites = generateSites(integerSeed, outputExtent + SITE_MARGIN);
+  const outputSites = allSites.filter((site) =>
+    Math.abs(site.point.x) <= outputExtent && Math.abs(site.point.y) <= outputExtent);
+  const cells = outputSites.map((site) => voronoiCell(site, allSites));
+  return cells.map((points, index) => {
+    const site = outputSites[index]!;
+    return { kind: hash(integerSeed, site.gridX, site.gridY, 4) & 3, points };
+  });
 }
 
 export const seededVoronoi: TilingDefinition = {
@@ -115,9 +127,9 @@ export const seededVoronoi: TilingDefinition = {
   name: 'Seeded Voronoi mosaic',
   family: 'algorithmic',
   description:
-    'A deterministic stained-glass mosaic. A seeded hash strongly scatters and smoothly warps a triangular site scaffold, then perpendicular bisectors between nearby sites carve the plane into irregular convex Voronoi cells. Four map colours distinguish cells that share an edge.',
+    'A deterministic stained-glass mosaic. Seeded random candidates compete locally to form a hard-core site process, then perpendicular bisectors carve the plane into irregular convex Voronoi cells. Each site receives one of four stable seeded shades.',
   kinds: 4,
-  kindLabels: ['Map colour 1', 'Map colour 2', 'Map colour 3', 'Map colour 4'],
+  kindLabels: ['Seeded shade 1', 'Seeded shade 2', 'Seeded shade 3', 'Seeded shade 4'],
   supportsThreeColours: true,
   reference: 'https://en.wikipedia.org/wiki/Voronoi_diagram',
   referenceLabel: 'Voronoi diagram — Wikipedia',
