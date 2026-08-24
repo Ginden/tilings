@@ -21,6 +21,8 @@ export interface AppState {
   substitutionHierarchy: number;
   /** Unsigned integer seed used by algorithmic tilings. */
   randomSeed: number;
+  /** Maximum Truchet loop size to fill. */
+  loopFillLimit: number;
 }
 
 export interface SizePreset {
@@ -57,6 +59,7 @@ export const DEFAULT_STATE: AppState = {
   rotation: 0,
   substitutionHierarchy: 0,
   randomSeed: currentDaySeed(),
+  loopFillLimit: 16,
 };
 
 export function swapSecondAndThirdColours(state: AppState): AppState {
@@ -116,9 +119,11 @@ export function encodeState(state: AppState): string {
     params.set('h', String(state.customHeight));
   }
   if (state.substitutionHierarchy > 0) params.set('sh', String(state.substitutionHierarchy));
-  if (TILINGS.find((tiling) => tiling.id === state.tilingId)?.family === 'algorithmic') {
+  const selectedTiling = TILINGS.find((tiling) => tiling.id === state.tilingId);
+  if (selectedTiling?.family === 'algorithmic') {
     params.set('seed', String(state.randomSeed));
   }
+  if (selectedTiling?.closedLoopFills) params.set('loops', String(state.loopFillLimit));
   return params.toString();
 }
 
@@ -167,6 +172,18 @@ export function decodeState(hash: string): AppState {
   const seed = Number(seedParam);
   if (seedParam !== null && Number.isInteger(seed) && seed >= 0 && seed <= 0xffffffff) {
     state.randomSeed = seed;
+  }
+
+  const loopFillParam = params.get('loops');
+  const loopFillLimit = Number(loopFillParam);
+  const loopFillOptions = TILINGS.find((item) => item.id === state.tilingId)?.closedLoopFills;
+  if (
+    loopFillOptions &&
+    loopFillParam !== null &&
+    Number.isInteger(loopFillLimit) &&
+    loopFillOptions.limits.includes(loopFillLimit)
+  ) {
+    state.loopFillLimit = loopFillLimit;
   }
 
   const size = params.get('s');

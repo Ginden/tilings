@@ -65,6 +65,8 @@ Voronoi cells that share an edge receive different shades.
 * **Type** — the tiling, grouped by family and sorted by name within each group.
 * **Random seed** — shown for algorithmic tilings; defaults to the local date as
   `YYYYMMDD` and makes the generated mosaic reproducible.
+* **Maximum filled loop** — shown for the Truchet mosaic; offers thresholds of
+  4 (circles), 9, 16, 25 or 36 crossed tiles, with 16 as the default.
 * **Colour 1 / Colour 2** — the two base tile colours, as pickers or hex values,
   plus ten named preset palettes grouped into classic and studio collections.
 * **Third colour** — available on selected multi-class tilings, with six

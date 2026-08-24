@@ -215,12 +215,14 @@ select optgroup {
 }
 
 #substitution-hierarchy-controls,
-#algorithmic-controls {
+#algorithmic-controls,
+#loop-fill-controls {
   margin-top: 0.65rem;
 }
 
 #substitution-hierarchy-controls label,
-#algorithmic-controls label {
+#algorithmic-controls label,
+#loop-fill-controls label {
   display: block;
   margin-bottom: 0.3rem;
 }

@@ -38,6 +38,10 @@ export interface TilingReference {
   readonly url: string;
 }
 
+export interface TilingGenerationOptions {
+  readonly loopFillLimit?: number;
+}
+
 export interface TilingDefinition {
   /** Stable identifier, also used in exported file names. */
   readonly id: string;
@@ -51,6 +55,11 @@ export interface TilingDefinition {
   readonly supportsThreeColours?: boolean;
   /** Use one tile-class colour behind sparse decorative geometry. */
   readonly backgroundKind?: number;
+  /** Offer preset limits for filling small closed curve components. */
+  readonly closedLoopFills?: {
+    readonly defaultLimit: number;
+    readonly limits: readonly number[];
+  };
   /** Pair adjacent states around each selected endpoint colour instead of using one linear gradient. */
   readonly colourMode?: 'gradient' | 'paired';
   /** Reference URL (usually Wikipedia). */
@@ -84,5 +93,5 @@ export interface TilingDefinition {
    * Generate a patch centred on the origin that covers the disc of the given
    * radius (in natural units).
    */
-  generate(radius: number, seed?: number): Tile[];
+  generate(radius: number, seed?: number, options?: TilingGenerationOptions): Tile[];
 }

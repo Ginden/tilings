@@ -222,6 +222,15 @@ describe('export file names', () => {
     expect(exportFileName(tilingById('seeded-voronoi'), { ...options, seed: 20260824 }, 'svg')).toBe(
       'seeded-voronoi_800x600_tile40_e8b53b-1b3a5c_border-101820_seed-20260824.svg',
     );
+    expect(
+      exportFileName(
+        tilingById('seeded-truchet'),
+        { ...options, seed: 20260824, loopFillLimit: 25 },
+        'svg',
+      ),
+    ).toBe(
+      'seeded-truchet_800x600_tile40_e8b53b-1b3a5c_border-101820_seed-20260824_loops-25.svg',
+    );
   });
 
   it('adds Dublin Core metadata to SVG exports', () => {
@@ -296,6 +305,12 @@ describe('state', () => {
     const state = { ...DEFAULT_STATE, tilingId: 'seeded-voronoi', randomSeed: 123456789 };
     expect(decodeState(`#${encodeState(state)}`)).toEqual(state);
     expect(decodeState('#t=seeded-voronoi&seed=-1').randomSeed).toBe(DEFAULT_STATE.randomSeed);
+  });
+
+  it('round trips a Truchet loop limit and rejects values outside its presets', () => {
+    const state = { ...DEFAULT_STATE, tilingId: 'seeded-truchet', loopFillLimit: 25 };
+    expect(decodeState(`#${encodeState(state)}`)).toEqual(state);
+    expect(decodeState('#t=seeded-truchet&loops=8').loopFillLimit).toBe(DEFAULT_STATE.loopFillLimit);
   });
 
   it('swaps the second and third colours only when the third colour is enabled', () => {

@@ -43,6 +43,12 @@ describe('static page shell', () => {
     expect(html).toContain('aria-label="Swap colours 2 and 3"');
   });
 
+  it('offers the Truchet closed-loop limit', () => {
+    expect(html).toContain('id="loop-fill-controls"');
+    expect(html).toContain('id="loop-fill-limit"');
+    expect([...html.matchAll(/<option value="(4|9|16|25|36)"/g)]).toHaveLength(5);
+  });
+
   it('shows the hierarchy of sticky rotation stops', () => {
     expect(html.match(/rotation-mark--major/g)).toHaveLength(4);
     expect(html.match(/rotation-mark--medium/g)).toHaveLength(4);

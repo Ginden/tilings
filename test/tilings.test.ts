@@ -58,7 +58,11 @@ import {
   generateWatanabeItoSomaEightfold,
   subdivideWatanabeItoSoma,
 } from '../src/tilings/watanabe-ito-soma-eightfold.js';
-import { TRUCHET_MAX_FILL_TILES, generateTruchet } from '../src/tilings/truchet.js';
+import {
+  TRUCHET_DEFAULT_FILL_LIMIT,
+  TRUCHET_FILL_LIMITS,
+  generateTruchet,
+} from '../src/tilings/truchet.js';
 import { generateVoronoi } from '../src/tilings/voronoi.js';
 
 const ARCHIMEDEAN_VERTEX_FIGURES: Readonly<Record<string, readonly number[]>> = {
@@ -139,6 +143,13 @@ describe('tiling registry', () => {
       if (def.backgroundKind !== undefined) {
         expect(def.backgroundKind).toBeGreaterThanOrEqual(0);
         expect(def.backgroundKind).toBeLessThan(def.kinds);
+      }
+      if (def.closedLoopFills) {
+        expect(def.closedLoopFills.limits).toContain(def.closedLoopFills.defaultLimit);
+        expect(new Set(def.closedLoopFills.limits).size).toBe(def.closedLoopFills.limits.length);
+        expect(def.closedLoopFills.limits).toEqual(
+          [...def.closedLoopFills.limits].sort((left, right) => left - right),
+        );
       }
     }
   });
@@ -264,9 +275,26 @@ describe('seeded Truchet mosaic', () => {
     expect(overlays.length).toBeGreaterThan(10);
     for (const overlay of overlays) {
       expect(overlay.kind).toBe(1);
-      expect(overlay.points.length).toBeLessThanOrEqual(TRUCHET_MAX_FILL_TILES * 8);
+      expect(overlay.points.length).toBeLessThanOrEqual(TRUCHET_DEFAULT_FILL_LIMIT * 8);
       expect(area(overlay.points)).toBeGreaterThan(0);
     }
+  });
+
+  it('configures the maximum filled-loop size without changing the curve network', () => {
+    const generated = [TRUCHET_FILL_LIMITS[0], TRUCHET_FILL_LIMITS.at(-1)!].map((loopFillLimit) =>
+      generateTruchet(4, 20260824, { loopFillLimit }).filter((tile) => {
+        const centre = centroid(tile.points);
+        return Math.abs(centre.x) < 4 && Math.abs(centre.y) < 4;
+      }),
+    );
+    const fillCounts = generated.map((tiles) =>
+      tiles.reduce((count, tile) => count + (tile.overlays?.length ?? 0), 0),
+    );
+    expect(fillCounts[0]).toBeGreaterThan(0);
+    expect(fillCounts[1]).toBeGreaterThan(fillCounts[0]!);
+
+    const curveNetwork = (tiles: readonly Tile[]) => tiles.map((tile) => tile.borderParts);
+    expect(curveNetwork(generated[1]!)).toEqual(curveNetwork(generated[0]!));
   });
 });
 

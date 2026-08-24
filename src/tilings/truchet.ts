@@ -1,10 +1,10 @@
 import type { Vec } from '../geometry.js';
 import { currentDaySeed } from '../seed.js';
-import type { Tile, TilingDefinition } from './types.js';
+import type { Tile, TilingDefinition, TilingGenerationOptions } from './types.js';
 
-export const TRUCHET_MAX_FILL_TILES = 16;
+export const TRUCHET_FILL_LIMITS = [4, 9, 16, 25, 36] as const;
+export const TRUCHET_DEFAULT_FILL_LIMIT = 16;
 
-const PATCH_MARGIN = TRUCHET_MAX_FILL_TILES + 1;
 const ARC_RADIUS = 0.5;
 const ARC_SEGMENTS = 8;
 
@@ -127,9 +127,10 @@ function closedLoop(
   component: readonly number[],
   arcs: readonly Arc[],
   owners: ReadonlyMap<string, readonly number[]>,
+  fillLimit: number,
 ): Vec[] | null {
   if (
-    component.length > TRUCHET_MAX_FILL_TILES ||
+    component.length > fillLimit ||
     component.some((index) => {
       const current = arcs[index]!;
       return owners.get(current.start)?.length !== 2 || owners.get(current.end)?.length !== 2;
@@ -165,8 +166,16 @@ function closedLoop(
 }
 
 /** Fill the integer lattice with Smith's quarter-circle Truchet tile and its small closed loops. */
-export function generateTruchet(radius: number, seed = currentDaySeed()): Tile[] {
-  const extent = Math.ceil(radius) + PATCH_MARGIN;
+export function generateTruchet(
+  radius: number,
+  seed = currentDaySeed(),
+  options: TilingGenerationOptions = {},
+): Tile[] {
+  const requestedLimit = options.loopFillLimit ?? TRUCHET_DEFAULT_FILL_LIMIT;
+  const fillLimit = TRUCHET_FILL_LIMITS.some((limit) => limit === requestedLimit)
+    ? requestedLimit
+    : TRUCHET_DEFAULT_FILL_LIMIT;
+  const extent = Math.ceil(radius) + fillLimit + 1;
   const integerSeed = seed >>> 0;
   const cells: Cell[] = [];
   for (let y = -extent; y < extent; y++) {
@@ -177,7 +186,7 @@ export function generateTruchet(radius: number, seed = currentDaySeed()): Tile[]
   const owners = endpointOwners(arcs);
   const fills = new Map<string, Vec[][]>();
   for (const component of arcComponents(arcs, owners)) {
-    const polygon = closedLoop(component, arcs, owners);
+    const polygon = closedLoop(component, arcs, owners, fillLimit);
     if (!polygon) continue;
     const key = arcs[component[0]!]!.cellKey;
     const existing = fills.get(key);
@@ -202,10 +211,14 @@ export const seededTruchet: TilingDefinition = {
   name: 'Seeded Truchet mosaic',
   family: 'algorithmic',
   description:
-    "Cyril Stanley Smith's quarter-circle variation on Truchet tiles places an arc at each of two opposite corners. The border colour traces the resulting loops and wandering paths; closed loops crossing at most sixteen tiles are filled with the second colour. A coordinate hash chooses reproducibly between the tile's two orientations.",
+    "Cyril Stanley Smith's quarter-circle variation on Truchet tiles places an arc at each of two opposite corners. The border colour traces the resulting loops and wandering paths; closed loops up to the selected tile count are filled with the second colour. A coordinate hash chooses reproducibly between the tile's two orientations.",
   kinds: 2,
   kindLabels: ['Background', 'Small closed loops'],
   backgroundKind: 0,
+  closedLoopFills: {
+    defaultLimit: TRUCHET_DEFAULT_FILL_LIMIT,
+    limits: TRUCHET_FILL_LIMITS,
+  },
   reference: 'https://en.wikipedia.org/wiki/Truchet_tile',
   referenceLabel: 'Truchet tiling — Wikipedia',
   furtherReferences: [

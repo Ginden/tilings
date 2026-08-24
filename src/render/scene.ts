@@ -11,6 +11,8 @@ export interface SceneOptions {
   readonly substitutionHierarchy?: number;
   /** Seed used by algorithmic tilings. */
   readonly seed?: number;
+  /** Maximum number of tile arcs in a filled closed component. */
+  readonly loopFillLimit?: number;
 }
 
 export interface Scene {
@@ -31,7 +33,7 @@ export function buildScene(def: TilingDefinition, opts: SceneOptions): Scene {
   const diagonal = Math.hypot(opts.width, opts.height) / 2;
   const radius = (diagonal * 1.1 + tileSize * 2) / scale;
 
-  const raw = def.generate(radius, opts.seed);
+  const raw = def.generate(radius, opts.seed, { loopFillLimit: opts.loopFillLimit });
   const angle = ((opts.rotation ?? 0) * Math.PI) / 180;
   const cos = Math.cos(angle);
   const sin = Math.sin(angle);

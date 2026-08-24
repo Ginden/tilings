@@ -47,6 +47,9 @@ export function exportFileName(
     parts.push(`hierarchy-${opts.substitutionHierarchy}`);
   }
   if (def.family === 'algorithmic') parts.push(`seed-${opts.seed ?? 0}`);
+  if (def.closedLoopFills) {
+    parts.push(`loops-${opts.loopFillLimit ?? def.closedLoopFills.defaultLimit}`);
+  }
   return `${parts.join('_')}.${extension}`;
 }
 

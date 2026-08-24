@@ -53,6 +53,8 @@ const substitutionHierarchyControls = element<HTMLDivElement>('substitution-hier
 const substitutionHierarchy = element<HTMLSelectElement>('substitution-hierarchy');
 const algorithmicControls = element<HTMLDivElement>('algorithmic-controls');
 const randomSeed = element<HTMLInputElement>('random-seed');
+const loopFillControls = element<HTMLDivElement>('loop-fill-controls');
+const loopFillLimit = element<HTMLSelectElement>('loop-fill-limit');
 const borderTransparent = element<HTMLInputElement>('border-transparent');
 const borderWidth = element<HTMLInputElement>('border-width');
 const borderWidthValue = element<HTMLOutputElement>('border-width-value');
@@ -191,6 +193,7 @@ function currentOptions(): RenderOptions {
     borderWidth: state.borderWidth,
     substitutionHierarchy: state.substitutionHierarchy,
     seed: state.randomSeed,
+    loopFillLimit: state.loopFillLimit,
   };
 }
 
@@ -213,6 +216,8 @@ function syncControls(): void {
   substitutionHierarchyControls.hidden = !def.substitutionHierarchy;
   algorithmicControls.hidden = def.family !== 'algorithmic';
   randomSeed.value = String(state.randomSeed);
+  loopFillControls.hidden = !def.closedLoopFills;
+  loopFillLimit.value = String(state.loopFillLimit);
   substitutionHierarchy.value = String(
     Math.min(state.substitutionHierarchy, def.substitutionHierarchy?.maxLevels ?? 0),
   );
@@ -481,6 +486,11 @@ function bindControls(): void {
     }
     state = { ...state, randomSeed: value };
     syncControls();
+    render();
+  });
+
+  loopFillLimit.addEventListener('change', () => {
+    state = { ...state, loopFillLimit: Number(loopFillLimit.value) };
     render();
   });
 
