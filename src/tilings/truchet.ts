@@ -16,24 +16,26 @@ function hash(seed: number, x: number, y: number): number {
   return (value ^ (value >>> 16)) >>> 0;
 }
 
-function arcBand(center: Vec, startAngle: number, endAngle: number): Vec[] {
+interface ArcBand {
+  readonly part: readonly Vec[];
+  readonly borders: readonly (readonly Vec[])[];
+}
+
+function arcPoints(center: Vec, radius: number, startAngle: number, endAngle: number): Vec[] {
+  return Array.from({ length: ARC_SEGMENTS + 1 }, (_, index) => {
+    const angle = startAngle + ((endAngle - startAngle) * index) / ARC_SEGMENTS;
+    return {
+      x: center.x + Math.cos(angle) * radius,
+      y: center.y + Math.sin(angle) * radius,
+    };
+  });
+}
+
+function arcBand(center: Vec, startAngle: number, endAngle: number): ArcBand {
   const radii = [ARC_RADIUS + ARC_BAND_WIDTH / 2, ARC_RADIUS - ARC_BAND_WIDTH / 2] as const;
-  const points: Vec[] = [];
-  for (let index = 0; index <= ARC_SEGMENTS; index++) {
-    const angle = startAngle + ((endAngle - startAngle) * index) / ARC_SEGMENTS;
-    points.push({
-      x: center.x + Math.cos(angle) * radii[0],
-      y: center.y + Math.sin(angle) * radii[0],
-    });
-  }
-  for (let index = ARC_SEGMENTS; index >= 0; index--) {
-    const angle = startAngle + ((endAngle - startAngle) * index) / ARC_SEGMENTS;
-    points.push({
-      x: center.x + Math.cos(angle) * radii[1],
-      y: center.y + Math.sin(angle) * radii[1],
-    });
-  }
-  return points;
+  const outer = arcPoints(center, radii[0], startAngle, endAngle);
+  const inner = arcPoints(center, radii[1], startAngle, endAngle);
+  return { part: [...outer, ...[...inner].reverse()], borders: [outer, inner] };
 }
 
 /** Fill the integer lattice with the two orientations of Smith's quarter-circle Truchet tile. */
@@ -48,15 +50,15 @@ export function generateTruchet(radius: number, seed = currentDaySeed()): Tile[]
       const northEast = { x: x + 1, y };
       const southEast = { x: x + 1, y: y + 1 };
       const southWest = { x, y: y + 1 };
-      const parts = (hash(integerSeed, x, y) & 1) === 0
+      const bands = (hash(integerSeed, x, y) & 1) === 0
         ? [arcBand(northWest, 0, Math.PI / 2), arcBand(southEast, -Math.PI, -Math.PI / 2)]
         : [arcBand(northEast, Math.PI, Math.PI / 2), arcBand(southWest, 0, -Math.PI / 2)];
 
       tiles.push({
         kind: 1,
         points: [northWest, northEast, southEast, southWest],
-        parts,
-        drawBorder: false,
+        parts: bands.map((band) => band.part),
+        borderParts: bands.flatMap((band) => band.borders),
       });
     }
   }

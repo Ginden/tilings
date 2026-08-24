@@ -7,13 +7,13 @@ import type { Vec } from '../geometry.js';
  */
 export interface Tile {
   readonly kind: number;
-  /** Omit border geometry for decorative parts that should join seamlessly. */
-  readonly drawBorder?: boolean;
   /**
    * Optional disconnected visible components. `points` remains the carrier
    * used for coverage and clipping; the renderer draws these polygons instead.
    */
   readonly parts?: readonly (readonly Vec[])[];
+  /** Optional open polylines to use instead of the visible polygons' closed borders. */
+  readonly borderParts?: readonly (readonly Vec[])[];
   readonly points: readonly Vec[];
 }
 

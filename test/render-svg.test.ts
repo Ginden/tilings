@@ -64,8 +64,8 @@ describe('SVG drawing snapshot', () => {
     ).toMatchSnapshot();
   });
 
-  it('renders Truchet ribbons over a tile-colour background without cell borders', () => {
-    const result = renderSvg(tilingById('seeded-truchet'), {
+  it('outlines Truchet ribbon sides without changing its tile-colour background', () => {
+    const options = {
       width: 80,
       height: 60,
       tileSize: 20,
@@ -74,10 +74,17 @@ describe('SVG drawing snapshot', () => {
       colour2: '#ffffff',
       border: '#123456',
       borderWidth: 0.75,
-    });
-    expect(result.svg).toContain('<rect width="80" height="60" fill="#000000"/>');
-    expect(result.svg).toContain('<path data-kind="1" fill="#ffffff"');
-    expect(result.svg).not.toContain('data-border');
+    } as const;
+    const bordered = renderSvg(tilingById('seeded-truchet'), options);
+    const transparent = renderSvg(tilingById('seeded-truchet'), { ...options, border: null });
+
+    for (const result of [bordered, transparent]) {
+      expect(result.svg).toContain('<rect width="80" height="60" fill="#000000"/>');
+      expect(result.svg).toContain('<path data-kind="1" fill="#ffffff"');
+    }
+    expect(bordered.svg).toContain('data-border');
+    expect(bordered.svg).toContain('stroke="#123456"');
+    expect(transparent.svg).not.toContain('data-border');
   });
 
   it('keeps the Danzer drawing stable', () => {

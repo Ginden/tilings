@@ -1,7 +1,7 @@
 import type { Tile, TilingDefinition } from '../tilings/types.js';
 import { buildScene } from './scene.js';
 import type { SceneOptions } from './scene.js';
-import { kindColors, paletteBackground } from './color.js';
+import { kindColors, tilingBackground } from './color.js';
 
 export interface Palette {
   readonly colour1: string;
@@ -48,6 +48,9 @@ interface DrawingPaths {
 function drawingPaths(tiles: readonly Tile[], includeBorders: boolean): DrawingPaths {
   const byKind = new Map<number, string[]>();
   const edges = includeBorders ? new Set<string>() : null;
+  const addEdge = (left: string, right: string): void => {
+    edges!.add(left < right ? `M${left}L${right}` : `M${right}L${left}`);
+  };
   for (const tile of tiles) {
     let paths = byKind.get(tile.kind);
     if (!paths) {
@@ -58,11 +61,17 @@ function drawingPaths(tiles: readonly Tile[], includeBorders: boolean): DrawingP
       if (polygon.length === 0) continue;
       const points = polygon.map((point) => `${fmt(point.x)} ${fmt(point.y)}`);
       paths.push(`M${points.join('L')}Z`);
-      if (edges && tile.drawBorder !== false) {
+      if (edges && !tile.borderParts) {
         for (let index = 0; index < points.length; index++) {
-          const left = points[index]!;
-          const right = points[(index + 1) % points.length]!;
-          edges.add(left < right ? `M${left}L${right}` : `M${right}L${left}`);
+          addEdge(points[index]!, points[(index + 1) % points.length]!);
+        }
+      }
+    }
+    if (edges && tile.borderParts) {
+      for (const polyline of tile.borderParts) {
+        const points = polyline.map((point) => `${fmt(point.x)} ${fmt(point.y)}`);
+        for (let index = 0; index + 1 < points.length; index++) {
+          addEdge(points[index]!, points[index + 1]!);
         }
       }
     }
@@ -142,7 +151,12 @@ function renderPeriodicSvg(
     ...(tile.parts
       ? { parts: tile.parts.map((part) => part.map((point) => ({ x: point.x * scale, y: point.y * scale }))) }
       : {}),
-    ...(tile.drawBorder === undefined ? {} : { drawBorder: tile.drawBorder }),
+    ...(tile.borderParts
+      ? {
+          borderParts: tile.borderParts.map((part) =>
+            part.map((point) => ({ x: point.x * scale, y: point.y * scale }))),
+        }
+      : {}),
   }));
   const body = tileBody(def, scaledTiles, colours, opts);
   const cellSvg =
@@ -178,9 +192,7 @@ function renderPeriodicSvg(
 export function renderSvg(def: TilingDefinition, opts: RenderOptions): RenderResult {
   const colour3 = def.supportsThreeColours ? (opts.colour3 ?? null) : null;
   const colours = kindColors(opts.colour1, opts.colour2, def.kinds, def.colourMode, colour3);
-  const background = def.backgroundKind === undefined
-    ? paletteBackground(opts.colour1, opts.colour2, colour3)
-    : colours[def.backgroundKind] ?? opts.colour1;
+  const background = tilingBackground(def, colours, opts.colour1, opts.colour2, colour3);
   if (def.periodicCell) return renderPeriodicSvg(def, opts, colours, background);
 
   const scene = buildScene(def, opts);

@@ -240,8 +240,8 @@ describe('seeded Truchet mosaic', () => {
 
     for (const tile of tiles) {
       expect(tile.kind).toBe(1);
-      expect(tile.drawBorder).toBe(false);
       expect(tile.parts).toHaveLength(2);
+      expect(tile.borderParts).toHaveLength(4);
 
       const centre = centroid(tile.points);
       const upperArc = tile.parts!.map(centroid).sort((a, b) => a.y - b.y)[0]!;

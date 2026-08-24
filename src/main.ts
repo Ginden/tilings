@@ -2,7 +2,7 @@ import { tilingById } from './tilings/index.js';
 import { hierarchyStrokeWidth, renderSvg } from './render/svg.js';
 import type { RenderOptions, RenderResult } from './render/svg.js';
 import type { RenderRequest, RenderResponse } from './render/worker-protocol.js';
-import { kindColors, paletteBackground } from './render/color.js';
+import { kindColors, tilingBackground } from './render/color.js';
 import { PALETTES } from './palettes.js';
 import {
   DEFAULT_STATE,
@@ -388,7 +388,13 @@ function updateAppearance(): void {
   const activeColour3 = def.supportsThreeColours ? state.colour3 : null;
   const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode, activeColour3);
   const border = state.borderTransparent ? null : state.border;
-  const background = paletteBackground(state.colour1, state.colour2, activeColour3);
+  const background = tilingBackground(
+    def,
+    colours,
+    state.colour1,
+    state.colour2,
+    activeColour3,
+  );
   if (border !== null && !svg.querySelector('path[data-border]')) {
     render();
     return;

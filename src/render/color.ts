@@ -1,3 +1,5 @@
+import type { TilingDefinition } from '../tilings/types.js';
+
 export interface Rgb {
   r: number;
   g: number;
@@ -71,6 +73,19 @@ export function kindColors(
 export function paletteBackground(colour1: string, colour2: string, colour3: string | null): string {
   if (!colour3) return mix(colour1, colour2, 0.5);
   return mix(mix(colour1, colour2, 0.5), colour3, 1 / 3);
+}
+
+/** Resolve the canvas fill consistently for full-cover tilings and sparse motifs. */
+export function tilingBackground(
+  def: Pick<TilingDefinition, 'backgroundKind'>,
+  colours: readonly string[],
+  colour1: string,
+  colour2: string,
+  colour3: string | null,
+): string {
+  return def.backgroundKind === undefined
+    ? paletteBackground(colour1, colour2, colour3)
+    : colours[def.backgroundKind] ?? colour1;
 }
 
 export function relativeLuminance(colour: string): number {
