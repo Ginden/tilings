@@ -208,7 +208,14 @@ function renderPeriodicSvg(
  */
 export function renderSvg(def: TilingDefinition, opts: RenderOptions): RenderResult {
   const colour3 = def.supportsThreeColours ? (opts.colour3 ?? null) : null;
-  const colours = kindColors(opts.colour1, opts.colour2, def.kinds, def.colourMode, colour3);
+  const colours = kindColors(
+    opts.colour1,
+    opts.colour2,
+    def.kinds,
+    def.colourMode,
+    colour3,
+    def.colourPositions,
+  );
   const background = tilingBackground(def, colours, opts.colour1, opts.colour2, colour3);
   if (def.periodicCell) return renderPeriodicSvg(def, opts, colours, background);
 

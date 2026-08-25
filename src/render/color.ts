@@ -48,6 +48,7 @@ export function kindColors(
   kinds: number,
   mode: 'gradient' | 'paired' = 'gradient',
   colour3: string | null = null,
+  positions?: readonly number[],
 ): string[] {
   if (kinds <= 1) return [colour1];
   if (mode === 'paired' && kinds === 4) {
@@ -57,7 +58,7 @@ export function kindColors(
   }
   const out: string[] = [];
   for (let i = 0; i < kinds; i++) {
-    const t = i / (kinds - 1);
+    const t = positions?.[i] ?? i / (kinds - 1);
     if (!colour3) {
       out.push(mix(colour1, colour2, t));
     } else if (t <= 0.5) {

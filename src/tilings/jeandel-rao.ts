@@ -285,6 +285,7 @@ export const jeandelRao: TilingDefinition = {
     'The smallest possible aperiodic set of Wang tiles: eleven unit squares with coloured edges that tile the plane by translation, but never periodically. Jeandel and Rao proved that no aperiodic Wang set can use fewer than eleven tiles or four colours.\n\nEach square is drawn as four triangles carrying its edge colours. Across a legal join, matching triangles merge into a diamond. Patches come from Labbé’s Markov partition of a torus into eleven labelled regions, which describes the repetitive hierarchical core of the Jeandel–Rao shift.',
   kinds: JR_COLOURS,
   kindLabels: ['edge colour 0', 'edge colour 1', 'edge colour 2', 'edge colour 3'],
+  colourMode: 'paired',
   reference: 'https://arxiv.org/abs/1506.06492',
   referenceLabel: 'Jeandel & Rao, “An aperiodic set of 11 Wang tiles” (2021)',
   furtherReferences: [

@@ -215,6 +215,7 @@ export const penroseP1: TilingDefinition = {
     'Penrose’s original six prototiles: three matched pentagons, a five-pointed star, a boat and a thin diamond.',
   kinds: 6,
   kindLabels: ['pentagon P5', 'pentagon P3', 'pentagon P2', 'star', 'boat', 'diamond'],
+  supportsThreeColours: true,
   reference: 'https://en.wikipedia.org/wiki/Penrose_tiling#Original_pentagonal_Penrose_tiling_(P1)',
   unitTileArea: 1.543,
   generate(radius): Tile[] {

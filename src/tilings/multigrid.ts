@@ -126,6 +126,7 @@ function makeMultigridTiling(opts: {
   kindLabels: string[];
   family?: TilingDefinition['family'];
   supportsThreeColours?: boolean;
+  colourPositions?: readonly number[];
 }): TilingDefinition {
   const offsets = offsetsFor(opts.n);
   return {
@@ -136,6 +137,7 @@ function makeMultigridTiling(opts: {
     kinds: Math.floor(opts.n / 2),
     kindLabels: opts.kindLabels,
     supportsThreeColours: opts.supportsThreeColours,
+    colourPositions: opts.colourPositions,
     reference: opts.reference,
     unitTileArea: averageRhombArea(opts.n),
     generate(radius) {
@@ -173,6 +175,7 @@ export const dodecagonal = makeMultigridTiling({
     'A twelve-fold quasicrystal of 30°, 60° and 90° rhombs — the rhombic relative of the Socolar and Stampfli tilings.',
   reference: 'https://en.wikipedia.org/wiki/List_of_aperiodic_sets_of_tiles',
   kindLabels: ['30° rhomb', '60° rhomb', 'square'],
+  supportsThreeColours: true,
 });
 
 export const heptagonal = makeMultigridTiling({
@@ -195,4 +198,7 @@ export const decagonal = makeMultigridTiling({
   reference: 'https://en.wikipedia.org/wiki/Quasicrystal',
   kindLabels: ['18°', '36°', '54°', '72°', 'square'],
   supportsThreeColours: true,
+  // The 72° rhombs dominate this patch. Put them at one endpoint and group
+  // the less frequent shapes around the other two stops to balance visible area.
+  colourPositions: [1, 0.5, 0.5, 0, 1],
 });

@@ -62,6 +62,15 @@ describe('colours', () => {
     ]);
     expect(paletteBackground('#000000', '#ff0000', '#ffffff')).toBe('#aa5555');
   });
+
+  it('can place unequal tile classes explicitly on palette stops', () => {
+    expect(kindColors('#000000', '#ff0000', 4, 'gradient', '#ffffff', [0, 0.5, 0, 1])).toEqual([
+      '#000000',
+      '#ff0000',
+      '#000000',
+      '#ffffff',
+    ]);
+  });
 });
 
 describe('scene', () => {
@@ -388,8 +397,10 @@ describe('palettes', () => {
     expect(TILINGS.filter((tiling) => tiling.supportsThreeColours).map((tiling) => tiling.id).sort()).toEqual([
       'danzer-sevenfold',
       'decagonal',
+      'dodecagonal',
       'hat',
       'heptagonal',
+      'penrose-p1',
       'rhombitrihexagonal',
       'seeded-voronoi',
       'shuriken-supertile-12',

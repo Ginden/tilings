@@ -206,6 +206,8 @@ export const tubingenTriangle: TilingDefinition = {
     'Robinson triangles under the Tübingen four-state substitution: acute and obtuse shapes retain distinct left- and right-handed hierarchy states.',
   kinds: 4,
   kindLabels: ['acute left', 'acute right', 'obtuse left', 'obtuse right'],
+  // Shape is already visible in the geometry; colour carries handedness.
+  colourPositions: [0, 1, 0, 1],
   reference: 'https://en.wikipedia.org/wiki/T%C3%BCbingen_triangle',
   unitTileArea: 0.406,
   generate: generateTubingen,

@@ -62,6 +62,8 @@ export interface TilingDefinition {
   };
   /** Pair adjacent states around each selected endpoint colour instead of using one linear gradient. */
   readonly colourMode?: 'gradient' | 'paired';
+  /** Optional normalized palette positions for tile classes with strongly unequal visible areas. */
+  readonly colourPositions?: readonly number[];
   /** Reference URL (usually Wikipedia). */
   readonly reference: string;
   /** Human-readable citation for `reference`; defaults to the tiling name and website. */

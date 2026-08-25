@@ -233,7 +233,14 @@ function syncControls(): void {
   rotationValue.textContent = `${state.rotation}\u00b0`;
 
   const activeColour3 = def.supportsThreeColours ? state.colour3 : null;
-  const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode, activeColour3);
+  const colours = kindColors(
+    state.colour1,
+    state.colour2,
+    def.kinds,
+    def.colourMode,
+    activeColour3,
+    def.colourPositions,
+  );
   kindHint.textContent =
     def.kinds === 2
       ? `${def.kindLabels[0]} · ${def.kindLabels[1]}`
@@ -253,6 +260,7 @@ function syncControls(): void {
       def.kinds,
       def.colourMode,
       def.supportsThreeColours ? (palette.colour3 ?? null) : null,
+      def.colourPositions,
     ).map((colour) => {
       const swatch = document.createElement('span');
       swatch.style.background = colour;
@@ -391,7 +399,14 @@ function updateAppearance(): void {
 
   const def = tilingById(state.tilingId);
   const activeColour3 = def.supportsThreeColours ? state.colour3 : null;
-  const colours = kindColors(state.colour1, state.colour2, def.kinds, def.colourMode, activeColour3);
+  const colours = kindColors(
+    state.colour1,
+    state.colour2,
+    def.kinds,
+    def.colourMode,
+    activeColour3,
+    def.colourPositions,
+  );
   const border = state.borderTransparent ? null : state.border;
   const background = tilingBackground(
     def,
