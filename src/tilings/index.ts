@@ -26,6 +26,7 @@ import { hexagonal, square, triangular } from './regular.js';
 import { ARCHIMEDEAN_TILINGS } from './archimedean.js';
 import { seededTruchet } from './truchet.js';
 import { seededVoronoi } from './voronoi.js';
+import { seededBinaryTreeMaze } from './maze.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,
@@ -49,6 +50,7 @@ export const TILINGS: readonly TilingDefinition[] = [
   jeandelRao,
   danzerSevenfold,
   watanabeItoSomaEightfold,
+  seededBinaryTreeMaze,
   seededTruchet,
   seededVoronoi,
   triangular,

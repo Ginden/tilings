@@ -64,6 +64,7 @@ import {
   generateTruchet,
 } from '../src/tilings/truchet.js';
 import { generateVoronoi } from '../src/tilings/voronoi.js';
+import { generateBinaryTreeMaze } from '../src/tilings/maze.js';
 
 const ARCHIMEDEAN_VERTEX_FIGURES: Readonly<Record<string, readonly number[]>> = {
   'elongated-triangular': [3, 3, 3, 4, 4],
@@ -184,6 +185,7 @@ describe('tiling registry', () => {
       'pinwheel',
       'sphinx',
       'voderberg',
+      'seeded-binary-tree-maze',
       'seeded-truchet',
       'seeded-voronoi',
       'danzer-sevenfold',
@@ -227,6 +229,77 @@ describe('tiling registry', () => {
       });
     });
   }
+});
+
+describe('seeded binary-tree maze', () => {
+  it('repeats exactly for one seed and changes for another', () => {
+    const first = generateBinaryTreeMaze(4, 20260824);
+    expect(generateBinaryTreeMaze(4, 20260824)).toEqual(first);
+    expect(generateBinaryTreeMaze(4, 20260825)).not.toEqual(first);
+  });
+
+  it('keeps central passages fixed as the requested patch grows', () => {
+    const centralTiles = (radius: number): Tile[] =>
+      generateBinaryTreeMaze(radius, 20260824).filter((tile) => {
+        const centre = centroid(tile.points);
+        return Math.abs(centre.x) < 3 && Math.abs(centre.y) < 3;
+      });
+    expect(centralTiles(9)).toEqual(centralTiles(4));
+  });
+
+  it('forms one spanning tree and joins every passage across cell edges', () => {
+    const tiles = generateBinaryTreeMaze(5, 20260824);
+    const tileByCentre = new Map(
+      tiles.map((tile, index) => {
+        const centre = centroid(tile.points);
+        return [`${centre.x},${centre.y}`, index] as const;
+      }),
+    );
+    const adjacency = tiles.map(() => [] as number[]);
+
+    for (let index = 0; index < tiles.length; index++) {
+      const tile = tiles[index]!;
+      const centre = centroid(tile.points);
+      const outline = tile.overlays![0]!.points;
+      for (const border of tile.borderParts!) {
+        expect(border).toHaveLength(2);
+        const [start, end] = border;
+        const crossesVerticalCellEdge =
+          start!.x === end!.x && tile.points.some((point) => point.x === start!.x);
+        const crossesHorizontalCellEdge =
+          start!.y === end!.y && tile.points.some((point) => point.y === start!.y);
+        expect(crossesVerticalCellEdge || crossesHorizontalCellEdge).toBe(false);
+      }
+      for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]] as const) {
+        const neighbour = tileByCentre.get(`${centre.x + dx},${centre.y + dy}`);
+        const edge = dx < 0
+          ? Math.min(...tile.points.map((point) => point.x))
+          : dx > 0
+            ? Math.max(...tile.points.map((point) => point.x))
+            : dy < 0
+              ? Math.min(...tile.points.map((point) => point.y))
+              : Math.max(...tile.points.map((point) => point.y));
+        const open = outline.some((point) => (dx === 0 ? point.y : point.x) === edge);
+        if (!open) continue;
+        expect(neighbour).toBeDefined();
+        adjacency[index]!.push(neighbour!);
+      }
+    }
+
+    expect(adjacency.reduce((sum, neighbours) => sum + neighbours.length, 0) / 2).toBe(
+      tiles.length - 1,
+    );
+    const visited = new Set([0]);
+    const pending = [0];
+    while (pending.length > 0) {
+      for (const neighbour of adjacency[pending.pop()!]!) {
+        if (visited.has(neighbour)) continue;
+        visited.add(neighbour);
+        pending.push(neighbour);
+      }
+    }
+    expect(visited.size).toBe(tiles.length);
+  });
 });
 
 describe('seeded Truchet mosaic', () => {
