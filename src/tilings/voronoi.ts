@@ -338,6 +338,83 @@ export function generateVoronoi(radius: number, seed = currentDaySeed()): Tile[]
   return cells.map((cell, index) => ({ kind: colours[index]!, points: cell.points }));
 }
 
+interface DelaunayVertex {
+  readonly owners: Map<string, Site>;
+}
+
+function siteKey(site: Site): string {
+  return `${site.gridX},${site.gridY}`;
+}
+
+function triangleKind(points: readonly Vec[]): number {
+  const squaredLengths = points.map((point, index) => {
+    const other = points[(index + 1) % points.length]!;
+    return (point.x - other.x) ** 2 + (point.y - other.y) ** 2;
+  }).sort((left, right) => left - right);
+  const comparison = squaredLengths[2]! / (squaredLengths[0]! + squaredLengths[1]!);
+  if (comparison < 0.92) return 0;
+  if (comparison <= 1.08) return 1;
+  return 2;
+}
+
+/** Build the Delaunay dual by joining the three sites meeting at each Voronoi vertex. */
+export function generateDelaunay(radius: number, seed = currentDaySeed()): Tile[] {
+  const integerSeed = seed >>> 0;
+  const outputExtent = Math.ceil(radius) + OUTPUT_MARGIN;
+  const allSites = generateSites(integerSeed, outputExtent + SITE_MARGIN);
+  const buckets = bucketSites(allSites);
+  const vertices = new Map<string, DelaunayVertex>();
+
+  for (const site of allSites) {
+    const points = voronoiCell(site, buckets);
+    for (const point of points) {
+      if (Math.abs(point.x) > outputExtent || Math.abs(point.y) > outputExtent) continue;
+      const key = pointKey(point);
+      const vertex = vertices.get(key);
+      if (vertex) vertex.owners.set(siteKey(site), site);
+      else vertices.set(key, { owners: new Map([[siteKey(site), site]]) });
+    }
+  }
+
+  const tiles: Tile[] = [];
+  for (const vertex of vertices.values()) {
+    if (vertex.owners.size !== 3) continue;
+    const points = [...vertex.owners.values()].map((site) => site.point);
+    const centre = {
+      x: points.reduce((sum, point) => sum + point.x, 0) / 3,
+      y: points.reduce((sum, point) => sum + point.y, 0) / 3,
+    };
+    points.sort(
+      (left, right) =>
+        Math.atan2(left.y - centre.y, left.x - centre.x) -
+        Math.atan2(right.y - centre.y, right.x - centre.x),
+    );
+    tiles.push({ kind: triangleKind(points), points });
+  }
+  return tiles;
+}
+
+export const seededDelaunay: TilingDefinition = {
+  id: 'seeded-delaunay',
+  name: 'Seeded Delaunay triangulation',
+  family: 'algorithmic',
+  description:
+    'The geometric dual of the seeded Voronoi mosaic. Three sites are joined whenever their cells meet at a vertex, producing the Delaunay triangulation with no site inside any triangle’s circumcircle. Triangles are shaded by angle class—acute, nearly right, or obtuse—so the local geometry becomes visible.',
+  kinds: 3,
+  kindLabels: ['Acute triangles', 'Nearly right triangles', 'Obtuse triangles'],
+  supportsThreeColours: true,
+  reference: 'https://doi.org/10.1093/comjnl/24.2.162',
+  referenceLabel: 'Bowyer, “Computing Dirichlet tessellations” (1981)',
+  furtherReferences: [
+    {
+      label: 'Watson, “Computing the n-dimensional Delaunay tessellation” (1981)',
+      url: 'https://doi.org/10.1093/comjnl/24.2.167',
+    },
+  ],
+  unitTileArea: ROW_HEIGHT / 2,
+  generate: generateDelaunay,
+};
+
 export const seededVoronoi: TilingDefinition = {
   id: 'seeded-voronoi',
   name: 'Seeded Voronoi mosaic',

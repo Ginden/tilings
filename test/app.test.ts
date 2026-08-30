@@ -402,6 +402,8 @@ describe('palettes', () => {
       'heptagonal',
       'penrose-p1',
       'rhombitrihexagonal',
+      'seeded-delaunay',
+      'seeded-quadtree',
       'seeded-voronoi',
       'shuriken-supertile-12',
       'socolar',

@@ -45,24 +45,28 @@ rasterisation for display, and no runtime dependencies.
 | Shuriken tiling (12-fold) | fourteen substitution states based on a dodecagon and seven triangular shapes/scales | Paz's primitive dense-orientation substitution with inflation √(5 + 2√3), reconstructed as verified affine placement data |
 | Squiral | one rep-9 spiral tile, in two chiralities | Baake and Grimm's scale-3 bijective 3×3 block substitution, run on the rosettes of four like-handed tiles and drawn with the spiral carrier |
 | Jeandel–Rao 11 Wang tiles | eleven unit squares with four edge colours | coding the orbit of a point under the two unit translations of the torus ℝ²/⟨(φ,0),(1,φ+3)⟩ through Labbé's eleven-letter Markov partition; each square drawn as four triangles carrying its edge colours |
+| Rule 90 cellular automaton | two states of a unit square | seeded initial cells evolved by XOR of the two diagonal neighbours, then mirrored into a Sierpiński spacetime carpet |
 | Seeded binary-tree maze | square maze cells | a coordinate hash carves north or east from each cell, forming a reproducible spanning tree with one route between every pair of cells |
+| Seeded Delaunay triangulation | acute, near-right and obtuse triangles | the geometric dual of the seeded hard-core Voronoi site process, classified by the triangle's largest angle |
+| Seeded quadtree mosaic | three sizes of dyadic square | point-region quadtree subdivision with coordinate-hashed decisions and colours showing leaf depth |
 | Seeded Truchet mosaic | paired quarter-circle arcs | a coordinate hash chooses one of Smith's two curved tile orientations; the border colour traces every path and loops crossing at most 16 tiles are filled with the second colour |
 | Seeded Voronoi mosaic | convex polygons | a seeded hard-core random site process partitioned by perpendicular bisectors |
 
 Tilings with more than two tile classes shade their classes evenly between the
 chosen colours. Socolar, Heptagonal, Decagonal, the Hat monotile, Shuriken,
-Rhombitrihexagonal, and Truncated trihexagonal can add a third stop, giving
+the Delaunay and quadtree mosaics, Rhombitrihexagonal, and Truncated
+trihexagonal can add a third stop, giving
 three-class tilings exact colours and larger class sets a two-part gradient
 through the middle colour.
 
-The binary-tree maze hashes the seed and each square's coordinates to carve a
-north- or east-going passage. Its finite patch closes into a spanning tree at
-the outer boundary, which is generated beyond the viewport. The Truchet mosaic
-uses the same coordinate-stable approach to select one of two quarter-circle
-orientations, then detects and colours its small closed loops. The Voronoi
-mosaic assigns one of four seeded shades to each site. All three assignments
-stay fixed while zooming or resizing;
-Voronoi cells that share an edge receive different shades.
+The cellular automaton, maze, Delaunay, quadtree, Truchet and Voronoi generators
+all derive their choices from the seed and absolute coordinates, so their
+visible interiors stay fixed while zooming or resizing. Rule 90 evolves sparse
+initial cells into colliding Sierpiński triangles. The binary-tree maze carves
+north- or east-going passages into a spanning tree. Delaunay triangles expose
+the dual graph of the hard-core Voronoi sites, while the quadtree recursively
+splits dyadic squares. Truchet paths detect and colour their small closed loops;
+Voronoi cells use four map shades and never match across a shared edge.
 
 ## Controls
 
@@ -158,7 +162,9 @@ The hat metatile construction is ported from Craig S. Kaplan's
 [THIRD-PARTY-LICENSES.md](THIRD-PARTY-LICENSES.md). The P1 L-system follows the
 rules documented by Andrew Stacey's [Penrose package](https://ctan.org/pkg/penrose).
 The Sphinx rep-4 child maps follow the classical four-copy hexiamond
-dissection. Everything else is derived from the geometry described on Wikipedia's
+dissection. The algorithmic collection cites Wolfram's Rule 90 analysis,
+Bowyer's Delaunay construction, and Finkel and Bentley's quadtree paper directly
+in the app. Everything else is derived from the geometry described on Wikipedia's
 [Penrose tiling](https://en.wikipedia.org/wiki/Penrose_tiling) and
 [list of aperiodic sets of tiles](https://en.wikipedia.org/wiki/List_of_aperiodic_sets_of_tiles)
 pages. The Archimedean translation cells use the integer-lattice construction

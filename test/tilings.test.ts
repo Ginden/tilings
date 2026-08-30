@@ -63,8 +63,10 @@ import {
   TRUCHET_FILL_LIMITS,
   generateTruchet,
 } from '../src/tilings/truchet.js';
-import { generateVoronoi } from '../src/tilings/voronoi.js';
+import { generateDelaunay, generateVoronoi } from '../src/tilings/voronoi.js';
 import { generateBinaryTreeMaze } from '../src/tilings/maze.js';
+import { generateRule90, rule90InitialCell, rule90Step } from '../src/tilings/rule90.js';
+import { generateQuadtree } from '../src/tilings/quadtree.js';
 
 const ARCHIMEDEAN_VERTEX_FIGURES: Readonly<Record<string, readonly number[]>> = {
   'elongated-triangular': [3, 3, 3, 4, 4],
@@ -185,7 +187,10 @@ describe('tiling registry', () => {
       'pinwheel',
       'sphinx',
       'voderberg',
+      'rule-90',
       'seeded-binary-tree-maze',
+      'seeded-delaunay',
+      'seeded-quadtree',
       'seeded-truchet',
       'seeded-voronoi',
       'danzer-sevenfold',
@@ -229,6 +234,72 @@ describe('tiling registry', () => {
       });
     });
   }
+});
+
+describe('Rule 90 cellular automaton', () => {
+  it('applies XOR to the two neighbours in every generation', () => {
+    expect(rule90Step([0, 0, 1, 0, 0])).toEqual([0, 1, 0, 1, 0]);
+    expect(rule90Step([0, 1, 0, 1, 0])).toEqual([1, 0, 0, 0, 1]);
+
+    const seed = 20260824;
+    const tiles = generateRule90(8, seed);
+    const states = new Map(tiles.map((tile) => {
+      const centre = centroid(tile.points);
+      return [`${centre.x - 0.5},${centre.y - 0.5}`, tile.kind] as const;
+    }));
+    for (let x = -7; x <= 7; x++) {
+      expect(states.get(`${x},0`)).toBe(rule90InitialCell(x, seed));
+      expect(states.get(`${x},1`)).toBe(
+        rule90InitialCell(x - 1, seed) ^ rule90InitialCell(x + 1, seed),
+      );
+    }
+  });
+
+  it('is seeded, mirrored, and stable when the requested patch grows', () => {
+    const centralTiles = (radius: number, seed: number): Tile[] =>
+      generateRule90(radius, seed).filter((tile) => {
+        const centre = centroid(tile.points);
+        return Math.abs(centre.x) < 4 && Math.abs(centre.y) < 4;
+      });
+    expect(centralTiles(10, 20260824)).toEqual(centralTiles(5, 20260824));
+    expect(centralTiles(5, 20260825)).not.toEqual(centralTiles(5, 20260824));
+
+    const states = new Map(generateRule90(6, 20260824).map((tile) => {
+      const centre = centroid(tile.points);
+      return [`${centre.x},${centre.y}`, tile.kind] as const;
+    }));
+    for (let y = 1.5; y < 5; y++) {
+      for (let x = -4.5; x < 5; x++) {
+        expect(states.get(`${x},${y}`)).toBe(states.get(`${x},${1 - y}`));
+      }
+    }
+  });
+});
+
+describe('seeded quadtree mosaic', () => {
+  it('uses dyadic leaf sizes and preserves every root square area', () => {
+    const tiles = generateQuadtree(8, 20260824);
+    expect(new Set(tiles.map((tile) => Math.sqrt(area(tile.points))))).toEqual(
+      new Set([0.5, 1, 2]),
+    );
+    expect(new Set(tiles.map((tile) => tile.kind))).toEqual(new Set([0, 1, 2]));
+
+    const root = tiles.filter((tile) => {
+      const centre = centroid(tile.points);
+      return centre.x > 0 && centre.x < 4 && centre.y > 0 && centre.y < 4;
+    });
+    expect(root.reduce((sum, tile) => sum + area(tile.points), 0)).toBe(16);
+  });
+
+  it('changes with the seed but keeps central leaves fixed as the patch grows', () => {
+    const centralTiles = (radius: number, seed: number): Tile[] =>
+      generateQuadtree(radius, seed).filter((tile) => {
+        const centre = centroid(tile.points);
+        return Math.abs(centre.x) < 4 && Math.abs(centre.y) < 4;
+      });
+    expect(centralTiles(12, 20260824)).toEqual(centralTiles(5, 20260824));
+    expect(centralTiles(5, 20260825)).not.toEqual(centralTiles(5, 20260824));
+  });
 });
 
 describe('seeded binary-tree maze', () => {
@@ -426,6 +497,67 @@ describe('seeded Voronoi mosaic', () => {
   it('generates the patch needed for a 4K viewport within the test timeout', () => {
     const tiles = generateVoronoi(55, 20260824);
     expect(tiles.length).toBeGreaterThan(10_000);
+  });
+});
+
+describe('seeded Delaunay triangulation', () => {
+  it('is the stable, seeded triangle dual of the site process', () => {
+    const centralTiles = (radius: number, seed: number): Tile[] =>
+      generateDelaunay(radius, seed)
+        .filter((tile) => Math.hypot(centroid(tile.points).x, centroid(tile.points).y) < 3)
+        .sort((left, right) => {
+          const a = centroid(left.points);
+          const b = centroid(right.points);
+          return a.y - b.y || a.x - b.x;
+        });
+    expect(centralTiles(9, 20260824)).toEqual(centralTiles(4, 20260824));
+    expect(centralTiles(4, 20260825)).not.toEqual(centralTiles(4, 20260824));
+    expect(new Set(generateDelaunay(9, 20260824).map((tile) => tile.kind))).toEqual(
+      new Set([0, 1, 2]),
+    );
+  });
+
+  it('remains gap-free across different seeds', () => {
+    for (const seed of [0, 1, 20260824, 0xffffffff]) {
+      expect(coverCounts(generateDelaunay(9, seed), 6, 150)).toEqual(Array(150).fill(1));
+    }
+  });
+
+  it('has no site strictly inside a central triangle circumcircle', () => {
+    const tiles = generateDelaunay(9, 20260824);
+    const sites = new Map<string, Vec>();
+    for (const tile of tiles) {
+      for (const point of tile.points) {
+        sites.set(`${Math.round(point.x * 1e8)},${Math.round(point.y * 1e8)}`, point);
+      }
+    }
+
+    const circumcircle = (points: readonly Vec[]): { centre: Vec; radiusSquared: number } => {
+      const [a, b, c] = points;
+      const d = 2 * (a!.x * (b!.y - c!.y) + b!.x * (c!.y - a!.y) + c!.x * (a!.y - b!.y));
+      const aa = a!.x ** 2 + a!.y ** 2;
+      const bb = b!.x ** 2 + b!.y ** 2;
+      const cc = c!.x ** 2 + c!.y ** 2;
+      const centre = {
+        x: (aa * (b!.y - c!.y) + bb * (c!.y - a!.y) + cc * (a!.y - b!.y)) / d,
+        y: (aa * (c!.x - b!.x) + bb * (a!.x - c!.x) + cc * (b!.x - a!.x)) / d,
+      };
+      return {
+        centre,
+        radiusSquared: (centre.x - a!.x) ** 2 + (centre.y - a!.y) ** 2,
+      };
+    };
+
+    const central = tiles.filter((tile) => Math.hypot(centroid(tile.points).x, centroid(tile.points).y) < 5);
+    expect(central.length).toBeGreaterThan(100);
+    for (const tile of central) {
+      const circle = circumcircle(tile.points);
+      for (const point of sites.values()) {
+        if (tile.points.includes(point)) continue;
+        const distanceSquared = (point.x - circle.centre.x) ** 2 + (point.y - circle.centre.y) ** 2;
+        expect(distanceSquared).toBeGreaterThanOrEqual(circle.radiusSquared - 1e-9);
+      }
+    }
   });
 });
 

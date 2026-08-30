@@ -25,8 +25,10 @@ import { watanabeItoSomaEightfold } from './watanabe-ito-soma-eightfold.js';
 import { hexagonal, square, triangular } from './regular.js';
 import { ARCHIMEDEAN_TILINGS } from './archimedean.js';
 import { seededTruchet } from './truchet.js';
-import { seededVoronoi } from './voronoi.js';
+import { seededDelaunay, seededVoronoi } from './voronoi.js';
 import { seededBinaryTreeMaze } from './maze.js';
+import { rule90 } from './rule90.js';
+import { seededQuadtree } from './quadtree.js';
 
 export const TILINGS: readonly TilingDefinition[] = [
   penroseP3,
@@ -50,7 +52,10 @@ export const TILINGS: readonly TilingDefinition[] = [
   jeandelRao,
   danzerSevenfold,
   watanabeItoSomaEightfold,
+  rule90,
   seededBinaryTreeMaze,
+  seededDelaunay,
+  seededQuadtree,
   seededTruchet,
   seededVoronoi,
   triangular,
