@@ -135,12 +135,21 @@ Markdown table (progress is written to stderr):
 
 ```bash
 npm run --silent report:performance > /tmp/tiling-performance.md
-npm run --silent report:performance -- --width 1920 --height 1080 --tile-size 40 --runs 20 --warmup 3 > /tmp/tiling-performance-hd.md
+npm run --silent report:performance -- --sizes 900x600,1920x1080 --tile-size 34,68 --rotation 0,30 --border-width 0,1 --runs 20 --warmup 3 > /tmp/tiling-performance-matrix.md
 ```
 
 The report includes median and p95 render times, tile counts, SVG sizes and
-machine/settings metadata. Defaults are a 900 × 600 viewport, 34 px tiles,
-seed 20260824, two warmups and ten measured renders. Periodic tilings use the
+machine/settings metadata. Every tiling runs against the Cartesian product of
+the supplied lists: viewport sizes, tile sizes, rotations, hierarchy levels,
+loop fill limits, border widths and seeds. Each row identifies every setting.
+Defaults cross two viewports (900 × 600 and 1920 × 1080), two tile sizes (34 and
+68 px), and borders off/on (0 and 1 px): eight combinations per tiling.
+Rotation and hierarchy default to zero, loop fill limit to 16, and seed to
+20260824, with two warmups and ten measured renders per combination.
+Use `--width 900 --height 600 --tile-size 34 --border-width 1` for a single
+configuration. Hierarchy levels are requested values; the renderer clamps them
+to each tiling's supported depth and ignores settings that do not apply.
+Periodic tilings use the
 production repeating-cell optimization. This measures synchronous SVG generation
 in Node, excluding browser painting and PNG rasterization; compare runs on the
 same idle machine. Use `--help` for all options. Failed tilings get an `ERROR`
