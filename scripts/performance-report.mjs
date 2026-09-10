@@ -7,18 +7,16 @@ import { createServer } from 'vite';
 
 const { values } = parseArgs({
   options: {
-    sizes: { type: 'string' },
+    sizes: { type: 'string', default: '900x600,1920x1080,3840x2160' },
     tilings: { type: 'string' },
-    width: { type: 'string' },
-    height: { type: 'string' },
-    'tile-size': { type: 'string', default: '34,68' },
+    'tile-size': { type: 'string', default: '10,34,68' },
     rotation: { type: 'string', default: '0' },
     hierarchy: { type: 'string', default: '0' },
     'loop-fill-limit': { type: 'string', default: '16' },
-    'border-width': { type: 'string', default: '0,1' },
+    'border-width': { type: 'string', default: '0,1,3,6' },
     seed: { type: 'string', default: '20260824' },
-    runs: { type: 'string', default: '10' },
-    warmup: { type: 'string', default: '2' },
+    runs: { type: 'string', default: '6' },
+    warmup: { type: 'string', default: '1' },
     help: { type: 'boolean', default: false },
   },
 });
@@ -30,7 +28,6 @@ Print a Markdown report for every registered tiling to stdout.
 Progress and failures go to stderr. Options:
   --tilings LIST        Tiling IDs (default: all registered tilings)
   --sizes LIST          Viewports (default: 900x600,1920x1080)
-  --width N --height N   Single viewport instead of --sizes
   --tile-size LIST      Tile sizes >= 2 (default: 34,68)
   --rotation LIST       Rotation angles in degrees (default: 0)
   --hierarchy LIST      Requested ancestry levels >= 0 (default: 0)
