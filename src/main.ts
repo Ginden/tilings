@@ -248,8 +248,12 @@ function syncControls(): void {
       : `${def.kinds} tile classes, shaded ${activeColour3 ? 'through three colours' : 'between two colours'}: ${def.kindLabels.join(', ')}`;
   kindHint.title = colours.join(' ');
 
-  const trioGroup = paletteBox.querySelector<HTMLElement>('[data-collection="trios"]');
-  if (trioGroup) trioGroup.hidden = !def.supportsThreeColours;
+  // Both collections require all three colours; truncating a flag changes it.
+  for (const group of paletteBox.querySelectorAll<HTMLElement>(
+    '[data-collection="trios"], [data-collection="flags"]',
+  )) {
+    group.hidden = !def.supportsThreeColours;
+  }
 
   for (const button of paletteBox.querySelectorAll<HTMLButtonElement>('button')) {
     const palette = PALETTES.find((p) => p.id === button.dataset['palette']);
