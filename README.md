@@ -130,6 +130,22 @@ favicon or preview, regenerate them with:
 ./scripts/generate-assets.sh
 ```
 
+Benchmark production SVG generation for every registered tiling and save a
+Markdown table (progress is written to stderr):
+
+```bash
+npm run --silent report:performance > /tmp/tiling-performance.md
+npm run --silent report:performance -- --width 1920 --height 1080 --tile-size 40 --runs 20 --warmup 3 > /tmp/tiling-performance-hd.md
+```
+
+The report includes median and p95 render times, tile counts, SVG sizes and
+machine/settings metadata. Defaults are a 900 × 600 viewport, 34 px tiles,
+seed 20260824, two warmups and ten measured renders. Periodic tilings use the
+production repeating-cell optimization. This measures synchronous SVG generation
+in Node, excluding browser painting and PNG rasterization; compare runs on the
+same idle machine. Use `--help` for all options. Failed tilings get an `ERROR`
+row; the script continues through the registry and exits nonzero if any fail.
+
 The test suite samples random points inside every generated patch and asserts
 that each is covered by exactly one tile, which catches both gaps and overlaps —
 the failure mode that a wrong substitution rule produces. To eyeball the output:

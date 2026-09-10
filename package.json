@@ -10,6 +10,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "preview:geometry": "bash scripts/render-geometry-preview.sh",
+    "report:performance": "node scripts/performance-report.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
