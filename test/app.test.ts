@@ -397,10 +397,12 @@ describe('palettes', () => {
     expect(TILINGS.filter((tiling) => tiling.supportsThreeColours).map((tiling) => tiling.id).sort()).toEqual([
       'danzer-sevenfold',
       'decagonal',
+      'deltoidal-trihexagonal',
       'dodecagonal',
       'hat',
       'heptagonal',
       'penrose-p1',
+      'rhombille',
       'rhombitrihexagonal',
       'seeded-delaunay',
       'seeded-quadtree',

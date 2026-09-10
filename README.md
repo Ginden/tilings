@@ -26,6 +26,9 @@ rasterisation for display, and no runtime dependencies.
 | Truncated trihexagonal | square + hexagon + dodecagon | unit-edge lattice with vertex figure 4.6.12 |
 | Snub square | triangle + square | unit-edge lattice with vertex figure 3².4.3.4 |
 | Snub hexagonal (left/right) | triangle + hexagon | both mirror forms of the chiral unit-edge lattice with vertex figure 3⁴.6 |
+| Rhombille (tumbling blocks) | 60° rhomb | dual of the trihexagonal translation cell, coloured by orientation |
+| Tetrakis square | isosceles right triangle | dual of the truncated square translation cell |
+| Deltoidal trihexagonal | 60°–90°–120°–90° kite | dual of the rhombitrihexagonal translation cell, coloured by axis |
 | Penrose P3 — rhombs | thick + thin rhomb | Robinson triangle deflation, half-tiles glued on their bases |
 | Penrose P2 — kite and dart | kite + dart | Robinson triangle deflation with the mirror axis tracked per half-tile |
 | Penrose P1 — pentagons | 3 matched pentagons + star + boat + diamond | six-prototile pentagonal L-system decomposition |
@@ -55,7 +58,7 @@ rasterisation for display, and no runtime dependencies.
 Tilings with more than two tile classes shade their classes evenly between the
 chosen colours. Socolar, Heptagonal, Decagonal, the Hat monotile, Shuriken,
 the Delaunay and quadtree mosaics, Rhombitrihexagonal, and Truncated
-trihexagonal can add a third stop, giving
+trihexagonal, Rhombille, and Deltoidal trihexagonal can add a third stop, giving
 three-class tilings exact colours and larger class sets a two-part gradient
 through the middle colour.
 
