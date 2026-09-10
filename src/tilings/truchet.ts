@@ -40,25 +40,31 @@ function nodePoint(node: Node): Vec {
   return { x: node[0] / 2, y: node[1] / 2 };
 }
 
-function arcPoints(center: Vec, startAngle: number, endAngle: number): Vec[] {
+function arcTemplate(startAngle: number, endAngle: number): Vec[] {
   return Array.from({ length: ARC_SEGMENTS + 1 }, (_, index) => {
     const angle = startAngle + ((endAngle - startAngle) * index) / ARC_SEGMENTS;
     return {
-      x: center.x + Math.cos(angle) * ARC_RADIUS,
-      y: center.y + Math.sin(angle) * ARC_RADIUS,
+      x: Math.cos(angle) * ARC_RADIUS,
+      y: Math.sin(angle) * ARC_RADIUS,
     };
   });
 }
+
+const ARC_TEMPLATES = [
+  arcTemplate(0, Math.PI / 2),
+  arcTemplate(-Math.PI, -Math.PI / 2),
+  arcTemplate(Math.PI, Math.PI / 2),
+  arcTemplate(0, -Math.PI / 2),
+];
 
 function arc(
   cellKey: string,
   start: Node,
   end: Node,
   center: Vec,
-  startAngle: number,
-  endAngle: number,
+  template: number,
 ): Arc {
-  const points = arcPoints(center, startAngle, endAngle);
+  const points = ARC_TEMPLATES[template]!.map((point) => ({ x: center.x + point.x, y: center.y + point.y }));
   points[0] = nodePoint(start);
   points[points.length - 1] = nodePoint(end);
   return { cellKey, start: nodeKey(start), end: nodeKey(end), points };
@@ -76,12 +82,12 @@ function cell(x: number, y: number, seed: number): Cell {
   const left: Node = [2 * x, 2 * y + 1];
   const arcs = (hash(seed, x, y) & 1) === 0
     ? [
-        arc(key, top, left, northWest, 0, Math.PI / 2),
-        arc(key, bottom, right, southEast, -Math.PI, -Math.PI / 2),
+        arc(key, top, left, northWest, 0),
+        arc(key, bottom, right, southEast, 1),
       ]
     : [
-        arc(key, top, right, northEast, Math.PI, Math.PI / 2),
-        arc(key, bottom, left, southWest, 0, -Math.PI / 2),
+        arc(key, top, right, northEast, 2),
+        arc(key, bottom, left, southWest, 3),
       ];
   return { key, points: [northWest, northEast, southEast, southWest], arcs };
 }
@@ -175,7 +181,9 @@ export function generateTruchet(
   const fillLimit = TRUCHET_FILL_LIMITS.some((limit) => limit === requestedLimit)
     ? requestedLimit
     : TRUCHET_DEFAULT_FILL_LIMIT;
-  const extent = Math.ceil(radius) + fillLimit + 1;
+  // A closed loop has as many positive as negative steps on each axis;
+  // its span is at most half its arc count. Keep that halo for loop discovery.
+  const extent = Math.ceil(radius) + Math.ceil(fillLimit / 2) + 1;
   const integerSeed = seed >>> 0;
   const cells: Cell[] = [];
   for (let y = -extent; y < extent; y++) {

@@ -8,6 +8,7 @@ import { createServer } from 'vite';
 const { values } = parseArgs({
   options: {
     sizes: { type: 'string' },
+    tilings: { type: 'string' },
     width: { type: 'string' },
     height: { type: 'string' },
     'tile-size': { type: 'string', default: '34,68' },
@@ -27,6 +28,7 @@ if (values.help) {
 
 Print a Markdown report for every registered tiling to stdout.
 Progress and failures go to stderr. Options:
+  --tilings LIST        Tiling IDs (default: all registered tilings)
   --sizes LIST          Viewports (default: 900x600,1920x1080)
   --width N --height N   Single viewport instead of --sizes
   --tile-size LIST      Tile sizes >= 2 (default: 34,68)
@@ -104,12 +106,19 @@ const server = await createServer({
 
 try {
   const { TILINGS } = await server.ssrLoadModule('/src/tilings/index.ts');
+  const ids = values.tilings?.split(',').map((id) => id.trim());
+  if (ids) {
+    for (const id of ids) {
+      if (!TILINGS.some((def) => def.id === id)) throw new Error(`Unknown tiling: ${id}`);
+    }
+  }
+  const selectedTilings = ids ? TILINGS.filter((def) => ids.includes(def.id)) : TILINGS;
   const { renderSvg } = await server.ssrLoadModule('/src/render/svg.ts');
   console.log(`# Tiling performance report
 
 ${new Date().toISOString()} · Node ${process.version} · ${process.platform}/${process.arch} · ${escapeCell(cpus()[0]?.model ?? 'unknown CPU')}
 
-${TILINGS.length} tilings × ${scenarios.length} setting combinations = ${TILINGS.length * scenarios.length} benchmark rows.
+${selectedTilings.length} tilings × ${scenarios.length} setting combinations = ${selectedTilings.length * scenarios.length} benchmark rows.
 ${warmup} warmup renders and ${runs} measured renders per combination, run sequentially in one process.
 Times cover synchronous production SVG generation, including geometry, clipping and serialization where applicable.
 Module loading, browser painting, worker messaging and PNG rasterization are excluded.
@@ -122,7 +131,7 @@ Median averages the two central samples for even run counts; p95 uses nearest ra
 | Tiling | ID | Viewport | Tile px | Rotation ° | Hierarchy | Loop limit | Border px | Seed | Render path | Tiles | SVG KiB | Median ms | p95 ms |
 | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: |`);
 
-  for (const def of TILINGS) {
+  for (const def of selectedTilings) {
     for (const scenario of scenarios) {
       const options = { ...palette, ...scenario, border: scenario.borderWidth === 0 ? null : '#101820' };
       const label = `${escapeCell(def.name)} | ${def.id} | ${options.width}x${options.height} | ${options.tileSize} | ${options.rotation} | ${options.substitutionHierarchy} | ${options.loopFillLimit} | ${options.borderWidth} | ${options.seed}`;

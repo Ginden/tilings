@@ -42,12 +42,14 @@ function fmt(v: number): string {
 interface DrawingPaths {
   readonly byKind: ReadonlyMap<number, readonly string[]>;
   readonly edges: ReadonlySet<string> | null;
+  readonly polylines: readonly string[];
 }
 
 /** Format each vertex once while assembling both fill paths and border edges. */
 function drawingPaths(tiles: readonly Tile[], includeBorders: boolean): DrawingPaths {
   const byKind = new Map<number, string[]>();
   const edges = includeBorders ? new Set<string>() : null;
+  const polylines: string[] = [];
   const addEdge = (left: string, right: string): void => {
     edges!.add(left < right ? `M${left}L${right}` : `M${right}L${left}`);
   };
@@ -79,16 +81,14 @@ function drawingPaths(tiles: readonly Tile[], includeBorders: boolean): DrawingP
     if (edges && tile.borderParts) {
       for (const polyline of tile.borderParts) {
         const points = polyline.map((point) => `${fmt(point.x)} ${fmt(point.y)}`);
-        for (let index = 0; index + 1 < points.length; index++) {
-          addEdge(points[index]!, points[index + 1]!);
-        }
+        if (points.length > 1) polylines.push(`M${points.join('L')}`);
       }
     }
   }
-  return { byKind, edges };
+  return { byKind, edges, polylines };
 }
 
-function edgePathChunks(edges: ReadonlySet<string>, chunkSize = 1_024): string[] {
+function edgePathChunks(edges: Iterable<string>, chunkSize = 1_024): string[] {
   const chunks: string[] = [];
   let chunk: string[] = [];
   for (const edge of edges) {
@@ -127,6 +127,14 @@ function tileBody(
   for (const edges of edgePathChunks(paths.edges)) {
     body.push(
       `<path data-border="" fill="none" ${borderStroke} stroke-linecap="round" d="${edges}"/>`,
+    );
+  }
+  // Explicit border polylines already describe separate curves/passages.
+  // Keep each connected line intact instead of serializing every segment's
+  // start point again. Round joins match the former round-capped segments.
+  for (const lines of edgePathChunks(paths.polylines)) {
+    body.push(
+      `<path data-border="" fill="none" ${borderStroke} stroke-linecap="round" stroke-linejoin="round" d="${lines}"/>`,
     );
   }
   return body;

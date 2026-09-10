@@ -1,5 +1,7 @@
 # Tiling performance report
 
+Seeded performance fixes and follow-up measurements: [report-seeded.md](report-seeded.md).
+
 2026-09-10T21:03:47.921Z · Node v24.19.0 · linux/x64 · AMD Ryzen 9 5950X 16-Core Processor
 
 42 tilings × 36 setting combinations = 1512 benchmark rows.

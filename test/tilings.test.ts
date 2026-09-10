@@ -497,6 +497,14 @@ describe('seeded Voronoi mosaic', () => {
     }
   });
 
+  it('colours a dense patch without getting stuck in a constrained repair region', () => {
+    // The 1080p/10px report stalled here despite the smaller 4K/34px case passing.
+    const tiles = generateVoronoi(120, 20260824);
+    expect(tiles.every((tile) => tile.kind >= 0 && tile.kind < 4)).toBe(true);
+    const pairs = sharedBorderPairs(tiles);
+    expect(pairs.filter(([left, right]) => left.kind === right.kind)).toEqual([]);
+  }, 10_000);
+
   it('generates the patch needed for a 4K viewport within the test timeout', () => {
     const tiles = generateVoronoi(55, 20260824);
     expect(tiles.length).toBeGreaterThan(10_000);

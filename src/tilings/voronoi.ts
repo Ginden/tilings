@@ -9,7 +9,7 @@ const OUTPUT_MARGIN = 4;
 const SITE_MARGIN = 8;
 const CELL_EXTENT = 4;
 const NEIGHBOUR_DISTANCE = CELL_EXTENT * 2 * Math.SQRT2;
-const NEIGHBOUR_DISTANCE_SQUARED = NEIGHBOUR_DISTANCE ** 2;
+const BUCKET_SIZE = 2;
 
 function hash(seed: number, x: number, y: number, channel: number): number {
   let value = seed >>> 0;
@@ -81,7 +81,7 @@ function bucketKey(x: number, y: number): string {
 }
 
 function bucketCoordinate(value: number): number {
-  return Math.floor(value / NEIGHBOUR_DISTANCE);
+  return Math.floor(value / BUCKET_SIZE);
 }
 
 function bucketSites(sites: readonly Site[]): SiteBuckets {
@@ -95,23 +95,22 @@ function bucketSites(sites: readonly Site[]): SiteBuckets {
   return buckets;
 }
 
-function neighbouringSites(origin: Site, buckets: SiteBuckets): Site[] {
+function neighbouringSites(origin: Site, buckets: SiteBuckets, distance: number): Site[] {
   const centre = origin.point;
   const bucketX = bucketCoordinate(centre.x);
   const bucketY = bucketCoordinate(centre.y);
   const neighbours: Site[] = [];
 
-  // A bucket is exactly as wide as the maximum relevant distance, so the
-  // origin's bucket and its eight neighbours contain every possible clipper.
-  for (let dy = -1; dy <= 1; dy++) {
-    for (let dx = -1; dx <= 1; dx++) {
+  const reach = Math.ceil(distance / BUCKET_SIZE);
+  for (let dy = -reach; dy <= reach; dy++) {
+    for (let dx = -reach; dx <= reach; dx++) {
       const bucket = buckets.get(bucketKey(bucketX + dx, bucketY + dy));
       if (!bucket) continue;
       for (const other of bucket) {
         if (other === origin) continue;
         const distanceX = other.point.x - centre.x;
         const distanceY = other.point.y - centre.y;
-        if (distanceX * distanceX + distanceY * distanceY <= NEIGHBOUR_DISTANCE_SQUARED) {
+        if (distanceX * distanceX + distanceY * distanceY <= distance * distance) {
           neighbours.push(other);
         }
       }
@@ -151,14 +150,26 @@ function clipToBisector(polygon: readonly Vec[], origin: Vec, other: Vec): Vec[]
 
 function voronoiCell(origin: Site, buckets: SiteBuckets): Vec[] {
   const centre = origin.point;
-  let polygon: Vec[] = [
+  const square: Vec[] = [
     { x: centre.x - CELL_EXTENT, y: centre.y - CELL_EXTENT },
     { x: centre.x + CELL_EXTENT, y: centre.y - CELL_EXTENT },
     { x: centre.x + CELL_EXTENT, y: centre.y + CELL_EXTENT },
     { x: centre.x - CELL_EXTENT, y: centre.y + CELL_EXTENT },
   ];
 
-  for (const other of neighbouringSites(origin, buckets)) {
+  // Nearby sites cheaply bound the final cell. A site farther than twice
+  // the farthest vertex cannot cut this convex polygon (triangle inequality).
+  let bound = square;
+  for (const other of neighbouringSites(origin, buckets, BUCKET_SIZE)) {
+    bound = clipToBisector(bound, centre, other.point);
+  }
+  const distance = Math.min(NEIGHBOUR_DISTANCE, 2 * Math.sqrt(Math.max(
+    ...bound.map((point) => (point.x - centre.x) ** 2 + (point.y - centre.y) ** 2),
+  )) + 1e-8);
+  // Restart in the original site order to preserve floating-point coordinates
+  // and hence shared-edge keys, colours and the Delaunay dual.
+  let polygon = square;
+  for (const other of neighbouringSites(origin, buckets, distance)) {
     polygon = clipToBisector(polygon, centre, other.point);
   }
   return polygon;
@@ -228,11 +239,48 @@ function neighbourhood(
   return [...region];
 }
 
+/** Swap a two-colour component when it frees a colour at the new cell. */
+function recolourChains(
+  index: number,
+  adjacency: readonly (readonly number[])[],
+  colours: number[],
+  populations: number[],
+): boolean {
+  for (let target = 0; target < 4; target++) {
+    for (let replacement = 0; replacement < 4; replacement++) {
+      if (target === replacement) continue;
+      const component = new Set<number>();
+      const pending = adjacency[index]!.filter((cell) => colours[cell] === target);
+      while (pending.length > 0) {
+        const cell = pending.pop()!;
+        if (component.has(cell)) continue;
+        component.add(cell);
+        for (const neighbour of adjacency[cell]!) {
+          if (colours[neighbour] === target || colours[neighbour] === replacement) pending.push(neighbour);
+        }
+      }
+      if (adjacency[index]!.some((cell) => colours[cell] === replacement && component.has(cell))) continue;
+      for (const cell of component) {
+        const previous = colours[cell]!;
+        const next = previous === target ? replacement : target;
+        populations[previous]!--;
+        populations[next]!++;
+        colours[cell] = next;
+      }
+      colours[index] = target;
+      populations[target]!++;
+      return true;
+    }
+  }
+  return false;
+}
+
 function recolourRegion(
   region: readonly number[],
   adjacency: readonly (readonly number[])[],
   colours: number[],
   populations: number[],
+  attemptBudget = Infinity,
 ): boolean {
   const previous = region.map((index) => colours[index]!);
   for (const index of region) {
@@ -241,7 +289,9 @@ function recolourRegion(
     colours[index] = -1;
   }
 
+  let attempts = 0;
   const search = (remaining: number): boolean => {
+    if (++attempts > attemptBudget) return false;
     if (remaining === 0) return true;
     let selected = -1;
     let selectedAvailable: number[] = [];
@@ -302,12 +352,16 @@ function colourCells(cells: readonly Cell[], seed: number): number[] {
 
     if (available.length === 0) {
       let repaired = false;
-      for (const depth of [1, 2, 3]) {
-        if (recolourRegion(neighbourhood(index, adjacency, colours, depth), adjacency, colours, populations)) {
+      // A fixed boundary can make a small region impossible to four-colour.
+      // Bound that search and expand the region instead of exploring its
+      // exponential search tree before allowing more neighbours to change.
+      for (const depth of [1, 2, 3, 4, 5, 6]) {
+        if (recolourRegion(neighbourhood(index, adjacency, colours, depth), adjacency, colours, populations, 2_000)) {
           repaired = true;
           break;
         }
       }
+      if (!repaired && recolourChains(index, adjacency, colours, populations)) continue;
       if (!repaired) {
         const coloured = order.filter((cell) => colours[cell]! >= 0);
         recolourRegion([index, ...coloured], adjacency, colours, populations);
@@ -366,6 +420,9 @@ export function generateDelaunay(radius: number, seed = currentDaySeed()): Tile[
   const vertices = new Map<string, DelaunayVertex>();
 
   for (const site of allSites) {
+    // Cells are clipped to a square of this extent around their site.
+    if (Math.abs(site.point.x) > outputExtent + CELL_EXTENT ||
+        Math.abs(site.point.y) > outputExtent + CELL_EXTENT) continue;
     const points = voronoiCell(site, buckets);
     for (const point of points) {
       if (Math.abs(point.x) > outputExtent || Math.abs(point.y) > outputExtent) continue;

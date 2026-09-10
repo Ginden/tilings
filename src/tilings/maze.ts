@@ -102,6 +102,15 @@ function corridorBorders(outline: readonly Vec[], x: number, y: number): Vec[][]
   return borders;
 }
 
+// There are only sixteen corridor shapes. Trace their boundaries once,
+// then translate the selected template instead of rebuilding a graph per cell.
+const ARMS: readonly Arm[] = ['north', 'east', 'south', 'west'];
+const CORRIDORS = Array.from({ length: 16 }, (_, mask) => {
+  const arms = new Set(ARMS.filter((_, index) => mask & (1 << index)));
+  const outline = corridorOutline(0, 0, arms);
+  return { outline, borders: corridorBorders(outline, 0, 0) };
+});
+
 /** Fill a square patch with a reproducible binary-tree perfect maze. */
 export function generateBinaryTreeMaze(radius: number, seed = currentDaySeed()): Tile[] {
   const extent = Math.ceil(radius) + OUTPUT_MARGIN;
@@ -112,7 +121,11 @@ export function generateBinaryTreeMaze(radius: number, seed = currentDaySeed()):
 
   for (let y = min; y <= max; y++) {
     for (let x = min; x <= max; x++) {
-      const outline = corridorOutline(x, y, cellArms(x, y, min, max, integerSeed));
+      const arms = cellArms(x, y, min, max, integerSeed);
+      const mask = ARMS.reduce((value, arm, index) => value | (arms.has(arm) ? 1 << index : 0), 0);
+      const corridor = CORRIDORS[mask]!;
+      const translate = (point: Vec): Vec => ({ x: x + point.x, y: y + point.y });
+      const outline = corridor.outline.map(translate);
       tiles.push({
         kind: 0,
         points: [
@@ -123,7 +136,7 @@ export function generateBinaryTreeMaze(radius: number, seed = currentDaySeed()):
         ],
         parts: [],
         overlays: [{ kind: 1, points: outline }],
-        borderParts: corridorBorders(outline, x, y),
+        borderParts: corridor.borders.map((border) => border.map(translate)),
       });
     }
   }
