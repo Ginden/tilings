@@ -34,6 +34,47 @@ const options = {
 };
 
 describe('colours', () => {
+  it('organises the compact preset palette by collection', () => {
+    expect(PALETTES.filter((palette) => palette.collection === 'flags')).toEqual([
+      expect.objectContaining({ id: 'trans', name: 'Trans flag' }),
+      expect.objectContaining({ id: 'bisexual', name: 'Bisexual flag' }),
+      expect.objectContaining({
+        id: 'french',
+        name: 'French',
+        colour1: '#000091',
+        colour2: '#ffffff',
+        colour3: '#e1000f',
+        border: '#000000',
+      }),
+      expect.objectContaining({
+        id: 'german',
+        name: 'German',
+        colour1: '#000000',
+        colour2: '#d00000',
+        colour3: '#ffce00',
+        border: '#000000',
+      }),
+      expect.objectContaining({
+        id: 'italy',
+        name: 'Italy',
+        colour1: '#008c45',
+        colour2: '#f4f5f0',
+        colour3: '#cd212a',
+        border: '#ffffff',
+      }),
+      expect.objectContaining({
+        id: 'ireland',
+        name: 'Ireland',
+        colour1: '#169b62',
+        colour2: '#ffffff',
+        colour3: '#ff883e',
+        border: '#ffffff',
+      }),
+    ]);
+    expect(PALETTES.map((palette) => palette.id)).not.toContain('bauhaus');
+    expect(PALETTES.map((palette) => palette.id)).not.toContain('islamic-tile');
+  });
+
   it('round trips hex values', () => {
     expect(toHex(parseHex('#e8b53b'))).toBe('#e8b53b');
     expect(toHex(parseHex('abc'))).toBe('#aabbcc');
@@ -385,15 +426,13 @@ describe('palettes', () => {
       'penrose-classic',
       'blueprint',
       'monochrome',
-      'islamic-tile',
       'archive',
-      'bauhaus',
     ]);
   });
 
   it('offers three-colour palettes only on the selected tilings', () => {
     expect(PALETTES.filter((palette) => palette.collection === 'trios').map((palette) => palette.id)).toContain('night-bloom');
-    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(6);
+    expect(PALETTES.filter((palette) => palette.collection === 'trios')).toHaveLength(5);
     expect(TILINGS.filter((tiling) => tiling.supportsThreeColours).map((tiling) => tiling.id).sort()).toEqual([
       'danzer-sevenfold',
       'decagonal',
@@ -415,7 +454,7 @@ describe('palettes', () => {
 
   it('offers the Trans palette broadly with a white border and all three flag colours', () => {
     expect(PALETTES.find((palette) => palette.id === 'trans')).toMatchObject({
-      collection: 'studio',
+      collection: 'flags',
       colour1: '#5bcefa',
       colour2: '#f5a9b8',
       colour3: '#ffffff',
@@ -433,13 +472,13 @@ describe('palettes', () => {
   });
 
   it('are unique and use valid colours', () => {
-    expect(PALETTES.filter((palette) => palette.collection === 'studio')).toHaveLength(6);
+    expect(PALETTES.filter((palette) => palette.collection === 'studio')).toHaveLength(5);
     expect(new Set(PALETTES.map((p) => p.id)).size).toBe(PALETTES.length);
     for (const palette of PALETTES) {
-      expect(['classics', 'studio', 'trios']).toContain(palette.collection);
+      expect(['classics', 'studio', 'trios', 'flags']).toContain(palette.collection);
       expect(palette.colour1).toMatch(/^#[0-9a-f]{6}$/);
       expect(palette.colour2).toMatch(/^#[0-9a-f]{6}$/);
-      if (palette.collection === 'trios') expect(palette.colour3).toBeDefined();
+      if (palette.collection === 'trios' || palette.collection === 'flags') expect(palette.colour3).toBeDefined();
       if (palette.colour3 !== undefined) expect(palette.colour3).toMatch(/^#[0-9a-f]{6}$/);
       if (palette.border !== null) expect(palette.border).toMatch(/^#[0-9a-f]{6}$/);
     }

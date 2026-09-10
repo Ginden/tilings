@@ -86,6 +86,7 @@ function populateSelects(): void {
   for (const [collection, label] of [
     ['classics', 'Classics'],
     ['studio', 'Studio'],
+    ['flags', 'Flags'],
     ['trios', 'Three colours'],
   ] as const) {
     const group = document.createElement('section');
