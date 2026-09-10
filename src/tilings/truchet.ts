@@ -2,7 +2,7 @@ import type { Vec } from '../geometry.js';
 import { currentDaySeed } from '../seed.js';
 import type { Tile, TilingDefinition, TilingGenerationOptions } from './types.js';
 
-export const TRUCHET_FILL_LIMITS = [4, 9, 16, 25, 36] as const;
+export const TRUCHET_FILL_LIMITS = [4, 9, 16, 25, 36, 49] as const;
 export const TRUCHET_DEFAULT_FILL_LIMIT = 16;
 
 const ARC_RADIUS = 0.5;
